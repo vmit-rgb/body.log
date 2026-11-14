@@ -2,10 +2,11 @@ import { parseAccent, type Accent } from './accents';
 
 /**
  * Settings as the screens read them. The stored profile stays as it came
- * (PROFILE-FORMAT.md, version 1, also written by «бета 0.81»); this is a
- * checked, filled-in view of it: anything missing or broken gets a default
- * (mostly the one 0.81 gives it; a missing section is switched off), so a
- * screen never meets a hole.
+ * (PROFILE-FORMAT.md, format 0.1; older ones are converted where a diary is
+ * read, format/profile-upgrade.ts); this is a checked, filled-in view of
+ * it: anything missing or broken gets a default (a missing section is
+ * switched off, no `goal` means no weekly goal), so a screen never meets
+ * a hole. The strict check with limits is for the paste (format/profile-check.ts).
  *
  * Glossary
  * - activity kind: one of the four fixed sections with exercises.
@@ -34,7 +35,7 @@ export interface Exercise {
   readonly source: Source;
 }
 
-/** A warm-up exercise: done by count (`reps`, free text like «10» or «8–10») or by time (`seconds`). */
+/** A warm-up exercise: done by count (`reps`, free text like «10», «8–10», «10 на кожну ногу») or by time (`seconds`). */
 export interface WarmupItem {
   readonly exercise: string;
   readonly reps: string;
@@ -49,7 +50,6 @@ export interface WorkoutItem {
   readonly seconds: number | null;
   readonly weight: number | null;
   readonly sets: number | null;
-  readonly side: string;
   readonly fields: readonly WorkoutField[];
 }
 
@@ -132,9 +132,7 @@ function readWarmupItems(value: unknown): WarmupItem[] {
     const item = raw(entry);
     const exercise = id(item.exercise);
     if (exercise === null) return [];
-    // «бета 0.81» marks a timed exercise with `timed` and keeps the seconds in `reps`
-    const timedReps = item.timed === true ? numberOr(Number(text(item.reps).replace(',', '.')), null) : null;
-    const seconds = numberOr(item.seconds, timedReps);
+    const seconds = numberOr(item.seconds, null);
     return [{ exercise, reps: seconds === null ? text(item.reps) : '', seconds }];
   });
 }
@@ -152,7 +150,6 @@ function readWorkoutItem(entry: unknown): WorkoutItem | null {
     seconds: numberOr(item.seconds, null),
     weight: numberOr(item.weight, null),
     sets: numberOr(item.sets, null),
-    side: text(item.side),
     fields: fields.length ? fields : ['reps'],
   };
 }
@@ -198,21 +195,9 @@ function readActivity(value: Raw): Activity {
   return { enabled: value.enabled === true, weeklyTarget: numberOr(value.weeklyTarget, 0), hint: text(value.hint) };
 }
 
-/**
- * Before «доступність», «бета 0.76–0.81» kept `theme.motion`: a boolean, or
- * `{ ui, ascii, vibration }` (PROFILE-FORMAT.md). Read as the matching checkboxes.
- */
-function oldMotion(value: unknown): Partial<Record<AccessibilityKey, boolean>> {
-  if (value === false) return { noMotion: true };
-  const motion = raw(value);
-  return { noMotion: motion.ui === false, noBackgroundMotion: motion.ascii === false, noVibration: motion.vibration === false };
-}
-
 export function readAccessibility(profile: Raw): Accessibility {
-  const old = oldMotion(raw(profile.theme).motion);
   const stored = raw(profile.accessibility);
-  const entries = ACCESSIBILITY_KEYS.map((key) => [key, typeof stored[key] === 'boolean' ? stored[key] : old[key] === true] as const);
-  return Object.fromEntries(entries) as Record<AccessibilityKey, boolean>;
+  return Object.fromEntries(ACCESSIBILITY_KEYS.map((key) => [key, stored[key] === true])) as Record<AccessibilityKey, boolean>;
 }
 
 export function readSettings(profile: Raw): Settings {
@@ -225,7 +210,8 @@ export function readSettings(profile: Raw): Settings {
   return {
     accent: parseAccent(theme.accent),
     accessibility: readAccessibility(profile),
-    goal: { enabled: goal.enabled !== false, days: numberOr(goal.days, 5), done: pick(ACTIVITY_KINDS, goal.done) },
+    // no `goal` = no weekly goal (Olesia, 2026-11-15); 5 is where the days start when it is switched on
+    goal: { enabled: goal.enabled === true, days: numberOr(goal.days, 5), done: pick(ACTIVITY_KINDS, goal.done) },
     encouragement: list(profile.encouragement).map(text).filter((phrase) => phrase.trim() !== ''),
     morningWarmup: {
       ...readActivity(morning),

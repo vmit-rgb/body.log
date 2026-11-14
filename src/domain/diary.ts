@@ -1,11 +1,13 @@
 import { VERSION_LABEL } from '../version';
 import { isDayKey, type DayKey } from './dates';
 import { readDay, writeDay, type Day } from './day';
+import { isLegacyProfile, upgradeProfile } from '../format/profile-upgrade';
 
 /**
  * Glossary
  * - diary: everything the person keeps in the app: their settings and the days they logged.
  * - settings (profile): what the person set up; format in PROFILE-FORMAT.md.
+ *   Settings older than format 0.1 are converted here, where a diary comes in.
  * - day: what was logged on one calendar day, keyed by its date.
  * - copy (backup): the diary as a file, `phys-activity-backup` version 1,
  *   the same format «бета 0.81» saves («зберегти копію»).
@@ -56,14 +58,20 @@ function parseJson(text: string): unknown {
 }
 
 /**
- * Reads a copy (a file or the app's own storage). Returns null for anything
- * that isn't a copy with settings; days with a broken date are left out.
+ * Reads a copy (a file or the app's own storage); null for anything that
+ * isn't a copy with settings; days with a broken date are left out.
+ * `converted` says the settings were older than format 0.1 and are now 0.1.
  */
-export function parseDiary(text: string): Diary | null {
+export function readDiary(text: string): { readonly diary: Diary; readonly converted: boolean } | null {
   const data = parseJson(text);
   if (!isObject(data) || data.format !== BACKUP_FORMAT || data.version !== BACKUP_VERSION) return null;
   if (!isObject(data.profile) || !isObject(data.days)) return null;
-  return { profile: data.profile, days: parseDays(data.days) };
+  return { diary: { profile: upgradeProfile(data.profile), days: parseDays(data.days) }, converted: isLegacyProfile(data.profile) };
+}
+
+/** The diary of `readDiary` alone. */
+export function parseDiary(text: string): Diary | null {
+  return readDiary(text)?.diary ?? null;
 }
 
 /** A copy file read into a diary; null when it isn't a copy or can't be read. */

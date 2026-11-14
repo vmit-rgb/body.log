@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fakeDevice } from './test-env';
+import { fakeDevice, openSections } from './test-env';
 import type { DayKey } from '../domain/dates';
 import { readDay } from '../domain/day';
 import { serializeDiary, type Diary } from '../domain/diary';
 import { EXAMPLE_DIARY } from '../domain/examples';
-import { browserChoice, diaryStore, sectionMemory, type KeyValue } from '../storage/store';
+import { BEFORE_FORMAT_KEY, browserChoice, DIARY_KEY, diaryStore, sectionMemory, type KeyValue } from '../storage/store';
 import { mountToast } from '../ui/toast';
 import { startApp, type AppEnv } from './app';
 
@@ -179,6 +179,34 @@ describe('coming back', () => {
     start({ installed: false });
     expect(heading()).toBe('головна');
     expect(onDiary).toHaveBeenCalledWith(EXAMPLE_DIARY);
+  });
+});
+
+describe('coming back with a diary from before format 0.1', () => {
+  it('converts the old `timed` and `side` once, shows the exercises as before and keeps the days', () => {
+    // invented: the shape «бета 0.81» leaves on the phone
+    const old = serializeDiary({
+      profile: {
+        format: 'phys-activity-profile',
+        version: 1,
+        theme: { accent: 'blue' },
+        morningWarmup: { enabled: true, weeklyTarget: 5, levels: [{ id: 'l1', name: 'рівень 1', items: [{ exercise: 'plank', reps: '40', timed: true }] }] },
+        workout: { enabled: true, weeklyTarget: 2, sessions: [{ id: 'a', name: 'а', items: [{ exercise: 'lunge', sets: 3, reps: '10', side: 'на кожну ногу', fields: ['reps'] }] }] },
+        exercises: [{ id: 'plank', name: 'планка' }, { id: 'lunge', name: 'випад' }],
+      },
+      days: { ['2026-11-09' as DayKey]: readDay({ note: 'вправа 1', wo: { session: 'a' } }, '2026-11-09' as DayKey) },
+    }, new Date('2026-11-08T10:00:00Z'));
+    localStorage.setItem(DIARY_KEY, old);
+    start({ sections: openSections });
+    expect(heading()).toBe('головна');
+    expect(host.textContent).toContain('40 с');
+    expect(host.textContent).toContain('3 × 10 на кожну ногу');
+    const profile = stored()!.profile as { morningWarmup: { levels: { items: unknown[] }[] }; workout: { sessions: { items: unknown[] }[] }; version: unknown };
+    expect(profile.version).toBe('0.1');
+    expect(profile.morningWarmup.levels[0]!.items).toEqual([{ exercise: 'plank', seconds: 40 }]);
+    expect(profile.workout.sessions[0]!.items).toEqual([{ exercise: 'lunge', sets: 3, reps: '10 на кожну ногу', fields: ['reps'] }]);
+    expect(stored()!.days['2026-11-09' as DayKey]).toMatchObject({ note: 'вправа 1' });
+    expect(localStorage.getItem(BEFORE_FORMAT_KEY)).toBe(old);
   });
 });
 

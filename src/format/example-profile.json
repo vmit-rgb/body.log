@@ -1,0 +1,84 @@
+{
+  "format": "phys-activity-profile",
+  "version": "0.1",
+  "lang": "uk",
+  "theme": { "accent": "blue" },
+  "goal": { "enabled": true, "days": 5, "done": ["morningWarmup", "workout"] },
+  "encouragement": ["ти тут — це вже половина справи", "маленький крок теж рахується"],
+  "morningWarmup": {
+    "enabled": true,
+    "weeklyTarget": 6,
+    "levels": [
+      {
+        "id": "easy",
+        "name": "легкий день",
+        "duration": "10 хв",
+        "items": [
+          { "exercise": "neck-rolls", "reps": "10" },
+          { "exercise": "plank", "seconds": 30 }
+        ]
+      }
+    ]
+  },
+  "daytimeWarmup": {
+    "enabled": true,
+    "weeklyTarget": 3,
+    "hint": "коли довго сидиш",
+    "groups": [
+      { "id": "back", "name": "для спини", "items": [{ "exercise": "cat-cow", "reps": "8" }] }
+    ]
+  },
+  "workout": {
+    "enabled": true,
+    "weeklyTarget": 2,
+    "hint": "через день",
+    "sessions": [
+      {
+        "id": "a",
+        "name": "а",
+        "how": "розімнися перед початком",
+        "items": [
+          { "exercise": "squat", "sets": 3, "reps": "10", "weight": 8, "fields": ["weight", "reps"] },
+          {
+            "set": [
+              { "exercise": "lunge", "sets": 2, "reps": "10 на кожну ногу", "fields": ["reps"] },
+              { "exercise": "plank", "seconds": 30, "fields": ["seconds"] }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "movement": {
+    "enabled": true,
+    "weeklyTarget": 4,
+    "hint": "хоча б 20 хв на день",
+    "kinds": [
+      {
+        "id": "walk",
+        "name": "прогулянка",
+        "fields": ["km", "minutes", "steps"],
+        "source": { "type": "link", "url": "https://example.com/walk", "by": "user" }
+      }
+    ]
+  },
+  "exercises": [
+    { "id": "neck-rolls", "name": "оберти шиєю", "how": "повільно, без ривків", "source": { "type": "user" } },
+    { "id": "plank", "name": "планка", "how": "тіло рівне, живіт підтягнутий" },
+    { "id": "cat-cow", "name": "кішка-корова", "how": "на вдиху прогнись, на видиху округли спину", "source": { "type": "user" } },
+    {
+      "id": "squat",
+      "name": "присід",
+      "how": "стопи на ширині плечей, коліна дивляться туди ж, куди носки",
+      "source": { "type": "link", "url": "https://example.com/squat", "by": "ai" }
+    },
+    { "id": "lunge", "name": "випад", "how": "крок уперед, коліно не заходить за носок" }
+  ],
+  "trackers": [
+    { "id": "neck-pain", "name": "біль у шиї", "hint": "0 — не болить, 10 — дуже", "kind": "scale", "min": 0, "max": 10, "ask": ["morning", "afterMorningWarmup"] },
+    { "id": "dizzy", "name": "було запаморочення?", "kind": "yesno", "ask": ["morning"] },
+    { "id": "bp", "name": "тиск", "kind": "numbers", "units": ["мм рт. ст.", "мм рт. ст."], "ask": ["morning"] },
+    { "id": "pulse", "name": "пульс", "kind": "number", "units": ["уд/хв"], "ask": ["morning"], "timer": { "enabled": true, "seconds": 30 } },
+    { "id": "day-note", "name": "нотатка", "kind": "note", "ask": ["evening"] }
+  ]
+}

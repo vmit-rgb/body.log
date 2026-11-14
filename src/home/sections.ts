@@ -430,7 +430,7 @@ export function daytimeBody(ctx: SectionContext): string {
 function prescription(item: WorkoutItem): string {
   const amount = item.reps || (item.seconds === null ? '' : formatNumber(item.seconds));
   const timedOnly = item.fields.includes('seconds') && !item.fields.includes('reps') && amount !== '';
-  return `${item.sets ? `${item.sets} × ` : ''}${amount}${timedOnly ? ' с' : ''}${item.side ? ` ${item.side}` : ''}`;
+  return `${item.sets ? `${item.sets} × ` : ''}${amount}${timedOnly ? ' с' : ''}`;
 }
 
 function setFields(ctx: SectionContext, item: WorkoutItem, i: number): string {

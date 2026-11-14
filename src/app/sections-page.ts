@@ -152,9 +152,8 @@ export class SectionsEditor {
 
   timed(path: string, on: boolean): void {
     const item = obj(valueAt(this.draft.profile(), path));
-    const old = item.timed === true;
-    const seconds = typeof item.seconds === 'number' ? item.seconds : old ? Number(item.reps) || null : null;
-    this.draft.change(withTimed(path, on, seconds, old ? '' : String(item.reps ?? '')));
+    const seconds = typeof item.seconds === 'number' ? item.seconds : null;
+    this.draft.change(withTimed(path, on, seconds, String(item.reps ?? '')));
   }
 
   /** A field on or off; the last one stays (an empty list would read as the default anyway). */

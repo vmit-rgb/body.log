@@ -17,16 +17,8 @@ describe('accents', () => {
     expect(parseAccent(accent)).toBe(accent);
   });
 
-  it.each([
-    ['red', 'orange'],
-    ['amber', 'orange'],
-    ['yellow', 'orange'],
-    ['lime', 'green'],
-  ])('moves the removed accent %s to the nearest one, %s', (old, nearest) => {
-    expect(parseAccent(old)).toBe(nearest);
-  });
-
-  it.each([42, 'turquoise', '', null, {}, 'toString'])('falls back to pink for %j', (value) => {
+  // removed accents (red, lime…) are moved when old settings are converted: format/profile-upgrade.test.ts
+  it.each([42, 'turquoise', 'red', 'lime', '', null, {}, 'toString'])('falls back to pink for %j', (value) => {
     expect(parseAccent(value)).toBe('pink');
   });
 });

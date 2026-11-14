@@ -257,7 +257,7 @@ function warmupItem(ctx: Ctx, family: string, slot: Slot, item: WarmupItem): str
 }
 
 export function prescription(item: WorkoutItem): string {
-  return `${item.sets ? `${item.sets} × ` : ''}${item.reps}${item.side ? ` ${item.side}` : ''}`;
+  return `${item.sets ? `${item.sets} × ` : ''}${item.reps}`;
 }
 
 function workoutFields(item: WorkoutItem, path: string): string {
