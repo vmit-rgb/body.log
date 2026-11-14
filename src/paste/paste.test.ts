@@ -208,7 +208,9 @@ describe('readPaste: refusals', () => {
     const line = (path: string, value: unknown) => refused(withAt(path, value)).lines[0];
     expect(line('exercises.0.name', 'а'.repeat(61))).toBe('вправи → вправа 1 «ааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааа» → назва: задовгий текст: символів 61, можна до 60');
     expect(line('goal.days', 9)).toBe('тижнева ціль → днів на тиждень: 9 — забагато, найбільше 7');
-    expect(line('goal.days', 0)).toBe('тижнева ціль → днів на тиждень: 0 — замало, найменше 1');
+    expect(line('goal.days', -1)).toBe('тижнева ціль → днів на тиждень: -1 — замало, найменше 0');
+    expect(read(withAt('goal.days', 0)).kind).toBe('accepted');
+    expect(line('encouragement.0', 'а'.repeat(81))).toBe('підбадьорливі фрази → фраза 1: задовгий текст: символів 81, можна до 80');
     expect(line('theme.accent', 'red')).toContain('вигляд → акцентний колір: має бути одним із: "gray", "orange"');
     expect(line('trackers.0.ask', [])).toBe('самопочуття → питання 1 «біль у шиї» → коли питати: замало записів: 0, треба щонайменше 1');
     expect(line('trackers.0.ask', ['morning', 'morning'])).toBe('самопочуття → питання 1 «біль у шиї» → коли питати: значення не мають повторюватися');

@@ -51,7 +51,7 @@
       "required": ["enabled", "days", "done"],
       "properties": {
         "enabled": { "title": "рахувати тижневу ціль", "type": "boolean" },
-        "days": { "title": "днів на тиждень", "type": "integer", "minimum": 1, "maximum": 7 },
+        "days": { "title": "днів на тиждень", "type": "integer", "minimum": 0, "maximum": 7 },
         "done": {
           "title": "що треба виконати, щоб день був «зроблено»",
           "type": "array",
@@ -65,7 +65,7 @@
       "title": "підбадьорливі фрази",
       "type": "array",
       "maxItems": 10,
-      "items": { "title": "фраза", "type": "string", "minLength": 1, "maxLength": 120 }
+      "items": { "title": "фраза", "type": "string", "minLength": 1, "maxLength": 80 }
     },
     "morningWarmup": {
       "title": "ранкова розминка",
