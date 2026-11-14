@@ -1,4 +1,5 @@
 import { ACCENTS, type Accent } from '../domain/accents';
+import type { PasteAct, PasteView } from '../app/paste-flow';
 import type { ExportTab } from '../domain/export';
 import { plural } from '../domain/numbers';
 import type { Slot } from '../domain/sections-edit';
@@ -11,6 +12,7 @@ import { withGrip } from '../ui/grip';
 import { wireDrag, type DropTarget } from './drag';
 import { motionFor } from './settings-motion';
 import { FOOTER, part, wireRestore } from './parts';
+import { pasteActOf, pasteResultBox, showPasteResult } from './paste-result';
 import { act, checkbox, daysSlider, destructive, secondary, tertiary } from './settings-bits';
 import {
   daytimeBody, KIND_NAMES, morningBody, movementBody, sectionMetas, wellbeingBody, workoutBody, type EditKind, type SectionsView,
@@ -38,6 +40,8 @@ export interface SettingsState {
   readonly exportTab: ExportTab;
   /** What is in the paste field, kept over a redraw. */
   readonly pasted: string;
+  /** What «застосувати» answered. */
+  readonly pasteView: PasteView;
   readonly sections: SectionsView;
 }
 
@@ -53,6 +57,7 @@ export type SettingsAct =
   | { readonly act: 'phrase-rm'; readonly index: number }
   | { readonly act: 'phrase-add' | 'save' | 'close' | 'copy-prompt' | 'copy-settings' | 'apply' | 'backup' | 'export-ai' | 'export-json' | 'export-pdf' | 'delete-records' | 'delete-all' }
   | { readonly act: 'pick-start' | 'pick-done' | 'pick-cancel' }
+  | { readonly act: 'paste-act'; readonly name: PasteAct }
   | { readonly act: 'accent'; readonly accent: Accent }
   | { readonly act: 'access'; readonly key: AccessibilityKey; readonly on: boolean }
   | { readonly act: 'timer'; readonly tracker: string; readonly on: boolean }
@@ -98,7 +103,7 @@ const ACCESS_LABELS: Record<AccessibilityKey, string> = {
   mirrored: 'віддзеркалити нижню панель',
 };
 /* The closed part's line (Figma layer 347:9003: «без анімацій, більші зони тапу»); Нитка's words for the rest. */
-const ACCESS_SHORT: Record<AccessibilityKey, string> = {
+export const ACCESS_SHORT: Record<AccessibilityKey, string> = {
   noMotion: 'без анімацій',
   noBackgroundMotion: 'без фонових анімацій',
   noVibration: 'без вібрації',
@@ -173,6 +178,7 @@ function aiBody(state: SettingsState): string {
       <div class="paste">
         ${withGrip(`<textarea class="field paste__field" rows="3" aria-label="відповідь ШІ" placeholder="встав сюди відповідь ШІ" data-input="paste">${esc(state.pasted)}</textarea>`)}
         <button type="button" class="ctl btn btn--primary btn--wide" ${act('apply')}${state.pasted.trim() ? '' : ' disabled'}>застосувати</button>
+        ${pasteResultBox(state.pasteView)}
       </div>
       <div>${tertiary('відновити з копії', 'data-restore')}</div>
       <input type="file" accept=".json,application/json,text/plain" hidden data-restore-file />`;
@@ -308,6 +314,8 @@ const READ: Record<string, Read> = {
 function tapped(target: Element): SettingsAct | null {
   const trigger = target.closest<HTMLElement>('[data-part]');
   if (trigger) return { act: 'part', part: trigger.dataset.part as PartId };
+  const pasteAct = pasteActOf(target);
+  if (pasteAct) return { act: 'paste-act', name: pasteAct };
   const button = target.closest<HTMLElement>('button[data-act]');
   if (!button) return null;
   const name = d(button, 'act');
@@ -322,6 +330,8 @@ function typed(host: HTMLElement, input: HTMLInputElement, actions: SettingsActi
   // checkboxes say «input» too: only the paste field is text
   if (input.dataset.input !== 'paste') return;
   actions.paste(input.value);
+  // the result shown spoke about the text before this change
+  showPasteResult(host, { kind: 'none' });
   part<HTMLButtonElement>(host, '[data-act="apply"]').disabled = input.value.trim() === '';
 }
 

@@ -10,6 +10,9 @@ import {
 } from '../domain/profile-edit';
 import { tidy } from '../domain/sections-edit';
 import { readSettings, type ActivityKind, type Settings } from '../domain/settings';
+import { russianReason } from '../paste/russian';
+import { ACCENT_NAMES, ACCESS_SHORT } from '../screens/settings';
+import { PasteFlow, RUSSIAN_COPY } from './paste-flow';
 import { showSettings, type PartId, type SettingsAct } from '../screens/settings';
 import { SectionsEditor } from './sections-page';
 import { buzz } from '../home/signal';
@@ -75,7 +78,6 @@ const NOT_A_COPY: ToastMessage = { message: 'цей файл не схожий �
 const RESTORED: ToastMessage = { message: 'відновлено з файлу', emoticon: ':)', showIcon: true };
 const soon = (message: string): ToastMessage => ({ message, emoticon: ':)' });
 const PROMPT_SOON = soon('промпт ще пишемо, скоро буде');
-const PASTE_SOON = soon('вставку налаштувань від ШІ ще робимо, скоро буде');
 const PDF_NOT_MADE: ToastMessage = { message: 'не вдалося зібрати PDF', emoticon: '>_<' }; // «бета 0.81»
 const PDF_FOOTER = `трекер · ${VERSION_LABEL}`; // Olesia, 2026-11-10
 const PHRASE_MAX = 80;
@@ -92,6 +94,18 @@ class Draft implements SettingsPage {
   private pasted = '';
   private shown = false;
   readonly sections: SectionsEditor;
+  /** «застосувати»: compares with the settings on screen; «зберегти» keeps the pasted ones at once. */
+  readonly paste = new PasteFlow({
+    current: () => this.draft,
+    names: { accents: ACCENT_NAMES, accessibility: ACCESS_SHORT },
+    copyText: (text) => this.env.copyText(text),
+    say: (message) => this.say(message),
+    show: () => {
+      this.redraw();
+      this.home.host.querySelector<HTMLElement>('[data-paste-title]')?.focus();
+    },
+    save: (profile) => this.savePasted(profile),
+  });
 
   constructor(private readonly env: SettingsEnv, private readonly home: SettingsHome) {
     // tidy: what the screen can't show is dropped, so its indices are the profile's
@@ -105,6 +119,10 @@ class Draft implements SettingsPage {
       redraw: () => this.redraw(),
       say: (message) => this.say(message),
     });
+  }
+
+  pastedText(): string {
+    return this.pasted;
   }
 
   settings(): Settings {
@@ -124,10 +142,14 @@ class Draft implements SettingsPage {
       backupLine: this.home.backupLine(),
       exportTab: this.exportTab,
       pasted: this.pasted,
+      pasteView: this.paste.view,
       sections: this.sections.view(),
     }, {
       act: (action) => ACTS[action.act](this, action as never),
-      paste: (text) => (this.pasted = text),
+      paste: (text) => {
+        this.pasted = text;
+        this.paste.reset();
+      },
       restore: (file) => void this.restore(file),
       lifted: () => this.sections.lifted(),
     });
@@ -177,6 +199,27 @@ class Draft implements SettingsPage {
     if (!this.keepProfile(cleanForSave(this.draft))) return;
     void spinWhile(this.button('save'), Promise.resolve());
     this.say({ ...SAVED, action: undo(() => this.keepProfile(before)) });
+  }
+
+  /**
+   * Keeps pasted settings in place of the saved ones and of the changes not
+   * saved yet; «скасувати» brings both back. The records are not touched.
+   */
+  private savePasted(profile: JsonObject): void {
+    const saved = this.saved;
+    const draft = this.draft;
+    if (!this.keepProfile(profile)) return;
+    this.pasted = '';
+    this.redraw();
+    this.say({
+      ...SAVED,
+      action: undo(() => {
+        if (!this.keepProfile(saved)) return;
+        this.draft = draft;
+        this.env.look(draft);
+        this.redraw();
+      }),
+    });
   }
 
   mayLeave = async (): Promise<boolean> => {
@@ -279,6 +322,7 @@ class Draft implements SettingsPage {
   async restore(file: File): Promise<void> {
     const copied = await readCopy(file);
     if (!copied) return this.say(NOT_A_COPY);
+    if (russianReason(copied.profile)) return this.say(RUSSIAN_COPY);
     const n = Object.keys(copied.days).length;
     const answer = await confirmDialog({
       title: 'відновити з файлу?',
@@ -372,7 +416,8 @@ const ACTS: Acts = {
   close: (p) => void p.close(),
   'copy-prompt': (p) => p.say(PROMPT_SOON),
   'copy-settings': (p) => void p.copySettings(),
-  apply: (p) => p.say(PASTE_SOON),
+  apply: (p) => p.paste.apply(p.pastedText()),
+  'paste-act': (p, a) => p.paste.act(a.name),
   backup: (p) => p.backup(),
   'export-ai': (p) => void p.exportText(),
   'export-json': (p) => p.exportJson(),
