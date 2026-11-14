@@ -1,12 +1,14 @@
 import { DEFAULT_ACCENT } from './accents';
 import type { Diary } from './diary';
+import { PROFILE_FORMAT, PROFILE_VERSION } from '../format/profile-check';
 
 /*
  * «почати без ШІ» (brief, Decisions 2026-11-08): every section filled with
  * examples under neutral names, settings only, no invented log. A light
  * example (Olesia, 2026-11-09): two morning levels, one daytime zone, one
  * workout, one kind of movement, one evening question, 2–3 exercises in
- * each. Texts are Нитка's draft. Format: PROFILE-FORMAT.md, version 1.
+ * each. Texts are Нитка's draft. Format: PROFILE-FORMAT.md, 0.1; a test
+ * checks it against the schema.
  */
 
 const exercise = (n: number) => ({
@@ -17,10 +19,9 @@ const exercise = (n: number) => ({
 });
 
 const EXAMPLE_PROFILE = {
-  format: 'phys-activity-profile',
-  version: 1,
+  format: PROFILE_FORMAT,
+  version: PROFILE_VERSION,
   lang: 'uk',
-  ui: null,
   theme: { accent: DEFAULT_ACCENT },
   goal: { enabled: true, days: 5, done: ['morningWarmup'] },
   encouragement: ['ти можеш налаштувати все в налаштуваннях :)'],
@@ -28,9 +29,9 @@ const EXAMPLE_PROFILE = {
     enabled: true,
     weeklyTarget: 5,
     levels: [
-      { id: 'level-1', name: 'рівень 1', duration: '5 хв', items: [{ exercise: 'exercise-1', reps: 10 }, { exercise: 'exercise-2', seconds: 30 }] },
+      { id: 'level-1', name: 'рівень 1', duration: '5 хв', items: [{ exercise: 'exercise-1', reps: '10' }, { exercise: 'exercise-2', seconds: 30 }] },
       { id: 'level-2', name: 'рівень 2', duration: '10 хв', items: [
-        { exercise: 'exercise-1', reps: 15 }, { exercise: 'exercise-2', seconds: 45 }, { exercise: 'exercise-3', reps: 10 },
+        { exercise: 'exercise-1', reps: '15' }, { exercise: 'exercise-2', seconds: 45 }, { exercise: 'exercise-3', reps: '10' },
       ] },
     ],
   },
@@ -38,7 +39,7 @@ const EXAMPLE_PROFILE = {
     enabled: true,
     weeklyTarget: 3,
     hint: 'коли довго сидиш',
-    groups: [{ id: 'back', name: 'для спини', items: [{ exercise: 'exercise-4', reps: 8 }, { exercise: 'exercise-5', seconds: 20 }] }],
+    groups: [{ id: 'back', name: 'для спини', items: [{ exercise: 'exercise-4', reps: '8' }, { exercise: 'exercise-5', seconds: 20 }] }],
   },
   workout: {
     enabled: true,
@@ -55,7 +56,6 @@ const EXAMPLE_PROFILE = {
   movement: {
     enabled: true,
     weeklyTarget: 3,
-    hint: '',
     kinds: [{ id: 'movement-1', name: 'рух 1', fields: ['km', 'minutes'], source: { type: 'user' } }],
   },
   exercises: [1, 2, 3, 4, 5, 6, 7, 8].map(exercise),

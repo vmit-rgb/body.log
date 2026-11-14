@@ -21,7 +21,7 @@ const PROFILE: JsonObject = {
   morningWarmup: {
     enabled: true,
     levels: [
-      { id: 'l1', name: 'рівень 1', items: [item('e1'), { reps: 'без вправи' }, item('e2', { timed: true, reps: '30' })] },
+      { id: 'l1', name: 'рівень 1', items: [item('e1'), { reps: 'без вправи' }, item('e2', { seconds: 30 })] },
       { id: 'l2', name: 'рівень 2', items: [] },
     ],
   },
@@ -108,7 +108,7 @@ describe('values', () => {
 
   it('reads «3 × 10–12» as sets and reps, and plain reps without sets', () => {
     const path = `${S1}.0`;
-    const both = withPrescription(path, ' 3 x 10–12 ')(withValue(`${path}.side`, 'на кожну')(PROFILE));
+    const both = withPrescription(path, ' 3 x 10–12 ')(PROFILE);
     expect(valueAt(both, path)).toEqual({ exercise: 'e1', reps: '10–12', sets: 3 });
     expect(valueAt(withPrescription(path, ' 15 ')(both), path)).toEqual({ exercise: 'e1', reps: '15' });
   });

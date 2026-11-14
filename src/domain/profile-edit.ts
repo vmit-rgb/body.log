@@ -29,11 +29,9 @@ export const withEncouragement = (phrases: readonly string[]): ProfileEdit => (p
 
 export const withAccent = (accent: Accent): ProfileEdit => (profile) => ({ ...profile, theme: { ...raw(profile.theme), accent } });
 
-/** One «доступність» checkbox. The old `theme.motion` goes: `accessibility` now says it all. */
-export const withAccessibility = (key: AccessibilityKey, on: boolean): ProfileEdit => (profile) => {
-  const { motion: _old, ...theme } = raw(profile.theme);
-  return { ...profile, theme, accessibility: { ...readAccessibility(profile), [key]: on } };
-};
+/** One «доступність» checkbox. */
+export const withAccessibility = (key: AccessibilityKey, on: boolean): ProfileEdit => (profile) =>
+  ({ ...profile, accessibility: { ...readAccessibility(profile), [key]: on } });
 
 /** The pulse timer on a one-number tracker: `timer: { enabled, seconds }`. */
 export const withPulseTimer = (trackerId: string, enabled: boolean, seconds: PulseSeconds): ProfileEdit => (profile) => ({

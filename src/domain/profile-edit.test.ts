@@ -14,9 +14,10 @@ describe('profile edits keep what they don’t touch', () => {
     expect(next.unknownField).toEqual({ kept: true });
   });
 
-  it('fills a missing goal with the defaults and keeps the days within 0–7', () => {
+  it('a missing goal is off; switching it on starts at 5 days, and the days stay within 0–7', () => {
     const { goal: _goal, ...noGoal } = PROFILE;
-    expect(withGoal({ days: 9 })(noGoal).goal).toEqual({ enabled: true, days: 7, done: [] });
+    expect(withGoal({ enabled: true })(noGoal).goal).toEqual({ enabled: true, days: 5, done: [] });
+    expect(withGoal({ days: 9 })(noGoal).goal).toEqual({ enabled: false, days: 7, done: [] });
     expect(withGoal({ days: -1, enabled: false })(noGoal).goal).toEqual({ enabled: false, days: 0, done: [] });
   });
 
@@ -30,12 +31,11 @@ describe('profile edits keep what they don’t touch', () => {
     expect(withPulseTimer('pulse', true, 15)({ ...PROFILE, trackers: undefined }).trackers).toEqual([]);
   });
 
-  it('writes «доступність» and drops the old `theme.motion`', () => {
-    const old = { ...PROFILE, theme: { accent: 'pink', motion: { ui: false, ascii: true, vibration: false } } };
-    const next = withAccessibility('largerText', true)(old);
-    expect(next.theme).toEqual({ accent: 'pink' });
+  it('writes «доступність» whole and leaves the theme alone', () => {
+    const next = withAccessibility('largerText', true)({ ...PROFILE, accessibility: { noMotion: true } });
+    expect(next.theme).toEqual(PROFILE.theme);
     expect(next.accessibility).toEqual({
-      noMotion: true, noBackgroundMotion: false, noVibration: true, noSound: false, largerTargets: false, largerText: true, mirrored: false,
+      noMotion: true, noBackgroundMotion: false, noVibration: false, noSound: false, largerTargets: false, largerText: true, mirrored: false,
     });
   });
 
@@ -51,13 +51,12 @@ describe('readAccessibility', () => {
     expect(Object.values(readSettings({}).accessibility).every((on) => on === false)).toBe(true);
   });
 
-  it('reads the old boolean `theme.motion: false` as «вимкнути всі анімації»', () => {
-    expect(readAccessibility({ theme: { motion: false } }).noMotion).toBe(true);
-    expect(readAccessibility({ theme: { motion: true } }).noMotion).toBe(false);
+  it('no longer reads the old `theme.motion` (converted when old settings are read: format/profile-upgrade.test.ts)', () => {
+    expect(readAccessibility({ theme: { motion: false } }).noMotion).toBe(false);
   });
 
-  it('lets the stored checkboxes win over the old switch', () => {
-    const a = readAccessibility({ theme: { motion: { ascii: false } }, accessibility: { noBackgroundMotion: false, mirrored: true, noSound: 'так' } });
+  it('reads only true as on', () => {
+    const a = readAccessibility({ accessibility: { noBackgroundMotion: false, mirrored: true, noSound: 'так' } });
     expect(a.noBackgroundMotion).toBe(false);
     expect(a.mirrored).toBe(true);
     expect(a.noSound).toBe(false);
@@ -66,7 +65,7 @@ describe('readAccessibility', () => {
 
 describe('profile edits on odd stored values', () => {
   it('treats a goal or theme that is a list or null as missing', () => {
-    expect(withGoal({ days: 3 })({ goal: ['x'] }).goal).toEqual({ enabled: true, days: 3, done: [] });
+    expect(withGoal({ days: 3 })({ goal: ['x'] }).goal).toEqual({ enabled: false, days: 3, done: [] });
     expect(withAccent('gray')({ theme: null }).theme).toEqual({ accent: 'gray' });
     expect(withAccent('gray')({ theme: ['blue'] }).theme).toEqual({ accent: 'gray' });
   });

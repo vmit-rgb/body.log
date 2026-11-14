@@ -154,14 +154,10 @@ export const withActivity = (kind: ActivityKind, update: { readonly enabled?: bo
     if (update.weeklyTarget !== undefined) put(copy, `${kind}.weeklyTarget`, Math.min(7, Math.max(0, update.weeklyTarget)));
   });
 
-/**
- * A warm-up exercise done by time («n с») or by count. The seconds go to
- * `seconds` (0.81's `timed` + seconds in `reps` is read, then dropped).
- */
+/** A warm-up exercise done by time («n с», `seconds`) or by count (`reps`). */
 export const withTimed = (path: string, on: boolean, seconds: number | null, reps: string): ProfileEdit =>
   change((copy) => {
     const item = obj(at(copy, path));
-    delete item.timed;
     if (on) {
       item.seconds = seconds ?? (Number(reps) || 30);
       item.reps = '';
@@ -176,7 +172,6 @@ export const withPrescription = (path: string, typed: string): ProfileEdit =>
   change((copy) => {
     const item = obj(at(copy, path));
     const match = /^\s*(\d+)\s*[×xх*]\s*(.+)$/i.exec(typed);
-    delete item.side;
     if (match) {
       item.sets = Number(match[1]);
       item.reps = match[2]!.trim();

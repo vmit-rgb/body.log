@@ -1,5 +1,5 @@
 import { isDayKey, type DayKey } from '../domain/dates';
-import { parseDiary, serializeDiary, type Diary } from '../domain/diary';
+import { parseDiary, readDiary, serializeDiary, type Diary } from '../domain/diary';
 
 /** The part of `localStorage` the app uses; a test can pass its own. */
 export interface KeyValue {
@@ -10,12 +10,20 @@ export interface KeyValue {
 
 export const DIARY_KEY = 'phys-activity-tracking-app/diary';
 const UNREADABLE_KEY = `${DIARY_KEY}/unreadable`;
+/** The diary as it was stored before its settings were converted to format 0.1. */
+export const BEFORE_FORMAT_KEY = `${DIARY_KEY}/before-format-0.1`;
 const BROWSER_KEY = 'phys-activity-tracking-app/browser-chosen';
 const SECTION_KEY = 'phys-activity-tracking-app/section-closed/';
 const THEME_KEY = 'phys-activity-tracking-app/theme';
 const BACKUP_KEY = 'phys-activity-tracking-app/last-copy';
 
 export interface DiaryStore {
+  /**
+   * The diary on this phone. Settings older than format 0.1 come back
+   * converted and are stored that way once; the entry as it was is kept
+   * aside first. When the phone has no room for that, the conversion
+   * lives in memory only and is tried again on the next launch.
+   */
   load(): Diary | null;
   /** Throws when the phone refuses to store it (e.g. storage full). */
   save(diary: Diary): void;
@@ -30,7 +38,20 @@ export interface DiaryStore {
  */
 export function diaryStore(storage: KeyValue, now: () => Date): DiaryStore {
   return {
-    load: () => parseDiary(storage.getItem(DIARY_KEY) ?? ''),
+    load() {
+      const stored = storage.getItem(DIARY_KEY);
+      const read = readDiary(stored ?? '');
+      if (!read) return null;
+      if (read.converted) {
+        try {
+          storage.setItem(BEFORE_FORMAT_KEY, stored!);
+          storage.setItem(DIARY_KEY, serializeDiary(read.diary, now()));
+        } catch {
+          // no room: the stored diary stays as it was
+        }
+      }
+      return read.diary;
+    },
     save(diary) {
       const previous = storage.getItem(DIARY_KEY);
       if (previous !== null && parseDiary(previous) === null) storage.setItem(UNREADABLE_KEY, previous);

@@ -107,7 +107,7 @@ describe('exercises, links and how-to', () => {
 
   it('a workout: the plan reads «3 × 10 на кожну ногу», «30 с», or nothing', () => {
     const items = [
-      { exercise: 'a', sets: 3, reps: '10', side: 'на кожну ногу' },
+      { exercise: 'a', sets: 3, reps: '10 на кожну ногу' },
       { exercise: 'b', seconds: 30, fields: ['seconds'] },
       { exercise: 'b', fields: ['reps', 'seconds'], seconds: 20 },
     ];

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { DayKey } from './dates';
 import { emptyDay, readDay } from './day';
-import { parseDiary, serializeDiary, type Diary } from './diary';
+import { parseDiary, readDiary, serializeDiary, type Diary } from './diary';
 import { readSettings } from './settings';
 
 const diaryAccent = (diary: Diary) => readSettings(diary.profile).accent;
@@ -19,9 +19,10 @@ const backup = (extra: object = {}) => JSON.stringify({
 });
 
 describe('parseDiary', () => {
-  it('reads a copy saved by «бета 0.81»', () => {
+  it('reads a copy saved by «бета 0.81», its settings converted to format 0.1', () => {
     const diary = parseDiary(backup());
-    expect(diary?.profile).toEqual(profile);
+    expect(diary?.profile).toEqual({ ...profile, version: '0.1', goal: { enabled: true, days: 5, done: [] } });
+    expect(readDiary(backup())!.converted).toBe(true);
     expect(Object.keys(diary!.days)).toEqual(['2026-11-07']);
     const date = '2026-11-07' as DayKey;
     expect(diary!.days[date]).toEqual({ ...emptyDay(date), note: 'вправа 1' });

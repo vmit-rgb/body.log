@@ -16,7 +16,7 @@ describe('readSettings: the example settings («почати без ШІ»)', ()
     expect(settings.daytimeWarmup.groups.map((group) => group.name)).toEqual(['для спини']);
     expect(settings.workout.sessions.map((session) => session.id)).toEqual(['a']);
     expect(settings.workout.sessions[0]!.items[0]).toEqual(
-      { exercise: 'exercise-6', reps: '10', seconds: null, weight: 5, sets: 3, side: '', fields: ['weight', 'reps'] },
+      { exercise: 'exercise-6', reps: '10', seconds: null, weight: 5, sets: 3, fields: ['weight', 'reps'] },
     );
     expect(settings.movement.kinds[0]).toEqual({ id: 'movement-1', name: 'рух 1', fields: ['km', 'minutes'], source: { type: 'user' } });
   });
@@ -54,8 +54,8 @@ describe('readSettings: groups of exercises and every kind of question', () => {
   it('reads a group of exercises in a workout', () => {
     expect(settings.workout.sessions[0]!.items[1]).toEqual({
       set: [
-        { exercise: 'b', reps: '12', seconds: null, weight: null, sets: null, side: '', fields: ['reps'] },
-        { exercise: 'c', reps: '', seconds: 30, weight: null, sets: null, side: '', fields: ['seconds'] },
+        { exercise: 'b', reps: '12', seconds: null, weight: null, sets: null, fields: ['reps'] },
+        { exercise: 'c', reps: '', seconds: 30, weight: null, sets: null, fields: ['seconds'] },
       ],
     });
   });
@@ -84,14 +84,17 @@ describe('readSettings: groups of exercises and every kind of question', () => {
   });
 });
 
-describe('readSettings: settings saved by «бета 0.81»', () => {
-  it('takes a timed warm-up exercise from `timed` + `reps`', () => {
+describe('readSettings: exercises by time and links', () => {
+  it('reads a warm-up exercise by time from `seconds`, and no longer from the old `timed`', () => {
     const settings = readSettings({
-      morningWarmup: { enabled: true, levels: [{ id: 'l1', items: [{ exercise: 'plank', reps: '40', timed: true }, { exercise: 'squat', reps: '8–10' }] }] },
+      morningWarmup: { enabled: true, levels: [{ id: 'l1', items: [
+        { exercise: 'plank', seconds: 40 }, { exercise: 'squat', reps: '8–10' }, { exercise: 'old', reps: '40', timed: true },
+      ] }] },
     });
     expect(settings.morningWarmup.levels[0]!.items).toEqual([
       { exercise: 'plank', reps: '', seconds: 40 },
       { exercise: 'squat', reps: '8–10', seconds: null },
+      { exercise: 'old', reps: '40', seconds: null },
     ]);
   });
 
@@ -114,7 +117,10 @@ describe('readSettings: settings saved by «бета 0.81»', () => {
 describe('readSettings: missing or broken parts', () => {
   it('gives an empty, switched-off diary for empty settings', () => {
     const settings = readSettings({});
-    expect(settings.goal).toEqual({ enabled: true, days: 5, done: [] });
+    // no `goal` = no weekly goal (Olesia, 2026-11-15)
+    expect(settings.goal).toEqual({ enabled: false, days: 5, done: [] });
+    expect(readSettings({ goal: { days: 4, done: ['workout'] } }).goal.enabled).toBe(false);
+    expect(readSettings({ goal: { enabled: true, days: 4, done: ['workout'] } }).goal).toEqual({ enabled: true, days: 4, done: ['workout'] });
     expect(settings.morningWarmup).toEqual({ enabled: false, weeklyTarget: 0, hint: '', levels: [] });
     expect(settings.workout.sessions).toEqual([]);
     expect(settings.trackers).toEqual([]);
@@ -134,8 +140,8 @@ describe('readSettings: missing or broken parts', () => {
     expect(settings.goal).toEqual({ enabled: false, days: 5, done: ['workout'] });
     expect(settings.encouragement).toEqual(['ок', '7']);
     expect(settings.workout.sessions).toEqual([{ id: 's', name: '', how: '', items: [
-      { exercise: 'x', reps: '', seconds: null, weight: null, sets: null, side: '', fields: ['reps'] },
-      { set: [{ exercise: 'y', reps: '5', seconds: null, weight: 7, sets: null, side: '', fields: ['reps'] }] },
+      { exercise: 'x', reps: '', seconds: null, weight: null, sets: null, fields: ['reps'] },
+      { set: [{ exercise: 'y', reps: '5', seconds: null, weight: 7, sets: null, fields: ['reps'] }] },
     ] }]);
     expect(settings.trackers).toEqual([
       { id: 't', name: '', hint: '', ask: ['evening'], kind: 'scale', min: 0, max: 10 },

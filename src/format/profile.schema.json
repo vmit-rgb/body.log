@@ -1,0 +1,448 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "налаштування",
+  "description": "Налаштування трекера (phys-activity-profile), формат 0.1. Тільки налаштування: жодних записів щоденника, порогів чи оцінок значень. Усі тексти показуються як звичайний текст. Межі — це стеля, а не ціль: пиши необхідний мінімум.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "version", "theme", "morningWarmup", "daytimeWarmup", "workout", "movement", "exercises", "trackers"],
+  "properties": {
+    "format": { "title": "формат", "const": "phys-activity-profile" },
+    "version": { "title": "версія формату", "description": "Текст у лапках, не число.", "enum": ["0.1"] },
+    "lang": {
+      "title": "мова",
+      "description": "Код мови текстів, напр. uk, en, pl. Будь-яка, крім ru.",
+      "type": "string",
+      "maxLength": 20,
+      "pattern": "^[A-Za-z]{2,3}(-[A-Za-z0-9]+)*$",
+      "x-pattern-hint": "має бути кодом мови, наприклад uk або en"
+    },
+    "theme": {
+      "title": "вигляд",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["accent"],
+      "properties": {
+        "accent": {
+          "title": "акцентний колір",
+          "enum": ["gray", "orange", "pink", "magenta", "purple", "violet", "blue", "sky", "cyan", "mint", "green"]
+        }
+      }
+    },
+    "accessibility": {
+      "title": "доступність",
+      "description": "Не додавай і не змінюй цей блок, якщо людина про це не просила. Якщо блоку немає, застосунок лишає доступність як була.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "noMotion": { "title": "вимкнути всі анімації", "type": "boolean" },
+        "noBackgroundMotion": { "title": "вимкнути фонові анімації", "type": "boolean" },
+        "noVibration": { "title": "вимкнути вібровідгук", "type": "boolean" },
+        "noSound": { "title": "вимкнути звук", "type": "boolean" },
+        "largerTargets": { "title": "збільшені зони тапу", "type": "boolean" },
+        "largerText": { "title": "збільшити розмір тексту", "type": "boolean" },
+        "mirrored": { "title": "віддзеркалити нижню панель", "type": "boolean" }
+      }
+    },
+    "goal": {
+      "title": "тижнева ціль",
+      "description": "Якщо людина не хоче тижневої цілі, цього блоку просто немає.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "days", "done"],
+      "properties": {
+        "enabled": { "title": "рахувати тижневу ціль", "type": "boolean" },
+        "days": { "title": "днів на тиждень", "type": "integer", "minimum": 1, "maximum": 7 },
+        "done": {
+          "title": "що треба виконати, щоб день був «зроблено»",
+          "type": "array",
+          "uniqueItems": true,
+          "maxItems": 4,
+          "items": { "title": "розділ", "enum": ["morningWarmup", "daytimeWarmup", "workout", "movement"] }
+        }
+      }
+    },
+    "encouragement": {
+      "title": "підбадьорливі фрази",
+      "type": "array",
+      "maxItems": 10,
+      "items": { "title": "фраза", "type": "string", "minLength": 1, "maxLength": 120 }
+    },
+    "morningWarmup": {
+      "title": "ранкова розминка",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "weeklyTarget", "levels"],
+      "properties": {
+        "enabled": { "$ref": "#/$defs/enabled" },
+        "weeklyTarget": { "$ref": "#/$defs/weeklyTarget" },
+        "hint": { "$ref": "#/$defs/hint" },
+        "levels": {
+          "title": "рівні",
+          "type": "array",
+          "maxItems": 10,
+          "items": {
+            "title": "рівень",
+            "description": "Рівень зараховано, коли зроблено всі його вправи.",
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "name", "items"],
+            "properties": {
+              "id": { "$ref": "#/$defs/id" },
+              "name": { "$ref": "#/$defs/name" },
+              "duration": { "title": "час", "description": "Текст, напр. «10 хв».", "type": "string", "maxLength": 120 },
+              "items": { "$ref": "#/$defs/warmupItems" }
+            }
+          }
+        }
+      }
+    },
+    "daytimeWarmup": {
+      "title": "денна розминка",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "weeklyTarget", "groups"],
+      "properties": {
+        "enabled": { "$ref": "#/$defs/enabled" },
+        "weeklyTarget": { "$ref": "#/$defs/weeklyTarget" },
+        "hint": { "$ref": "#/$defs/hint" },
+        "groups": {
+          "title": "зони («для чого»)",
+          "type": "array",
+          "maxItems": 10,
+          "items": {
+            "title": "зона",
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "name", "items"],
+            "properties": {
+              "id": { "$ref": "#/$defs/id" },
+              "name": { "$ref": "#/$defs/name" },
+              "items": { "$ref": "#/$defs/warmupItems" }
+            }
+          }
+        }
+      }
+    },
+    "workout": {
+      "title": "тренування",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "weeklyTarget", "sessions"],
+      "properties": {
+        "enabled": { "$ref": "#/$defs/enabled" },
+        "weeklyTarget": { "$ref": "#/$defs/weeklyTarget" },
+        "hint": { "$ref": "#/$defs/hint" },
+        "sessions": {
+          "title": "тренування",
+          "type": "array",
+          "maxItems": 10,
+          "items": {
+            "title": "тренування",
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "name", "items"],
+            "properties": {
+              "id": { "$ref": "#/$defs/id" },
+              "name": { "$ref": "#/$defs/name" },
+              "how": { "title": "як проходить тренування", "type": "string", "maxLength": 500 },
+              "items": {
+                "title": "вправи",
+                "type": "array",
+                "maxItems": 30,
+                "items": {
+                  "title": "вправа",
+                  "oneOf": [
+                    { "$ref": "#/$defs/workoutItem" },
+                    {
+                      "title": "група вправ",
+                      "description": "2–3 вправи, які роблять разом. Груп у групах не буває.",
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["set"],
+                      "properties": {
+                        "set": {
+                          "title": "група вправ",
+                          "type": "array",
+                          "minItems": 2,
+                          "maxItems": 3,
+                          "items": { "$ref": "#/$defs/workoutItem" }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "movement": {
+      "title": "рух",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "weeklyTarget", "kinds"],
+      "properties": {
+        "enabled": { "$ref": "#/$defs/enabled" },
+        "weeklyTarget": { "$ref": "#/$defs/weeklyTarget" },
+        "hint": { "$ref": "#/$defs/hint" },
+        "kinds": {
+          "title": "види руху",
+          "type": "array",
+          "maxItems": 10,
+          "items": {
+            "title": "рух",
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "name", "fields"],
+            "properties": {
+              "id": { "$ref": "#/$defs/id" },
+              "name": { "$ref": "#/$defs/name" },
+              "fields": {
+                "title": "поля",
+                "description": "Що людина записує: відстань (км), час (хв), кроки.",
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": { "title": "поле", "enum": ["km", "minutes", "steps"] }
+              },
+              "source": { "$ref": "#/$defs/source" }
+            }
+          }
+        }
+      }
+    },
+    "exercises": {
+      "title": "вправи",
+      "description": "Каталог вправ. Розминки й тренування посилаються на вправи за id. id стабільний: якщо вправу перейменовано, id лишається той самий, і записи щоденника не губляться.",
+      "type": "array",
+      "maxItems": 150,
+      "items": {
+        "title": "вправа",
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name"],
+        "properties": {
+          "id": { "$ref": "#/$defs/id" },
+          "name": { "$ref": "#/$defs/name" },
+          "how": { "title": "як робити", "type": "string", "maxLength": 500 },
+          "source": { "$ref": "#/$defs/source" }
+        }
+      }
+    },
+    "trackers": {
+      "title": "самопочуття",
+      "description": "Питання про самопочуття. Одне питання — одна річ (один повзунок на одну зону болю, одне поле на пульс).",
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "title": "питання",
+        "oneOf": [
+          {
+            "title": "повзунок",
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "name", "kind", "ask"],
+            "properties": {
+              "id": { "$ref": "#/$defs/id" },
+              "name": { "$ref": "#/$defs/name" },
+              "hint": { "$ref": "#/$defs/hint" },
+              "kind": { "title": "вид питання", "const": "scale" },
+              "ask": { "$ref": "#/$defs/ask" },
+              "min": { "title": "від", "description": "Якщо немає — 0. Має бути менше за max.", "type": "integer", "minimum": 0, "maximum": 100 },
+              "max": { "title": "до", "description": "Якщо немає — 10.", "type": "integer", "minimum": 0, "maximum": 100 }
+            }
+          },
+          {
+            "title": "питання так / ні",
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "name", "kind", "ask"],
+            "properties": {
+              "id": { "$ref": "#/$defs/id" },
+              "name": { "$ref": "#/$defs/name" },
+              "hint": { "$ref": "#/$defs/hint" },
+              "kind": { "title": "вид питання", "const": "yesno" },
+              "ask": { "$ref": "#/$defs/ask" }
+            }
+          },
+          {
+            "title": "одне число",
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "name", "kind", "ask"],
+            "properties": {
+              "id": { "$ref": "#/$defs/id" },
+              "name": { "$ref": "#/$defs/name" },
+              "hint": { "$ref": "#/$defs/hint" },
+              "kind": { "title": "вид питання", "const": "number" },
+              "ask": { "$ref": "#/$defs/ask" },
+              "units": {
+                "title": "одиниці",
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 1,
+                "items": { "$ref": "#/$defs/unit" }
+              },
+              "timer": {
+                "title": "таймер для пульсу",
+                "description": "Людина рахує удари, поки йде таймер, а застосунок перераховує в удари за хвилину.",
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["enabled", "seconds"],
+                "properties": {
+                  "enabled": { "title": "увімкнено", "type": "boolean" },
+                  "seconds": { "title": "секунди", "enum": [15, 30, 60] }
+                }
+              }
+            }
+          },
+          {
+            "title": "два числа",
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "name", "kind", "ask"],
+            "properties": {
+              "id": { "$ref": "#/$defs/id" },
+              "name": { "$ref": "#/$defs/name" },
+              "hint": { "$ref": "#/$defs/hint" },
+              "kind": { "title": "вид питання", "const": "numbers" },
+              "ask": { "$ref": "#/$defs/ask" },
+              "units": {
+                "title": "одиниці",
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": { "$ref": "#/$defs/unit" }
+              }
+            }
+          },
+          {
+            "title": "нотатка",
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "name", "kind", "ask"],
+            "properties": {
+              "id": { "$ref": "#/$defs/id" },
+              "name": { "$ref": "#/$defs/name" },
+              "hint": { "$ref": "#/$defs/hint" },
+              "kind": { "title": "вид питання", "const": "note" },
+              "ask": { "$ref": "#/$defs/ask" }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "$defs": {
+    "id": {
+      "title": "id",
+      "description": "Малі латинські літери, цифри, дефіс. Не повторюється у своєму списку й не змінюється з часом.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 60,
+      "pattern": "^[a-z0-9][a-z0-9_-]*$",
+      "x-pattern-hint": "тільки малі латинські літери, цифри й дефіс"
+    },
+    "name": { "title": "назва", "type": "string", "minLength": 1, "maxLength": 60 },
+    "hint": { "title": "підказка", "type": "string", "maxLength": 120 },
+    "unit": { "title": "одиниця", "type": "string", "maxLength": 120 },
+    "enabled": { "title": "показувати на головній", "type": "boolean" },
+    "weeklyTarget": { "title": "ціль: днів на тиждень", "type": "integer", "minimum": 0, "maximum": 7 },
+    "reps": {
+      "title": "скільки разів",
+      "description": "Текст: «10», «8–12», «10 на кожну ногу». Число теж приймається й зберігається як текст.",
+      "type": ["string", "integer"],
+      "maxLength": 60,
+      "minimum": 0,
+      "maximum": 10000
+    },
+    "seconds": { "title": "секунди", "type": "number", "minimum": 1, "maximum": 3600 },
+    "exerciseRef": {
+      "title": "id вправи",
+      "description": "id вправи з каталогу exercises.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 60
+    },
+    "warmupItems": {
+      "title": "вправи",
+      "type": "array",
+      "maxItems": 30,
+      "items": {
+        "title": "вправа",
+        "description": "На кількість (reps) або на час (seconds).",
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["exercise"],
+        "properties": {
+          "exercise": { "$ref": "#/$defs/exerciseRef" },
+          "reps": { "$ref": "#/$defs/reps" },
+          "seconds": { "$ref": "#/$defs/seconds" }
+        }
+      }
+    },
+    "workoutItem": {
+      "title": "вправа",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["exercise", "fields"],
+      "properties": {
+        "exercise": { "$ref": "#/$defs/exerciseRef" },
+        "fields": {
+          "title": "поля",
+          "description": "Що людина записує в кожному підході: вагу, повторення, час.",
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "title": "поле", "enum": ["weight", "reps", "seconds"] }
+        },
+        "sets": { "title": "підходи", "type": "integer", "minimum": 1, "maximum": 10 },
+        "reps": { "$ref": "#/$defs/reps" },
+        "seconds": { "$ref": "#/$defs/seconds" },
+        "weight": { "title": "вага", "type": "number", "minimum": 0, "maximum": 500 }
+      }
+    },
+    "source": {
+      "title": "посилання",
+      "description": "Звідки вправа: від людини без посилання (user) або з посиланням (link). by: хто дав посилання — ai чи user. Не вигадуй адрес: без доступу до інтернету дай посилання на пошук.",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type"],
+          "properties": { "type": { "title": "вид", "const": "user" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "url", "by"],
+          "properties": {
+            "type": { "title": "вид", "const": "link" },
+            "url": {
+              "title": "адреса",
+              "type": "string",
+              "maxLength": 500,
+              "pattern": "^https?://",
+              "x-pattern-hint": "має починатися з https:// або http://"
+            },
+            "by": { "title": "хто дав посилання", "enum": ["ai", "user"] }
+          }
+        }
+      ]
+    },
+    "ask": {
+      "title": "коли питати",
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "title": "момент",
+        "enum": [
+          "morning", "afterMorningWarmup", "beforeDaytimeWarmup", "afterDaytimeWarmup",
+          "beforeWorkout", "afterWorkout", "beforeMovement", "afterMovement", "evening"
+        ]
+      }
+    }
+  }
+}

@@ -648,8 +648,8 @@ describe('less common paths', () => {
     expect((storedProfile().exercises as JsonObject[]).at(-1)).toEqual({ id: 'ghost', name: 'примара', how: '', source: { type: 'user' } });
   });
 
-  it('reads the timed exercise of «бета 0.81»', async () => {
-    const profile = { ...EXAMPLE_DIARY.profile, morningWarmup: { enabled: true, levels: [{ id: 'l', name: '', items: [{ exercise: 'exercise-1', reps: '40', timed: true }] }] } };
+  it('reads the timed exercise of «бета 0.81», converted when the diary is read', async () => {
+    const profile = { ...EXAMPLE_DIARY.profile, version: 1, morningWarmup: { enabled: true, levels: [{ id: 'l', name: '', items: [{ exercise: 'exercise-1', reps: '40', timed: true }] }] } };
     await openSettings({ profile, days: {} });
     await tap('ранкова розминка');
     await tap('розгорнути: без назви');
@@ -659,8 +659,8 @@ describe('less common paths', () => {
     expect(at('morningWarmup.levels.0.items.0')).toEqual({ exercise: 'exercise-1', reps: '40' });
   });
 
-  it('turns on a 0.81 timed exercise that was unticked', async () => {
-    const profile = { ...EXAMPLE_DIARY.profile, morningWarmup: { enabled: true, levels: [{ id: 'l', name: '', items: [{ exercise: 'exercise-1', reps: 'x', timed: true }] }] } };
+  it('turns on a 0.81 timed exercise whose seconds were not a number', async () => {
+    const profile = { ...EXAMPLE_DIARY.profile, version: 1, morningWarmup: { enabled: true, levels: [{ id: 'l', name: '', items: [{ exercise: 'exercise-1', reps: 'x', timed: true }] }] } };
     await openSettings({ profile, days: {} });
     await tap('ранкова розминка');
     await tap('розгорнути: без назви');
