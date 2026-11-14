@@ -12,7 +12,7 @@ import { tidy } from '../domain/sections-edit';
 import { readSettings, type ActivityKind, type Settings } from '../domain/settings';
 import { russianReason } from '../paste/russian';
 import { ACCENT_NAMES, ACCESS_SHORT } from '../screens/settings';
-import { PasteFlow, RUSSIAN_COPY } from './paste-flow';
+import { copyPrompt, PasteFlow, RUSSIAN_COPY } from './paste-flow';
 import { showSettings, type PartId, type SettingsAct } from '../screens/settings';
 import { SectionsEditor } from './sections-page';
 import { buzz } from '../home/signal';
@@ -76,8 +76,6 @@ const FILE_SAVED: ToastMessage = { message: 'збережено', showIcon: true
 const FILE_NOT_SAVED: ToastMessage = { message: 'не вдалося зберегти файл', emoticon: '>_<' };
 const NOT_A_COPY: ToastMessage = { message: 'цей файл не схожий на копію з трекера', emoticon: '>_<' };
 const RESTORED: ToastMessage = { message: 'відновлено з файлу', emoticon: ':)', showIcon: true };
-const soon = (message: string): ToastMessage => ({ message, emoticon: ':)' });
-const PROMPT_SOON = soon('промпт ще пишемо, скоро буде');
 const PDF_NOT_MADE: ToastMessage = { message: 'не вдалося зібрати PDF', emoticon: '>_<' }; // «бета 0.81»
 const PDF_FOOTER = `трекер · ${VERSION_LABEL}`; // Olesia, 2026-11-10
 const PHRASE_MAX = 80;
@@ -278,6 +276,10 @@ class Draft implements SettingsPage {
     this.say(copied ? COPIED : NOT_COPIED);
   }
 
+  async copyPrompt(): Promise<void> {
+    if (await copyPrompt((text) => this.env.copyText(text), (message) => this.say(message))) this.finished('copy-prompt');
+  }
+
   copySettings(): Promise<void> {
     return this.copy(JSON.stringify(this.draft, null, 1), 'copy-settings');
   }
@@ -414,7 +416,7 @@ const ACTS: Acts = {
   'export-tab': (p, a) => p.showTab(a.tab),
   save: (p) => p.save(),
   close: (p) => void p.close(),
-  'copy-prompt': (p) => p.say(PROMPT_SOON),
+  'copy-prompt': (p) => void p.copyPrompt(),
   'copy-settings': (p) => void p.copySettings(),
   apply: (p) => p.paste.apply(p.pastedText()),
   'paste-act': (p, a) => p.paste.act(a.name),

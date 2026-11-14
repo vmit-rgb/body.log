@@ -4,6 +4,7 @@ import type { DayKey } from '../domain/dates';
 import { readDay } from '../domain/day';
 import { serializeDiary, type Diary } from '../domain/diary';
 import { EXAMPLE_DIARY } from '../domain/examples';
+import { PROMPT } from '../prompt/prompt';
 import PASTED from '../format/example-profile.json';
 import { BEFORE_FORMAT_KEY, browserChoice, DIARY_KEY, diaryStore, sectionMemory, type KeyValue } from '../storage/store';
 import { mountToast } from '../ui/toast';
@@ -104,6 +105,31 @@ describe('first launch in the installed app', () => {
   };
   const result = () => host.querySelector<HTMLElement>('[data-paste-result]')!;
   const resultButton = (label: string) => [...result().querySelectorAll('button')].find((b) => b.textContent === label)!;
+
+  it('keeps «застосувати» off until something is pasted', () => {
+    const apply = host.querySelector<HTMLButtonElement>('[data-apply]')!;
+    const field = host.querySelector<HTMLTextAreaElement>('[data-paste-field]')!;
+    expect(apply.disabled).toBe(true);
+    field.value = '   ';
+    field.dispatchEvent(new Event('input'));
+    expect(apply.disabled).toBe(true);
+    field.value = '{ }';
+    field.dispatchEvent(new Event('input'));
+    expect(apply.disabled).toBe(false);
+  });
+
+  it('copies the bundled prompt and names its version in the toast', async () => {
+    click('[data-copy-prompt]');
+    await vi.waitFor(() => expect(toastSays()).toBe('✓ промпт 0.1 скопійовано'));
+    expect(device.copied).toEqual([PROMPT.text]);
+    expect(PROMPT.text).toContain('ЧЕРНЕТКА');
+  });
+
+  it('says so when the phone refuses to copy the prompt', async () => {
+    device.copyWorks = false;
+    click('[data-copy-prompt]');
+    await vi.waitFor(() => expect(toastSays()).toBe('не вдалося скопіювати >_<'));
+  });
 
   it('shows what the pasted settings bring, saves them on «зберегти» and opens home', () => {
     expect(result().hidden).toBe(true);

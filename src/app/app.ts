@@ -12,7 +12,7 @@ import { showInstallFirst } from '../screens/install-first';
 import type { DiaryStore, sectionMemory } from '../storage/store';
 import { enter } from '../ui/motion';
 import type { Toast, ToastMessage } from '../ui/toast';
-import { PasteFlow, RUSSIAN_COPY } from './paste-flow';
+import { copyPrompt as copyPromptText, PasteFlow, RUSSIAN_COPY } from './paste-flow';
 import { logKeeper } from './keeper';
 import { pagesOverHome, type DeviceEnv } from './pages';
 import { startScreen, type Phone, type Platform, type StartScreen } from './start';
@@ -35,8 +35,7 @@ export interface AppEnv extends DeviceEnv {
   whenHidden(save: () => void): void;
 }
 
-/* Texts: COPY.md; «скоро» toasts as on the landing page (Olesia, 2026-11-09). */
-const PROMPT_SOON: ToastMessage = { message: 'промпт ще пишемо, скоро буде', emoticon: ':)' };
+/* Texts: COPY.md. */
 const SAVED: ToastMessage = { message: 'збережено', emoticon: ':)', showIcon: true };
 const UNDONE: ToastMessage = { message: 'скасовано', showIcon: true };
 /* Нитка's draft. */
@@ -166,7 +165,7 @@ export function startApp(env: AppEnv): void {
     browser.choose();
     show('first-launch');
   }
-  const copyPrompt = () => toast.show(PROMPT_SOON);
+  const copyPrompt = () => void copyPromptText(env.copyText, (message) => toast.show(message));
 
   /** The first settings from the AI: home, and «скасувати» brings the first screen back while nothing is logged. */
   function startWith(profile: Diary['profile']): void {

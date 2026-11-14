@@ -3,6 +3,7 @@ import type { DayKey } from '../domain/dates';
 import { readDay } from '../domain/day';
 import { parseDiary, serializeDiary, type Diary, type JsonObject } from '../domain/diary';
 import { EXAMPLE_DIARY } from '../domain/examples';
+import { PROMPT } from '../prompt/prompt';
 import { browserChoice, DIARY_KEY, diaryStore, sectionMemory } from '../storage/store';
 import { mountToast } from '../ui/toast';
 import { startApp } from './app';
@@ -374,9 +375,15 @@ describe('settings: «налаштування через ШІ»', () => {
     expect(toastSays()).toBe('✓ скопійовано — встав у чат зі своїм ШІ');
   });
 
-  it('says the prompt comes soon; «застосувати» waits for text', async () => {
+  it('copies the prompt and names its version; «застосувати» waits for text', async () => {
     await tap('скопіювати промпт');
-    expect(toastSays()).toBe('промпт ще пишемо, скоро буде :)');
+    await settle();
+    expect(toastSays()).toBe('✓ промпт 0.1 скопійовано');
+    expect(device.copied).toEqual([PROMPT.text]);
+    device.copyWorks = false;
+    await tap('скопіювати промпт');
+    await settle();
+    expect(toastSays()).toBe('не вдалося скопіювати >_<');
     expect(button('застосувати').disabled).toBe(true);
     const field = host.querySelector<HTMLTextAreaElement>('textarea')!;
     field.value = '{ }';

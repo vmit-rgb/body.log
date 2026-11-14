@@ -1,6 +1,7 @@
 import type { JsonObject } from '../domain/diary';
 import { changesNothing, describeChanges, type Changes, type PreviewNames } from '../paste/preview';
 import { readPaste, type Refusal } from '../paste/read';
+import { PROMPT } from '../prompt/prompt';
 import type { ToastMessage } from '../ui/toast';
 
 /*
@@ -36,6 +37,13 @@ const COPIED: ToastMessage = { message: 'скопійовано — встав �
 const NOT_COPIED: ToastMessage = { message: 'не вдалося скопіювати', emoticon: '>_<' };
 /** «відновити з копії» refuses a copy whose settings are russian (D-05). Serious: no emoticon. Нитка's draft. */
 export const RUSSIAN_COPY: ToastMessage = { message: 'копію не відновлено: налаштування в ній російською мовою.' };
+
+/** «скопіювати промпт»: the bundled prompt file goes to the clipboard; the toast names its version (Olesia, 2026-11-15). */
+export async function copyPrompt(copyText: (text: string) => Promise<boolean>, say: (message: ToastMessage) => void): Promise<boolean> {
+  const copied = await copyText(PROMPT.text);
+  say(copied ? { message: `промпт ${PROMPT.version} скопійовано`, showIcon: true } : NOT_COPIED);
+  return copied;
+}
 
 export class PasteFlow {
   view: PasteView = { kind: 'none' };
