@@ -122,6 +122,33 @@
   resize: vertical;
 }
 
+/* what «застосувати» answers: a refusal, unknown keys or the preview (Figma profile/import) */
+.paste-result {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-items);
+  width: 100%;
+  margin-top: var(--gap-items);
+  padding: 8px;
+  border: 1px solid var(--line);
+}
+.paste-result[hidden] {
+  display: none;
+}
+.paste-result__lines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-micro);
+  margin: 0;
+  padding-left: 2ch;
+  overflow-wrap: anywhere;
+}
+.paste-result__group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-micro);
+}
+
 /* «або»: tertiary buttons with a hint right under them */
 .screen__section--tight {
   gap: var(--gap-group);

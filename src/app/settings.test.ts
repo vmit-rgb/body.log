@@ -3,6 +3,7 @@ import type { DayKey } from '../domain/dates';
 import { readDay } from '../domain/day';
 import { parseDiary, serializeDiary, type Diary, type JsonObject } from '../domain/diary';
 import { EXAMPLE_DIARY } from '../domain/examples';
+import { PROMPT } from '../prompt/prompt';
 import { browserChoice, DIARY_KEY, diaryStore, sectionMemory } from '../storage/store';
 import { mountToast } from '../ui/toast';
 import { startApp } from './app';
@@ -374,16 +375,133 @@ describe('settings: «налаштування через ШІ»', () => {
     expect(toastSays()).toBe('✓ скопійовано — встав у чат зі своїм ШІ');
   });
 
-  it('says the prompt and the paste come soon; «застосувати» waits for text', async () => {
+  it('copies the prompt and names its version; «застосувати» waits for text', async () => {
     await tap('скопіювати промпт');
-    expect(toastSays()).toBe('промпт ще пишемо, скоро буде :)');
+    await settle();
+    expect(toastSays()).toBe('✓ промпт 0.1 скопійовано');
+    expect(device.copied).toEqual([PROMPT.text]);
+    device.copyWorks = false;
+    await tap('скопіювати промпт');
+    await settle();
+    expect(toastSays()).toBe('не вдалося скопіювати >_<');
     expect(button('застосувати').disabled).toBe(true);
     const field = host.querySelector<HTMLTextAreaElement>('textarea')!;
     field.value = '{ }';
     field.dispatchEvent(new Event('input', { bubbles: true }));
     expect(button('застосувати').disabled).toBe(false);
+  });
+
+  const pasteText = async (value: unknown) => {
+    const field = host.querySelector<HTMLTextAreaElement>('textarea')!;
+    field.value = typeof value === 'string' ? value : JSON.stringify(value);
+    field.dispatchEvent(new Event('input', { bubbles: true }));
     await tap('застосувати');
-    expect(toastSays()).toBe('вставку налаштувань від ШІ ще робимо, скоро буде :)');
+  };
+  const result = () => host.querySelector<HTMLElement>('[data-paste-result]')!;
+  const title = () => result().querySelector('[data-paste-title]')?.textContent;
+  const CHANGED = {
+    ...EXAMPLE_DIARY.profile,
+    theme: { accent: 'mint' },
+    exercises: [...(EXAMPLE_DIARY.profile.exercises as JsonObject[]).map((e) => (e.id === 'exercise-1' ? { ...e, name: 'присід' } : e)), { id: 'bridge', name: 'місток' }],
+    trackers: (EXAMPLE_DIARY.profile.trackers as JsonObject[]).filter((t) => t.id !== 'hard'),
+  };
+
+  it('previews a paste: added, changed, removed, and the records stay', async () => {
+    await pasteText(CHANGED);
+    expect(title()).toBe('ось що зміниться');
+    expect(document.activeElement).toBe(result().querySelector('[data-paste-title]'));
+    const groups = [...result().querySelectorAll('.paste-result__group')].map((g) => g.textContent!.replace(/\s+/g, ' ').trim());
+    expect(groups).toEqual([
+      'додановправа: місток',
+      'зміненоакцентний колір: м’ятнийвправа: присід',
+      'прибранопитання про самопочуття: було важко?',
+    ]);
+    expect(result().textContent).toContain('записи лишаються як були');
+    expect(storedProfile()).toEqual(EXAMPLE_DIARY.profile);
+  });
+
+  it('«зберегти» keeps the pasted settings and the records; «скасувати» on the toast brings the old ones back', async () => {
+    await pasteText(CHANGED);
+    await tap('зберегти');
+    expect(toastSays()).toBe('✓ збережено :)');
+    expect(storedProfile()).toEqual(CHANGED);
+    expect(stored().days).toEqual(WITH_A_DAY.days);
+    expect(result().hidden).toBe(true);
+    expect(host.querySelector<HTMLTextAreaElement>('textarea')!.value).toBe('');
+    document.querySelector<HTMLElement>('.toast__action')!.click();
+    expect(toastSays()).toBe('✓ скасовано');
+    expect(storedProfile()).toEqual(EXAMPLE_DIARY.profile);
+    expect(stored().days).toEqual(WITH_A_DAY.days);
+  });
+
+  it('«скасувати» in the preview changes nothing', async () => {
+    await pasteText(CHANGED);
+    await tap('скасувати');
+    expect(result().hidden).toBe(true);
+    expect(storedProfile()).toEqual(EXAMPLE_DIARY.profile);
+  });
+
+  it('says so when the paste is the same as the settings', async () => {
+    await pasteText(EXAMPLE_DIARY.profile);
+    expect(title()).toBe('нічого не зміниться');
+    expect(button('зберегти', result())).toBeUndefined();
+    await tap('закрити');
+    expect(result().hidden).toBe(true);
+  });
+
+  it('keeps «доступність» unless the paste carries it, and then shows it in the preview', async () => {
+    await openSettings({ ...WITH_A_DAY, profile: { ...EXAMPLE_DIARY.profile, accessibility: { largerText: true } } });
+    await openPart('налаштування через ШІ');
+    await pasteText(CHANGED);
+    expect(result().textContent).not.toContain('доступність');
+    await tap('зберегти');
+    expect(storedProfile().accessibility).toEqual({ largerText: true });
+    await pasteText({ ...CHANGED, accessibility: { noMotion: true } });
+    expect(result().textContent).toContain('доступність: без анімацій');
+    await tap('зберегти');
+    expect(storedProfile().accessibility).toEqual({ noMotion: true });
+  });
+
+  it('brings back changes not saved yet when the paste is undone', async () => {
+    await openPart('тижнева ціль');
+    await tick('рахувати тижневу ціль');
+    await openPart('тижнева ціль');
+    await pasteText(CHANGED);
+    await tap('зберегти');
+    document.querySelector<HTMLElement>('.toast__action')!.click();
+    await settle();
+    expect(storedProfile()).toEqual(EXAMPLE_DIARY.profile);
+    expect(meta('тижнева ціль')).toBe('вимкнено');
+  });
+
+  it('refuses an error, a part and russian; unknown keys can be left out', async () => {
+    await pasteText({ ...CHANGED, theme: { accent: 'red' } });
+    expect(title()).toBe('щось не так у налаштуваннях >_<');
+    await tap('скопіювати для ШІ');
+    await settle();
+    expect(device.copied.at(-1)).toContain('[theme.accent]');
+    const { trackers: _t, ...part } = CHANGED;
+    await pasteText(part);
+    expect(title()).toBe('це лише частина налаштувань');
+    await pasteText({ ...CHANGED, lang: 'ru' });
+    expect(title()).toBe('налаштування російською мовою не приймаються.');
+    await pasteText({ ...CHANGED, ui: null });
+    expect(title()).toBe('ось що застосунок не прочитав');
+    await tap('продовжити без цього');
+    expect(title()).toBe('ось що зміниться');
+    await tap('зберегти');
+    expect(storedProfile()).toEqual(CHANGED);
+  });
+
+  it('refuses to restore a copy whose settings are russian, before asking anything', async () => {
+    const copy = { profile: { ...EXAMPLE_DIARY.profile, lang: 'ru' }, days: {} };
+    const input = host.querySelector<HTMLInputElement>('input[type="file"]')!;
+    Object.defineProperty(input, 'files', { value: [new File([serializeDiary(copy, new Date())], 'trekr-kopiya.json')] });
+    input.dispatchEvent(new Event('change'));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(dialog()).toBeNull();
+    expect(toastSays()).toBe('копію не відновлено: налаштування в ній російською мовою.');
+    expect(stored()).toEqual(WITH_A_DAY);
   });
 
   it('restores from a copy after asking, and goes home', async () => {

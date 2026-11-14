@@ -4,6 +4,8 @@ import type { DayKey } from '../domain/dates';
 import { readDay } from '../domain/day';
 import { serializeDiary, type Diary } from '../domain/diary';
 import { EXAMPLE_DIARY } from '../domain/examples';
+import { PROMPT } from '../prompt/prompt';
+import PASTED from '../format/example-profile.json';
 import { BEFORE_FORMAT_KEY, browserChoice, DIARY_KEY, diaryStore, sectionMemory, type KeyValue } from '../storage/store';
 import { mountToast } from '../ui/toast';
 import { startApp, type AppEnv } from './app';
@@ -16,11 +18,14 @@ const COPY_081 = serializeDiary({
 
 let host: HTMLElement;
 let onDiary: ReturnType<typeof vi.fn<(diary: Diary) => void>>;
+let device: ReturnType<typeof fakeDevice>['device'];
 
 function start(over: Partial<AppEnv> = {}, storage: KeyValue = localStorage): void {
   document.body.innerHTML = '<main id="app"></main>';
   host = document.querySelector<HTMLElement>('#app')!;
   onDiary = vi.fn<(diary: Diary) => void>();
+  const fake = fakeDevice();
+  device = fake.device;
   startApp({
     host,
     store: diaryStore(storage, () => new Date('2026-11-09T08:00:00Z')),
@@ -31,7 +36,7 @@ function start(over: Partial<AppEnv> = {}, storage: KeyValue = localStorage): vo
     onDiary,
     today: () => '2026-11-09' as DayKey,
     sections: sectionMemory(localStorage),
-    ...fakeDevice().env,
+    ...fake.env,
     whenHidden: () => {},
     ...over,
   });
@@ -92,15 +97,124 @@ describe('first launch in the installed app', () => {
     expect(apply.disabled).toBe(false);
   });
 
-  it('says the prompt and the paste are coming soon, and keeps nothing', () => {
-    click('[data-copy-prompt]');
-    expect(toastSays()).toBe('промпт ще пишемо, скоро буде :)');
+  const pasteText = (text: string) => {
     const field = host.querySelector<HTMLTextAreaElement>('[data-paste-field]')!;
-    field.value = '{}';
+    field.value = text;
     field.dispatchEvent(new Event('input'));
     click('[data-apply]');
-    expect(toastSays()).toBe('вставку налаштувань від ШІ ще робимо, скоро буде :)');
+  };
+  const result = () => host.querySelector<HTMLElement>('[data-paste-result]')!;
+  const resultButton = (label: string) => [...result().querySelectorAll('button')].find((b) => b.textContent === label)!;
+
+  it('keeps «застосувати» off until something is pasted', () => {
+    const apply = host.querySelector<HTMLButtonElement>('[data-apply]')!;
+    const field = host.querySelector<HTMLTextAreaElement>('[data-paste-field]')!;
+    expect(apply.disabled).toBe(true);
+    field.value = '   ';
+    field.dispatchEvent(new Event('input'));
+    expect(apply.disabled).toBe(true);
+    field.value = '{ }';
+    field.dispatchEvent(new Event('input'));
+    expect(apply.disabled).toBe(false);
+  });
+
+  it('copies the bundled prompt and names its version in the toast', async () => {
+    click('[data-copy-prompt]');
+    await vi.waitFor(() => expect(toastSays()).toBe('✓ промпт 0.1 скопійовано'));
+    expect(device.copied).toEqual([PROMPT.text]);
+    expect(PROMPT.text).toContain('ЧЕРНЕТКА');
+  });
+
+  it('says so when the phone refuses to copy the prompt', async () => {
+    device.copyWorks = false;
+    click('[data-copy-prompt]');
+    await vi.waitFor(() => expect(toastSays()).toBe('не вдалося скопіювати >_<'));
+  });
+
+  it('shows what the pasted settings bring, saves them on «зберегти» and opens home', () => {
+    expect(result().hidden).toBe(true);
+    pasteText(`Ось налаштування:\n\`\`\`json\n${JSON.stringify(PASTED, null, 2)}\n\`\`\``);
+    expect(result().hidden).toBe(false);
+    expect(result().querySelector('[data-paste-title]')!.textContent).toBe('ось що буде в налаштуваннях');
+    expect(document.activeElement).toBe(result().querySelector('[data-paste-title]'));
+    expect(result().textContent).toContain('вправ у каталозі: 5');
+    expect(result().textContent).not.toContain('записи лишаються як були');
     expect(stored()).toBeNull();
+    resultButton('зберегти').click();
+    expect(heading()).toBe('головна');
+    expect(stored()).toEqual({ profile: PASTED, days: {} });
+    expect(toastSays()).toBe('✓ збережено :)');
+  });
+
+  it('«скасувати» on the toast brings the first screen back, with nothing stored', () => {
+    pasteText(JSON.stringify(PASTED));
+    resultButton('зберегти').click();
+    document.querySelector<HTMLElement>('.toast__action')!.click();
+    expect(toastSays()).toBe('✓ скасовано');
+    expect(heading()).toBe('привіт! почнімо з налаштувань :)');
+    expect(stored()).toBeNull();
+  });
+
+  it('«скасувати» in the preview keeps nothing and hides the result', () => {
+    pasteText(JSON.stringify(PASTED));
+    resultButton('скасувати').click();
+    expect(result().hidden).toBe(true);
+    expect(stored()).toBeNull();
+    expect(heading()).toBe('привіт! почнімо з налаштувань :)');
+  });
+
+  it('explains an error in plain words and copies it for the AI', async () => {
+    pasteText(JSON.stringify({ ...PASTED, exercises: [{ id: 'neck-rolls', name: '' }] }));
+    expect(result().querySelector('[data-paste-title]')!.textContent).toBe('щось не так у налаштуваннях >_<');
+    expect(result().textContent).toContain('вправи → вправа 1 → назва: не може бути порожнім');
+    expect(resultButton('зберегти')).toBeUndefined();
+    resultButton('скопіювати для ШІ').click();
+    await vi.waitFor(() => expect(toastSays()).toBe('✓ скопійовано — встав у чат зі своїм ШІ'));
+    expect(device.copied[0]).toContain('Застосунок не прийняв налаштування. Що треба виправити:');
+    expect(stored()).toBeNull();
+  });
+
+  it('hides the result as soon as the text changes', () => {
+    pasteText('не json');
+    expect(result().hidden).toBe(false);
+    expect(result().querySelector('button')).toBeNull();
+    const field = host.querySelector<HTMLTextAreaElement>('[data-paste-field]')!;
+    field.value = '{';
+    field.dispatchEvent(new Event('input'));
+    expect(result().hidden).toBe(true);
+  });
+
+  it('names unknown keys; «продовжити без цього» goes on without keeping them', async () => {
+    pasteText(JSON.stringify({ ...PASTED, schedule: 'daily' }));
+    expect(result().querySelector('[data-paste-title]')!.textContent).toBe('ось що застосунок не прочитав');
+    expect(result().textContent).toContain('"schedule"');
+    const buttons = [...result().querySelectorAll('button')];
+    expect(buttons.map((b) => b.textContent)).toEqual(['скопіювати для ШІ, щоб виправити', 'продовжити без цього']);
+    expect(buttons[0]!.className).toContain('btn--primary');
+    expect(buttons[1]!.className).toContain('btn--secondary');
+    buttons[0]!.click();
+    await vi.waitFor(() => expect(device.copied[0]).toContain('"schedule" [schedule]'));
+    resultButton('продовжити без цього').click();
+    expect(result().querySelector('[data-paste-title]')!.textContent).toBe('ось що буде в налаштуваннях');
+    resultButton('зберегти').click();
+    expect(stored()!.profile).toEqual(PASTED);
+  });
+
+  it('refuses settings in russian, by `lang` and by letters', () => {
+    pasteText(JSON.stringify({ ...PASTED, lang: 'ru' }));
+    expect(result().querySelector('[data-paste-title]')!.textContent).toBe('налаштування російською мовою не приймаються.');
+    pasteText(JSON.stringify({ ...PASTED, encouragement: ['ты молодец'] }));
+    expect(result().querySelector('[data-paste-title]')!.textContent).toBe('налаштування російською мовою не приймаються.');
+    expect(stored()).toBeNull();
+  });
+
+  it('refuses to restore a copy whose settings are russian', async () => {
+    await restoreFile(serializeDiary({ profile: { ...PASTED, lang: 'ru' }, days: {} }, new Date()));
+    expect(toastSays()).toBe('копію не відновлено: налаштування в ній російською мовою.');
+    expect(stored()).toBeNull();
+    // Belarusian has these letters too: accepted
+    void restoreFile(serializeDiary({ profile: { ...PASTED, lang: 'be', encouragement: ['гэта добра'] }, days: {} }, new Date()));
+    await vi.waitFor(() => expect(toastSays()).toBe('✓ відновлено з файлу :)'));
   });
 
   it('starts without AI: stores the examples and leaves the first screen', () => {

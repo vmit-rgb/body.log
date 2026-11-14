@@ -1,10 +1,16 @@
+import type { PasteAct } from '../app/paste-flow';
 import type { Phone, Platform } from '../app/start';
+import { pasteActOf, pasteResultBox, showPasteResult } from './paste-result';
 import { FOOTER, LANGUAGE_SWITCH, part, PHONE_NAMES, platformToggles, wirePlatformToggles, wireRestore } from './parts';
 import { withGrip } from '../ui/grip';
 
 export interface FirstLaunchActions {
   copyPrompt(): void;
   applySettings(text: string): void;
+  /** A button of the result under the field: copy for the AI, go on, save, cancel. */
+  pasteAct(act: PasteAct): void;
+  /** The text in the field changed: the result shown no longer speaks about it. */
+  pasteEdited(): void;
   restore(file: File): void;
   startWithoutAi(): void;
 }
@@ -60,6 +66,7 @@ const MARKUP = `
         ${withGrip('<textarea class="field paste__field" rows="3" aria-label="відповідь ШІ" placeholder="встав сюди відповідь ШІ" data-paste-field></textarea>')}
         <button type="button" class="ctl btn btn--primary btn--wide" data-apply disabled>застосувати</button>
         <p class="t-3rd-regular muted">кнопка стане активною, щойно встав текст.</p>
+        ${pasteResultBox({ kind: 'none' })}
       </div>
     </section>
 
@@ -96,8 +103,14 @@ function wirePaste(host: HTMLElement, detected: Platform, actions: FirstLaunchAc
 
   field.addEventListener('input', () => {
     apply.disabled = field.value.trim() === '';
+    actions.pasteEdited();
+    showPasteResult(host, { kind: 'none' });
   });
   apply.addEventListener('click', () => actions.applySettings(field.value));
+  paste.addEventListener('click', (event) => {
+    const act = pasteActOf(event.target as Element);
+    if (act) actions.pasteAct(act);
+  });
 }
 
 function wireOtherWays(host: HTMLElement, actions: FirstLaunchActions): void {

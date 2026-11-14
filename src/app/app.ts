@@ -2,6 +2,9 @@ import type { DayKey } from '../domain/dates';
 import { readCopy, type Diary } from '../domain/diary';
 import { EXAMPLE_DIARY } from '../domain/examples';
 import { readSettings } from '../domain/settings';
+import { russianReason } from '../paste/russian';
+import { showPasteResult } from '../screens/paste-result';
+import { ACCENT_NAMES, ACCESS_SHORT } from '../screens/settings';
 import { homeSession } from '../home/session';
 import { showFirstLaunch } from '../screens/first-launch';
 import { showHome } from '../screens/home';
@@ -9,6 +12,7 @@ import { showInstallFirst } from '../screens/install-first';
 import type { DiaryStore, sectionMemory } from '../storage/store';
 import { enter } from '../ui/motion';
 import type { Toast, ToastMessage } from '../ui/toast';
+import { copyPrompt as copyPromptText, PasteFlow, RUSSIAN_COPY } from './paste-flow';
 import { logKeeper } from './keeper';
 import { pagesOverHome, type DeviceEnv } from './pages';
 import { startScreen, type Phone, type Platform, type StartScreen } from './start';
@@ -31,9 +35,11 @@ export interface AppEnv extends DeviceEnv {
   whenHidden(save: () => void): void;
 }
 
-/* Texts: COPY.md; «скоро» toasts as on the landing page (Olesia, 2026-11-09). */
-const PROMPT_SOON: ToastMessage = { message: 'промпт ще пишемо, скоро буде', emoticon: ':)' };
-const PASTE_SOON: ToastMessage = { message: 'вставку налаштувань від ШІ ще робимо, скоро буде', emoticon: ':)' };
+/* Texts: COPY.md. */
+const SAVED: ToastMessage = { message: 'збережено', emoticon: ':)', showIcon: true };
+const UNDONE: ToastMessage = { message: 'скасовано', showIcon: true };
+/* Нитка's draft. */
+const HAS_RECORDS: ToastMessage = { message: 'уже є записи, тож скасувати не вийде. налаштування можна змінити в меню' };
 const NOT_A_COPY: ToastMessage = { message: 'цей файл не схожий на копію з трекера', emoticon: '>_<' };
 const RESTORED: ToastMessage = { message: 'відновлено з файлу', emoticon: ':)', showIcon: true };
 const NOT_SAVED: ToastMessage = { message: 'не вдалося зберегти: схоже, на телефоні забракло місця', emoticon: '>_<' };
@@ -52,8 +58,9 @@ function saved(store: DiaryStore, next: Diary, toast: Toast): boolean {
 /** «відновити з копії»: a copy goes to `keep`, anything else gets the «not a copy» toast. */
 async function restoreFrom(file: File, keep: (diary: Diary, done: ToastMessage) => void, toast: Toast): Promise<void> {
   const restored = await readCopy(file);
-  if (restored) keep(restored, RESTORED);
-  else toast.show(NOT_A_COPY);
+  if (!restored) toast.show(NOT_A_COPY);
+  else if (russianReason(restored.profile)) toast.show(RUSSIAN_COPY);
+  else keep(restored, RESTORED);
 }
 
 /** install-first shows Android's steps unless the phone is an iPhone. */
@@ -125,11 +132,16 @@ export function startApp(env: AppEnv): void {
   function show(screen: StartScreen): void {
     leave();
     leave = () => {};
+    paste.reset();
     // home is only chosen when there is a diary (startScreen)
     if (screen === 'home' && diary) showDay(diary, date);
     else {
       if (screen === 'install-first') showInstallFirst(host, phoneOf(env.platform), useBrowser);
-      else showFirstLaunch(host, env.platform, { copyPrompt, applySettings, restore, startWithoutAi });
+      else {
+        showFirstLaunch(host, env.platform, {
+          copyPrompt, applySettings: (text) => paste.apply(text), pasteAct: (act) => paste.act(act), pasteEdited: () => paste.reset(), restore, startWithoutAi,
+        });
+      }
       enter(host.firstElementChild);
     }
     document.documentElement.scrollTop = 0;
@@ -153,8 +165,27 @@ export function startApp(env: AppEnv): void {
     browser.choose();
     show('first-launch');
   }
-  const copyPrompt = () => toast.show(PROMPT_SOON);
-  const applySettings = () => toast.show(PASTE_SOON);
+  const copyPrompt = () => void copyPromptText(env.copyText, (message) => toast.show(message));
+
+  /** The first settings from the AI: home, and «скасувати» brings the first screen back while nothing is logged. */
+  function startWith(profile: Diary['profile']): void {
+    const back = (): ToastMessage => {
+      if (diary && Object.keys(diary.days).length) return HAS_RECORDS;
+      store.clear();
+      diary = null;
+      show('first-launch');
+      return UNDONE;
+    };
+    keep({ profile, days: {} }, { ...SAVED, action: { label: 'скасувати', run: back } });
+  }
+  const paste = new PasteFlow({
+    current: () => null,
+    names: { accents: ACCENT_NAMES, accessibility: ACCESS_SHORT },
+    copyText: env.copyText,
+    say: (message) => toast.show(message),
+    show: () => showPasteResult(host, paste.view),
+    save: startWith,
+  });
   const startWithoutAi = () => keep(EXAMPLE_DIARY);
   function restore(file: File): void {
     void restoreFrom(file, keep, toast);
