@@ -146,6 +146,14 @@ describe('first launch in the installed app', () => {
     expect(toastSays()).toBe('✓ збережено :)');
   });
 
+  it('accepts first settings without `theme`: the colour is the usual one', () => {
+    const { theme: _theme, ...noTheme } = PASTED;
+    pasteText(JSON.stringify(noTheme));
+    expect(result().textContent).toContain('акцентний колір: рожевий');
+    resultButton('зберегти').click();
+    expect(stored()!.profile).toEqual(noTheme);
+  });
+
   it('«скасувати» on the toast brings the first screen back, with nothing stored', () => {
     pasteText(JSON.stringify(PASTED));
     resultButton('зберегти').click();

@@ -462,6 +462,18 @@ describe('settings: «налаштування через ШІ»', () => {
     expect(storedProfile().accessibility).toEqual({ noMotion: true });
   });
 
+  it('keeps the accent colour when the paste has no `theme` (Olesia, 2026-11-15)', async () => {
+    await openSettings({ ...WITH_A_DAY, profile: { ...EXAMPLE_DIARY.profile, theme: { accent: 'sky' } } });
+    await openPart('налаштування через ШІ');
+    const { theme: _theme, ...noTheme } = CHANGED;
+    await pasteText(noTheme);
+    expect(title()).toBe('ось що зміниться');
+    expect(result().textContent).not.toContain('акцентний колір');
+    await tap('зберегти');
+    expect(storedProfile().theme).toEqual({ accent: 'sky' });
+    expect(storedProfile().exercises).toEqual(CHANGED.exercises);
+  });
+
   it('brings back changes not saved yet when the paste is undone', async () => {
     await openPart('тижнева ціль');
     await tick('рахувати тижневу ціль');

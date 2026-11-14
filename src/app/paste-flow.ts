@@ -65,9 +65,13 @@ export class PasteFlow {
     this.forAi = read.forAi;
     if (read.kind === 'refused') this.view = { kind: 'refused', refusal: read };
     else {
-      // «доступність» changes only when the paste carries it (PROFILE-FORMAT.md)
-      const kept = this.deps.current()?.accessibility;
-      this.pending = read.hasAccessibility || kept === undefined ? read.profile : { ...read.profile, accessibility: kept };
+      // «доступність» and the accent colour change only when the paste carries them (PROFILE-FORMAT.md)
+      const now = this.deps.current();
+      this.pending = {
+        ...(now?.theme === undefined ? {} : { theme: now.theme }),
+        ...(now?.accessibility === undefined ? {} : { accessibility: now.accessibility }),
+        ...read.profile,
+      };
       if (read.unknown.length) this.view = { kind: 'unknown', lines: read.unknown };
       else this.preview();
     }

@@ -30,8 +30,8 @@ describe('checkProfile: what passes', () => {
     expect(checkProfile(EXAMPLE_DIARY.profile)).toEqual({ issues: [], unknown: [] });
   });
 
-  it('passes settings without a goal, phrases, a language or «доступність»', () => {
-    const { goal: _g, encouragement: _e, lang: _l, ...rest } = example;
+  it('passes settings without a goal, phrases, a language, a colour or «доступність»', () => {
+    const { goal: _g, encouragement: _e, lang: _l, theme: _th, ...rest } = example;
     expect(checkProfile(rest)).toEqual({ issues: [], unknown: [] });
     expect(checkProfile({ ...rest, accessibility: { largerText: true } })).toEqual({ issues: [], unknown: [] });
   });
@@ -52,9 +52,8 @@ describe('checkProfile: the version', () => {
 
 describe('checkProfile: a part of the settings', () => {
   it('names every missing section', () => {
-    const { workout: _w, trackers: _t, theme: _th, ...part } = example;
+    const { workout: _w, trackers: _t, ...part } = example;
     expect(checkProfile(part).issues).toEqual([
-      { kind: 'required', path: [], key: 'theme' },
       { kind: 'required', path: [], key: 'workout' },
       { kind: 'required', path: [], key: 'trackers' },
     ]);

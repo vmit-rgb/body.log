@@ -4,13 +4,13 @@
   "description": "Налаштування трекера (phys-activity-profile), формат 0.1. Тільки налаштування: жодних записів щоденника, порогів чи оцінок значень. Усі тексти показуються як звичайний текст. Межі — це стеля, а не ціль: пиши необхідний мінімум.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["format", "version", "theme", "morningWarmup", "daytimeWarmup", "workout", "movement", "exercises", "trackers"],
+  "required": ["format", "version", "morningWarmup", "daytimeWarmup", "workout", "movement", "exercises", "trackers"],
   "properties": {
     "format": { "title": "формат", "const": "phys-activity-profile" },
     "version": { "title": "версія формату", "description": "Текст у лапках, не число.", "enum": ["0.1"] },
     "lang": {
       "title": "мова",
-      "description": "Код мови текстів, напр. uk, en, pl. Будь-яка, крім ru.",
+      "description": "Код мови текстів, напр. uk, en, pl, be. Будь-яка, крім ru. Завжди вказуй його: без нього тексти іншими кириличними мовами можуть бути відхилені.",
       "type": "string",
       "maxLength": 20,
       "pattern": "^[A-Za-z]{2,3}(-[A-Za-z0-9]+)*$",
@@ -18,6 +18,7 @@
     },
     "theme": {
       "title": "вигляд",
+      "description": "Акцентний колір людина вибирає сама в застосунку. Якщо блоку немає, застосунок лишає колір як був.",
       "type": "object",
       "additionalProperties": false,
       "required": ["accent"],
