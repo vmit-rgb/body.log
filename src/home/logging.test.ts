@@ -363,6 +363,97 @@ describe('movement', () => {
   });
 });
 
+describe('a number field with something that is not a number (D-01)', () => {
+  const leave = (field: HTMLElement) => field.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+  const km = () => byLabel<HTMLInputElement>('ходьба, км');
+  const errors = () => [...host.querySelectorAll<HTMLElement>('.number-error')].map((error) => error.textContent);
+
+  it('reads «10 000» and «1.5» as numbers', () => {
+    type(km(), '10 000');
+    expect(saved().mv.walk).toEqual([{ km: 10000, min: null, steps: null }]);
+    type(km(), '1.5');
+    expect(saved().mv.walk).toEqual([{ km: 1.5, min: null, steps: null }]);
+    leave(km());
+    expect(errors()).toEqual([]);
+  });
+
+  it('says nothing while the person types, and explains under the field once they leave it', () => {
+    type(km(), 'сімдесят');
+    expect(errors()).toEqual([]);
+    expect(km().getAttribute('aria-invalid')).toBeNull();
+    leave(km());
+    expect(errors()).toEqual(['тут потрібне число, наприклад 10 або 1,5']);
+    expect(km().getAttribute('aria-invalid')).toBe('true');
+    expect(document.getElementById(km().getAttribute('aria-describedby')!)!.textContent).toBe('тут потрібне число, наприклад 10 або 1,5');
+    expect(km().value).toBe('сімдесят');
+    expect(saved().mv.walk).toBeUndefined();
+  });
+
+  it('does not take a number below zero', () => {
+    type(km(), '-3');
+    leave(km());
+    expect(errors()).toEqual(['число не може бути від’ємним']);
+    expect(saved().mv.walk).toBeUndefined();
+  });
+
+  it('keeps what was typed, with its error, when the screen is drawn again', () => {
+    type(km(), '120/80');
+    leave(km());
+    $('[data-act="chip"]').click();
+    expect(km().value).toBe('120/80');
+    expect(km().getAttribute('aria-invalid')).toBe('true');
+    expect(errors()).toEqual(['тут потрібне число, наприклад 10 або 1,5']);
+  });
+
+  it('keeps what was typed when the screen is drawn again before the person left the field', () => {
+    type(km(), '1 км');
+    $('[data-act="chip"]').click();
+    expect(km().value).toBe('1 км');
+    expect(errors()).toEqual([]);
+  });
+
+  it('takes the error away as soon as the field holds a number or nothing', () => {
+    type(km(), 'сім');
+    leave(km());
+    type(km(), '7');
+    expect(errors()).toEqual([]);
+    expect(km().getAttribute('aria-invalid')).toBeNull();
+    expect(km().getAttribute('aria-describedby')).toBeNull();
+    expect(saved().mv.walk).toEqual([{ km: 7, min: null, steps: null }]);
+    type(km(), 'сім');
+    leave(km());
+    type(km(), '');
+    expect(errors()).toEqual([]);
+  });
+
+  it('marks one of two numbers without touching the other', () => {
+    type(byLabel<HTMLInputElement>('тиск, перше число, мм'), '120');
+    type(byLabel<HTMLInputElement>('тиск, друге число, мм'), 'вісімдесят');
+    leave(byLabel('тиск, друге число, мм'));
+    expect(errors()).toHaveLength(1);
+    expect(byLabel('тиск, перше число, мм').getAttribute('aria-invalid')).toBeNull();
+    expect(saved().t.morning).toEqual({ pressure: [120, null] });
+  });
+
+  it('a set row shows the error under the row', () => {
+    byText('тренування А').click();
+    const weight = () => byLabel<HTMLInputElement>('присідання, підхід 1, вага, кг');
+    type(weight(), '20кг');
+    leave(weight());
+    expect(weight().closest('.set-row')!.nextElementSibling!.className).toContain('number-error');
+  });
+
+  it('removing a row forgets what was typed wrongly on that day', () => {
+    byText('додати коло').click();
+    const second = () => byLabel<HTMLInputElement>('ходьба, коло 2, км');
+    type(second(), 'два');
+    leave(second());
+    byLabel('видалити коло 2').click();
+    byLabel('точно видалити коло 2').click();
+    expect(errors()).toEqual([]);
+  });
+});
+
 describe('saving', () => {
   it('writes once typing pauses, not on every key', () => {
     const save = vi.spyOn(store, 'save');

@@ -18,6 +18,8 @@ export interface HomeSession {
   readonly running: Map<string, number>;
   readonly retry: Set<string>;
   readonly drafts: Map<string, Draft>;
+  /** Number fields holding something that isn't a number, by field key; `shown`: its error line is on screen (D-01). */
+  readonly typed: Map<string, { readonly text: string; readonly shown: boolean }>;
   /** Saves every draft; set by the screen shown. */
   flush: () => void;
   /** The 20 s autosave of the drafts (ACCESSIBILITY.md, slider). */
@@ -70,7 +72,7 @@ export function dropPulse(session: HomeSession): void {
 
 export function homeSession(): HomeSession {
   return {
-    open: new Map(), armed: null, running: new Map(), retry: new Set(), drafts: new Map(), flush: () => {}, timer: undefined,
+    open: new Map(), armed: null, running: new Map(), retry: new Set(), drafts: new Map(), typed: new Map(), flush: () => {}, timer: undefined,
     month: null, pulse: null, pulseStep: () => {}, pulseTimer: undefined,
   };
 }

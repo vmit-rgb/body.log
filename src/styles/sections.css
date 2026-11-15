@@ -392,6 +392,15 @@
 .rm-space {
   width: var(--tap);
 }
+/* D-01: why a number field isn't a number, under its row, once the person left the field */
+.number-error {
+  margin: 0;
+  color: var(--err);
+}
+/* under a set or a lap it starts where the fields do, after the row's number */
+.set-row + .number-error {
+  padding-inline-start: calc(2ch + var(--gap-items));
+}
 /* × and its ✓ use the accent, as Figma binds them (VISUAL-AUDIT Н4); only text «видалити» is red */
 /* × and its ✓ drawn at 16 px, below ▶ / ■ in the hierarchy; the tap zone stays the control's (Olesia, 2026-11-12) */
 .rm .icon {

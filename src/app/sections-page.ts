@@ -1,6 +1,6 @@
 import type { JsonObject } from '../domain/diary';
 import { sessionName } from '../domain/journal';
-import { formatNumber, parseNumber } from '../domain/numbers';
+import { formatNumber, NUMBER_ERRORS, readNumber } from '../domain/numbers';
 import type { ProfileEdit } from '../domain/profile-edit';
 import {
   freeId, joinGroup, linkSource, LIST_OF, newTracker, TRACKERS, valueAt, withActivity, withAdded, withChoice, withExercise, withGroup, withLeft,
@@ -41,6 +41,7 @@ const MOVED: ToastMessage = { message: 'переміщено', showIcon: true };
 const REMOVED: ToastMessage = { message: 'видалено', showIcon: true }; // «бета 0.81»
 const FULL: ToastMessage = { message: 'у групі вже 3 вправи — більше не влізе', emoticon: '>_<' };
 const NOT_A_NUMBER: ToastMessage = { message: 'тут потрібне число', emoticon: '>_<' }; // draft
+const NEGATIVE: ToastMessage = { message: NUMBER_ERRORS.negative, emoticon: '>_<' }; // draft
 const ONE_FIELD: ToastMessage = { message: 'хоч одне поле має лишитися', emoticon: '>_<' }; // draft
 
 const MAX: Record<EditKind, number> = { text: 120, long: 500, url: 500, number: 12, rx: 60 };
@@ -138,9 +139,10 @@ export class SectionsEditor {
     if (kind === 'url') return withValue(path, linkSource(typed));
     if (kind === 'rx') return withPrescription(path.slice(0, -'.@rx'.length), typed);
     if (kind !== 'number') return withValue(path, typed);
-    const value = parseNumber(typed.replace(/[^\d,.-]/g, ''));
-    if (value !== null) return withValue(path, value);
-    if (typed.trim() !== '') this.draft.say(NOT_A_NUMBER);
+    // «45 с», «10 000»: the unit and the spaces are dropped; below zero is refused (D-01)
+    const read = readNumber(typed.replace(/[^\d,.\-−]/g, ''));
+    if (read.kind === 'number') return withValue(path, read.value);
+    if (typed.trim() !== '') this.draft.say(read.kind === 'negative' ? NEGATIVE : NOT_A_NUMBER);
     // an empty weight or workout time means «none»; a warm-up time or a scale end stays
     else if (/^workout\..*\.(weight|seconds)$/.test(path)) return withValue(path, undefined);
     return null;

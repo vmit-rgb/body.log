@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { countLabel, formatNumber, parseNumber, plural } from './numbers';
+import { countLabel, formatNumber, parseNumber, plural, readNumber } from './numbers';
 
 describe('parseNumber', () => {
   it.each<[string, number | null]>([
@@ -10,8 +10,46 @@ describe('parseNumber', () => {
     ['   ', null],
     ['дванадцять', null],
     ['1e400', null],
+    // D-01: thousands typed with a space of any kind
+    ['10 000', 10000],
+    ['10 000', 10000],
+    ['1 250,5', 1250.5],
+    ['1.5', 1.5],
+    ['1,5', 1.5],
+    ['.5', 0.5],
+    ['5,', 5],
+    // not numbers: nothing is guessed
+    ['-5', null],
+    ['−5', null],
+    ['120/80', null],
+    ['70кг', null],
+    ['1,2,3', null],
+    ['0x10', null],
+    ['1e3', null],
+    [',', null],
   ])('reads «%s» as %s', (input, expected) => {
     expect(parseNumber(input)).toBe(expected);
+  });
+});
+
+describe('readNumber: why a field is not a number (D-01)', () => {
+  it.each<[string, string]>([
+    ['', 'empty'],
+    ['  ', 'empty'],
+    ['12', 'number'],
+    ['-5', 'negative'],
+    ['−2,5', 'negative'],
+    ['– 3', 'negative'],
+    ['сімдесят', 'not-a-number'],
+    ['120/80', 'not-a-number'],
+    ['-', 'not-a-number'],
+    ['-кг', 'not-a-number'],
+  ])('«%s» is %s', (input, kind) => {
+    expect(readNumber(input).kind).toBe(kind);
+  });
+
+  it('gives the value of a number', () => {
+    expect(readNumber('10 000')).toEqual({ kind: 'number', value: 10000 });
   });
 });
 
