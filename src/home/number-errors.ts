@@ -40,7 +40,10 @@ function mark(root: ParentNode, field: HTMLInputElement, message: string): void 
     line.dataset.errorFor = key;
     // read out when it appears
     line.setAttribute('role', 'alert');
-    rowOf(field).after(line);
+    // under the row, after the lines its other fields already have
+    let last = rowOf(field);
+    while (last.nextElementSibling?.classList.contains('number-error')) last = last.nextElementSibling;
+    last.after(line);
   }
   line.textContent = message;
   field.setAttribute('aria-invalid', 'true');

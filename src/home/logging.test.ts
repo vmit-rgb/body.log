@@ -454,6 +454,15 @@ describe('a number field with something that is not a number (D-01)', () => {
     expect(weight().closest('.set-row')!.nextElementSibling!.className).toContain('number-error');
   });
 
+  it('two wrong fields of one row get their lines in the order the person left them', () => {
+    type(km(), 'сім');
+    leave(km());
+    const minutes = byLabel<HTMLInputElement>('ходьба, хв');
+    type(minutes, '-3');
+    leave(minutes);
+    expect(errors()).toEqual(['тут потрібне число, наприклад 10 або 1,5', 'число не може бути від’ємним']);
+  });
+
   it('removing a row forgets what was typed wrongly on that day', () => {
     byText('додати коло').click();
     const second = () => byLabel<HTMLInputElement>('ходьба, коло 2, км');
