@@ -19,6 +19,13 @@ export const FOOTER = `
     <p class="muted">© 2026 Олеся Кіштанова · усі права захищено</p>
   </footer>`;
 
+/**
+ * A-04 (Olesia, 2026-11-14): in a browser tab the app keeps nothing after the
+ * tab is closed (storage/store.ts, `storageFor`), and the screen must say so.
+ */
+export const TAB_NOTE = `
+  <p class="tab-note t-3rd-bold" role="note">це вкладка браузера: закриєш її — і записи зникнуть. встанови застосунок, щоб вони лишилися.</p>`;
+
 export const PHONE_NAMES: Record<Phone, string> = {
   android: 'андроїд',
   iphone: 'айфон',

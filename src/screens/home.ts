@@ -18,7 +18,7 @@ import { monthOf, shiftMonth } from '../domain/stats';
 import { wireAccordions } from '../ui/accordion';
 import type { ToastMessage } from '../ui/toast';
 import { barMarkup, fillBar, TO_TOP, wireDateNav, wireScroll } from './bar';
-import { FOOTER, part } from './parts';
+import { FOOTER, part, TAB_NOTE } from './parts';
 
 /*
  * Home (Figma `screen/home-default` 73:2601 open, 338:16522 closed;
@@ -37,6 +37,8 @@ export interface HomeState {
   readonly session: HomeSession;
   /** The day shown before, when home is drawn for another day: the motion comes from its side. */
   readonly cameFrom?: DayKey;
+  /** The app runs in a browser tab, where nothing is kept once the tab is closed (A-04). */
+  readonly inTab?: boolean;
 }
 
 export interface HomeActions {
@@ -83,7 +85,7 @@ function markup(state: HomeState, actions: HomeActions): string {
   return `
     <div class="home">
       <h1 class="visually-hidden">головна</h1>
-      <header class="hero"><p class="hero__text"></p></header>
+      <header class="hero"><p class="hero__text"></p></header>${state.inTab ? TAB_NOTE : ''}
       <div class="home__sections">${sections.join('')}</div>
       <section class="cal-block" aria-label="календар">${calendarMarkup(calendarView(state, 'home'))}</section>
       ${FOOTER}

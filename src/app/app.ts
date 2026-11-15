@@ -110,7 +110,7 @@ export function startApp(env: AppEnv): void {
     date = next;
     leave();
     let shown = current;
-    leave = showHome(host, { settings: readSettings(current.profile), days: current.days, date, today: env.today(), session, cameFrom }, {
+    leave = showHome(host, { settings: readSettings(current.profile), days: current.days, date, today: env.today(), session, cameFrom, inTab: !env.installed }, {
       goTo: (day) => {
         session.flush();
         showDay(shown, day);
@@ -145,7 +145,7 @@ export function startApp(env: AppEnv): void {
       else {
         showFirstLaunch(host, env.platform, {
           copyPrompt, applySettings: (text) => paste.apply(text), pasteAct: (act) => paste.act(act), pasteEdited: () => paste.reset(), restore, startWithoutAi,
-        });
+        }, !env.installed);
       }
       enter(host.firstElementChild);
     }

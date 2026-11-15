@@ -153,6 +153,12 @@
 .screen__section--tight {
   gap: var(--gap-group);
 }
+/* A-04: in a browser tab nothing is kept; said on the first screen and on home */
+.tab-note {
+  margin: 0;
+  padding: 0 var(--pad-screen-x);
+  color: var(--warn);
+}
 .option {
   display: flex;
   flex-direction: column;

@@ -304,6 +304,36 @@ describe('coming back', () => {
   });
 });
 
+describe('in a browser tab the app says that records will not stay (A-04)', () => {
+  const NOTE = 'це вкладка браузера: закриєш її — і записи зникнуть. встанови застосунок, щоб вони лишилися.';
+  const note = () => host.querySelector('.tab-note')?.textContent;
+
+  it('on the first screen, on a computer and on a phone that chose the browser', () => {
+    start({ platform: 'unknown', installed: false });
+    expect(note()).toBe(NOTE);
+    start({ platform: 'android', installed: false });
+    click('[data-use-browser]');
+    expect(note()).toBe(NOTE);
+  });
+
+  it('on home, and still there after the screen is drawn again', () => {
+    start({ platform: 'unknown', installed: false });
+    click('[data-start-without-ai]');
+    expect(heading()).toBe('головна');
+    expect(note()).toBe(NOTE);
+    click('.date-nav [data-step="-1"]');
+    expect(note()).toBe(NOTE);
+  });
+
+  it('never in the installed app', () => {
+    start();
+    expect(note()).toBeUndefined();
+    click('[data-start-without-ai]');
+    expect(heading()).toBe('головна');
+    expect(note()).toBeUndefined();
+  });
+});
+
 describe('coming back to a diary the app cannot read (D-02)', () => {
   const BROKEN = '{"format":"phys-activity-backup","version":1,"profile":{"lang":"uk"},"days":{"2026-11-07":{"note":"вправа';
 

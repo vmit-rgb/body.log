@@ -1,7 +1,7 @@
 import type { PasteAct } from '../app/paste-flow';
 import type { Phone, Platform } from '../app/start';
 import { pasteActOf, pasteResultBox, showPasteResult } from './paste-result';
-import { FOOTER, LANGUAGE_SWITCH, part, PHONE_NAMES, platformToggles, wirePlatformToggles, wireRestore } from './parts';
+import { FOOTER, LANGUAGE_SWITCH, part, PHONE_NAMES, platformToggles, TAB_NOTE, wirePlatformToggles, wireRestore } from './parts';
 import { withGrip } from '../ui/grip';
 
 export interface FirstLaunchActions {
@@ -118,8 +118,10 @@ function wireOtherWays(host: HTMLElement, actions: FirstLaunchActions): void {
   part(host, '[data-start-without-ai]').addEventListener('click', () => actions.startWithoutAi());
 }
 
-export function showFirstLaunch(host: HTMLElement, detected: Platform, actions: FirstLaunchActions): void {
+/** `inTab`: the app runs in a browser tab, so the screen says that records won't stay (A-04). */
+export function showFirstLaunch(host: HTMLElement, detected: Platform, actions: FirstLaunchActions, inTab = false): void {
   host.innerHTML = MARKUP;
+  if (inTab) part(host, '.lang').insertAdjacentHTML('afterend', TAB_NOTE);
   part(host, '[data-copy-prompt]').addEventListener('click', () => actions.copyPrompt());
   wirePaste(host, detected, actions);
   wireOtherWays(host, actions);
