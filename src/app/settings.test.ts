@@ -505,38 +505,8 @@ describe('settings: «налаштування через ШІ»', () => {
     expect(storedProfile()).toEqual(CHANGED);
   });
 
-  it('refuses to restore a copy whose settings are russian, before asking anything', async () => {
-    const copy = { profile: { ...EXAMPLE_DIARY.profile, lang: 'ru' }, days: {} };
-    const input = host.querySelector<HTMLInputElement>('input[type="file"]')!;
-    Object.defineProperty(input, 'files', { value: [new File([serializeDiary(copy, new Date())], 'trekr-kopiya.json')] });
-    input.dispatchEvent(new Event('change'));
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    expect(dialog()).toBeNull();
-    expect(toastSays()).toBe('копію не відновлено: налаштування в ній російською мовою.');
-    expect(stored()).toEqual(WITH_A_DAY);
-  });
-
-  it('restores from a copy after asking, and goes home', async () => {
-    const copy = { ...EXAMPLE_DIARY, days: { ['2026-11-01' as DayKey]: readDay({ note: 'з файлу' }, '2026-11-01' as DayKey) } };
-    const input = host.querySelector<HTMLInputElement>('input[type="file"]')!;
-    Object.defineProperty(input, 'files', { value: [new File([serializeDiary(copy, new Date())], 'trekr-kopiya.json')] });
-    input.dispatchEvent(new Event('change'));
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    expect(dialog()!.textContent).toContain('відновити з файлу?');
-    expect(dialog()!.textContent).toContain('записи й налаштування з файлу (1 день) замінять ті, що є зараз.');
-    await tap('відновити');
-    expect(heading()).toBe('головна');
-    expect(Object.keys(stored().days)).toEqual(['2026-11-01']);
-    expect(toastSays()).toBe('✓ відновлено з файлу :)');
-  });
-
-  it('says so when the file is not a copy', async () => {
-    const input = host.querySelector<HTMLInputElement>('input[type="file"]')!;
-    Object.defineProperty(input, 'files', { value: [new File(['не копія'], 'x.json')] });
-    input.dispatchEvent(new Event('change'));
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    expect(dialog()).toBeNull();
-    expect(toastSays()).toBe('цей файл не схожий на копію з трекера >_<');
+  it('has no «відновити з копії»: it lives in «копія й експорт» (A-07)', () => {
+    expect(host.querySelector('[data-restore]')).toBeNull();
   });
 });
 
@@ -544,6 +514,80 @@ describe('settings: copy and export', () => {
   beforeEach(async () => {
     await openSettings();
     await openPart('копія й експорт');
+  });
+
+  const pick = async (text: string) => {
+    const input = host.querySelector<HTMLInputElement>('input[type="file"]')!;
+    Object.defineProperty(input, 'files', { value: [new File([text], 'trekr-kopiya.json')] });
+    input.dispatchEvent(new Event('change'));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  };
+  const FROM_FILE = serializeDiary(
+    { ...EXAMPLE_DIARY, days: { ['2026-11-01' as DayKey]: readDay({ note: 'з файлу' }, '2026-11-01' as DayKey) } }, new Date(),
+  );
+
+  it('«відновити з копії» sits right under «зберегти копію» (A-07)', () => {
+    const buttons = [...host.querySelectorAll('#st-backup button')].map((b) => b.textContent);
+    expect(buttons.slice(0, 2)).toEqual(['зберегти копію', 'відновити з копії']);
+  });
+
+  it('refuses to restore a copy whose settings are russian, before asking anything', async () => {
+    await pick(serializeDiary({ profile: { ...EXAMPLE_DIARY.profile, lang: 'ru' }, days: {} }, new Date()));
+    expect(dialog()).toBeNull();
+    expect(toastSays()).toBe('копію не відновлено: налаштування в ній російською мовою.');
+    expect(stored()).toEqual(WITH_A_DAY);
+  });
+
+  it('before replacing, offers to save a copy of what is here now (A-08)', async () => {
+    await pick(FROM_FILE);
+    expect(dialog()!.textContent).toContain('поточні дані буде замінено. спершу зберегти копію?');
+    expect(dialog()!.textContent).toContain('у файлі 1 день записів і налаштування. вони замінять ті, що є зараз.');
+    expect([...dialog()!.querySelectorAll('button')].map((b) => b.textContent)).toEqual(['зберегти й відновити', 'скасувати', 'відновити без збереження']);
+  });
+
+  it('«зберегти й відновити» saves the copy of the old diary first, then restores and goes home', async () => {
+    await pick(FROM_FILE);
+    await tap('зберегти й відновити');
+    expect(device.saved).toHaveLength(1);
+    expect(device.saved[0]!.name).toBe('trekr-kopiya-2026-11-09.json');
+    expect(Object.keys(JSON.parse(device.saved[0]!.text).days)).toEqual(Object.keys(WITH_A_DAY.days));
+    expect(heading()).toBe('головна');
+    expect(Object.keys(stored().days)).toEqual(['2026-11-01']);
+    expect(toastSays()).toBe('✓ відновлено з файлу :)');
+  });
+
+  it('«зберегти й відновити» replaces nothing when the phone refuses the copy', async () => {
+    device.saveWorks = false;
+    await pick(FROM_FILE);
+    await tap('зберегти й відновити');
+    expect(stored()).toEqual(WITH_A_DAY);
+    expect(toastSays()).toBe('не вдалося зберегти файл >_<');
+    expect(heading()).not.toBe('головна');
+  });
+
+  it('«відновити без збереження» restores without a copy', async () => {
+    await pick(FROM_FILE);
+    await tap('відновити без збереження');
+    expect(device.saved).toEqual([]);
+    expect(heading()).toBe('головна');
+    expect(Object.keys(stored().days)).toEqual(['2026-11-01']);
+  });
+
+  it('«скасувати» leaves everything as it was', async () => {
+    await pick(FROM_FILE);
+    await tap('скасувати');
+    expect(dialog()).toBeNull();
+    expect(stored()).toEqual(WITH_A_DAY);
+  });
+
+  it('says so when the file is not a copy', async () => {
+    await pick('не копія');
+    expect(dialog()).toBeNull();
+    expect(toastSays()).toBe('цей файл не схожий на копію з трекера >_<');
+  });
+
+  it('says that a copy holds health records (E-13)', () => {
+    expect(host.querySelector('#st-backup')!.textContent).toContain('у копії всі записи про здоров’я.');
   });
 
   it('saves a copy and says how old it is', async () => {
@@ -555,7 +599,11 @@ describe('settings: copy and export', () => {
 
   it('exports the records with the health-data warning', async () => {
     expect(button('записи').getAttribute('aria-pressed')).toBe('true');
-    expect(host.textContent).toContain('записи — це дані про твоє здоров’я. копіюючи їх для ШІ, ти передаєш їх у чат стороннього сервісу.');
+    expect(host.textContent).toContain('записи — це дані про твоє здоров’я. надсилай їх лише тим, кому довіряєш; у чаті з ШІ вони потрапляють до стороннього сервісу.');
+    // E-13: the warning stands over all three buttons, not only the one for an AI
+    const warning = [...host.querySelectorAll('.st-warning')].find((p) => p.textContent!.startsWith('записи —'))!;
+    expect(warning.compareDocumentPosition(button('зберегти PDF')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(warning.compareDocumentPosition(button('скопіювати для ШІ')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     await tap('скопіювати для ШІ');
     await Promise.resolve();
     await Promise.resolve();
@@ -686,6 +734,7 @@ describe('settings: less common paths', () => {
     await tick('рахувати тижневу ціль');
     expect((document.activeElement as HTMLElement).dataset.act).toBe('goal-on');
     await openPart('налаштування через ШІ');
+    await openPart('копія й експорт');
     host.querySelector<HTMLElement>('[data-restore]')!.focus();
     await tick('рахувати тижневу ціль');
     expect(document.activeElement).toBe(document.body);
@@ -695,6 +744,7 @@ describe('settings: less common paths', () => {
   it('opens the file picker and keeps pasted text over a redraw', async () => {
     await openSettings();
     await openPart('налаштування через ШІ');
+    await openPart('копія й експорт');
     const picker = vi.spyOn(HTMLInputElement.prototype, 'click').mockImplementation(() => {});
     await tap('відновити з копії');
     expect(picker).toHaveBeenCalled();
@@ -748,7 +798,7 @@ describe('settings: less common paths', () => {
 
   it('changes nothing when restoring or erasing is cancelled', async () => {
     await openSettings();
-    await openPart('налаштування через ШІ');
+    await openPart('копія й експорт');
     await pick(new File([serializeDiary(EXAMPLE_DIARY, new Date())], 'trekr-kopiya.json'));
     await tap('скасувати');
     await openPart('видалення');
@@ -760,7 +810,7 @@ describe('settings: less common paths', () => {
 
   it('says a file that can’t be read is not a copy', async () => {
     await openSettings();
-    await openPart('налаштування через ШІ');
+    await openPart('копія й експорт');
     await pick({ text: () => Promise.reject(new Error('unreadable')) });
     expect(toastSays()).toBe('цей файл не схожий на копію з трекера >_<');
   });

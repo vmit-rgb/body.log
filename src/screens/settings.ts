@@ -179,22 +179,25 @@ function aiBody(state: SettingsState): string {
         ${withGrip(`<textarea class="field paste__field" rows="3" aria-label="відповідь ШІ" placeholder="встав сюди відповідь ШІ" data-input="paste">${esc(state.pasted)}</textarea>`)}
         <button type="button" class="ctl btn btn--primary btn--wide" ${act('apply')}${state.pasted.trim() ? '' : ' disabled'}>застосувати</button>
         ${pasteResultBox(state.pasteView)}
-      </div>
-      <div>${tertiary('відновити з копії', 'data-restore')}</div>
-      <input type="file" accept=".json,application/json,text/plain" hidden data-restore-file />`;
+      </div>`;
 }
 
 function backupBody(state: SettingsState): string {
   const tab = (name: ExportTab, label: string) =>
     `<button type="button" class="ctl tab" ${act('export-tab', `data-tab="${name}"`)} aria-pressed="${state.exportTab === name}">${label}</button>`;
+  // E-13: a copy, a JSON and a PDF carry the same health data as the text for an AI, so the warning covers all three buttons
   const warning = state.exportTab === 'records'
-    ? '<p class="t-3rd-bold st-warning">записи — це дані про твоє здоров’я. копіюючи їх для ШІ, ти передаєш їх у чат стороннього сервісу.</p>' : '';
+    ? '<p class="t-3rd-bold st-warning">записи — це дані про твоє здоров’я. надсилай їх лише тим, кому довіряєш; у чаті з ШІ вони потрапляють до стороннього сервісу.</p>' : '';
+  // A-07: «відновити з копії» lives here, right under «зберегти копію», not in «налаштування через ШІ»
   return `
       <div class="st-backup">
         <p class="t-3rd-regular muted" data-backup-line>${esc(state.backupLine)}</p>
         <div>${tertiary('зберегти копію', act('backup'))}</div>
+        <div>${tertiary('відновити з копії', 'data-restore')}</div>
+        <input type="file" accept=".json,application/json,text/plain" hidden data-restore-file />
       </div>
       <p class="t-3rd-regular muted">копія — один файл з усіма записами й налаштуваннями. з нього все відновиться на новому телефоні.</p>
+      <p class="t-3rd-bold st-warning">у копії всі записи про здоров’я.</p>
       <h3 class="t-2nd-bold">експорт</h3>
       <div class="segmented" role="group" aria-label="що експортувати">${tab('records', 'записи')}${tab('exercises', 'вправи')}</div>
       ${warning}
@@ -358,7 +361,7 @@ function wire(host: HTMLElement, actions: SettingsActions, state: SettingsState)
     if (event.key === 'Escape' && state.sections.menu) actions.act({ act: 'menu-item', key: 'cancel' });
   });
   // «відновити з копії» is there while its part is open
-  if (state.open.has('ai')) wireRestore(host, actions.restore);
+  if (state.open.has('backup')) wireRestore(host, actions.restore);
   wireDrag(host, {
     drop: (from, target) => actions.act({ act: 'drop', from, target }),
     menu: (from, family) => actMoving(host, actions, { act: 'menu', slot: from, family }),

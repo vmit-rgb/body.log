@@ -326,13 +326,17 @@ class Draft implements SettingsPage {
     if (!copied) return this.say(NOT_A_COPY);
     if (russianReason(copied.profile)) return this.say(RUSSIAN_COPY);
     const n = Object.keys(copied.days).length;
+    // A-08 (Olesia, 2026-11-14): a copy of what is here now is offered before it is replaced
     const answer = await confirmDialog({
-      title: 'відновити з файлу?',
-      body: `записи й налаштування з файлу (${n} ${plural(n, DAYS)}) замінять ті, що є зараз.`,
-      confirm: 'відновити',
+      title: 'поточні дані буде замінено. спершу зберегти копію?',
+      body: `у файлі ${n} ${plural(n, DAYS)} записів і налаштування. вони замінять ті, що є зараз.`,
+      extra: 'зберегти й відновити',
+      confirm: 'відновити без збереження',
       cancel: 'скасувати',
     });
-    if (answer !== 'confirm') return;
+    if (answer === 'cancel') return;
+    // the phone refused the file: nothing is replaced without the copy the person asked for
+    if (answer === 'extra' && !this.home.saveCopy()) return;
     this.forget();
     this.home.restart(copied, RESTORED);
   }
