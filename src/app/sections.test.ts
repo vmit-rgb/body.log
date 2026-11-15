@@ -239,6 +239,18 @@ describe('ранкова розминка', () => {
     expect(host.textContent).toContain('30 с');
   });
 
+  it('refuses a time below zero and reads «1 000 с» (D-01)', async () => {
+    await tap('розгорнути: рівень 1');
+    await tap('30 с');
+    await type('-45');
+    expect(toastSays()).toBe('число не може бути від’ємним >_<');
+    expect(host.textContent).toContain('30 с');
+    await tap('30 с');
+    await type('1 000 с');
+    await save();
+    expect(at('morningWarmup.levels.0.items.1.seconds')).toBe(1000);
+  });
+
   it('makes an exercise timed and back', async () => {
     await tap('розгорнути: рівень 1');
     await tick('n с', 0);

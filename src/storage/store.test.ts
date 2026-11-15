@@ -33,6 +33,20 @@ describe('diaryStore', () => {
     expect(store.load()).toEqual(EXAMPLE_DIARY);
   });
 
+  it('hands out an entry it cannot read, as it is stored (D-02)', () => {
+    const store = diaryStore(localStorage, now);
+    expect(store.unreadable()).toBeNull();
+    localStorage.setItem(DIARY_KEY, '   ');
+    expect(store.unreadable()).toBeNull();
+    localStorage.setItem(DIARY_KEY, '{ broken');
+    expect(store.unreadable()).toBe('{ broken');
+    // a copy from a format this app doesn't know yet is not a first start either
+    localStorage.setItem(DIARY_KEY, '{"format":"phys-activity-backup","version":2,"profile":{},"days":{}}');
+    expect(store.unreadable()).toContain('"version":2');
+    store.save(EXAMPLE_DIARY);
+    expect(store.unreadable()).toBeNull();
+  });
+
   it('does not keep a readable entry aside', () => {
     localStorage.setItem(DIARY_KEY, serializeDiary(EXAMPLE_DIARY, now()));
     diaryStore(localStorage, now).save(EXAMPLE_DIARY);

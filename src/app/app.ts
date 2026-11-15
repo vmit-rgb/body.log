@@ -9,6 +9,8 @@ import { homeSession } from '../home/session';
 import { showFirstLaunch } from '../screens/first-launch';
 import { showHome } from '../screens/home';
 import { showInstallFirst } from '../screens/install-first';
+import { showUnreadable } from '../screens/unreadable';
+import { unreadableFileName } from '../domain/backup';
 import type { DiaryStore, sectionMemory } from '../storage/store';
 import { enter } from '../ui/motion';
 import type { Toast, ToastMessage } from '../ui/toast';
@@ -42,7 +44,9 @@ const UNDONE: ToastMessage = { message: 'скасовано', showIcon: true };
 const HAS_RECORDS: ToastMessage = { message: 'уже є записи, тож скасувати не вийде. налаштування можна змінити в меню' };
 const NOT_A_COPY: ToastMessage = { message: 'цей файл не схожий на копію з трекера', emoticon: '>_<' };
 const RESTORED: ToastMessage = { message: 'відновлено з файлу', emoticon: ':)', showIcon: true };
-const NOT_SAVED: ToastMessage = { message: 'не вдалося зберегти: схоже, на телефоні забракло місця', emoticon: '>_<' };
+const FILE_SAVED: ToastMessage = { message: 'збережено', showIcon: true };
+const FILE_NOT_SAVED: ToastMessage = { message: 'не вдалося зберегти файл', emoticon: '>_<' };
+const NOT_SAVED: ToastMessage ={ message: 'не вдалося зберегти: схоже, на телефоні забракло місця', emoticon: '>_<' };
 
 /** Stores the diary; false and the «no space» toast when the phone refuses. */
 function saved(store: DiaryStore, next: Diary, toast: Toast): boolean {
@@ -106,7 +110,7 @@ export function startApp(env: AppEnv): void {
     date = next;
     leave();
     let shown = current;
-    leave = showHome(host, { settings: readSettings(current.profile), days: current.days, date, today: env.today(), session, cameFrom }, {
+    leave = showHome(host, { settings: readSettings(current.profile), days: current.days, date, today: env.today(), session, cameFrom, inTab: !env.installed }, {
       goTo: (day) => {
         session.flush();
         showDay(shown, day);
@@ -137,10 +141,11 @@ export function startApp(env: AppEnv): void {
     if (screen === 'home' && diary) showDay(diary, date);
     else {
       if (screen === 'install-first') showInstallFirst(host, phoneOf(env.platform), useBrowser);
+      else if (screen === 'unreadable') showUnreadable(host, { saveAsFile: saveUnreadable, restore, startOver: () => show('first-launch') });
       else {
         showFirstLaunch(host, env.platform, {
           copyPrompt, applySettings: (text) => paste.apply(text), pasteAct: (act) => paste.act(act), pasteEdited: () => paste.reset(), restore, startWithoutAi,
-        });
+        }, !env.installed);
       }
       enter(host.firstElementChild);
     }
@@ -190,11 +195,20 @@ export function startApp(env: AppEnv): void {
   function restore(file: File): void {
     void restoreFrom(file, keep, toast);
   }
+  /** «зберегти як файл»: what is stored, exactly as it is (D-02). */
+  function saveUnreadable(): void {
+    try {
+      env.saveFile(unreadableFileName(env.today()), store.unreadable() ?? '');
+      toast.show(FILE_SAVED);
+    } catch {
+      toast.show(FILE_NOT_SAVED);
+    }
+  }
 
   env.whenHidden(() => {
     session.flush();
     log.saveNow();
   });
   if (diary) env.onDiary(diary);
-  show(startScreen({ hasDiary: diary !== null, installed: env.installed, platform: env.platform, browserChosen: browser.chosen() }));
+  show(startScreen({ hasDiary: diary !== null, unreadable: diary === null && store.unreadable() !== null, installed: env.installed, platform: env.platform, browserChosen: browser.chosen() }));
 }

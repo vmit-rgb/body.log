@@ -26,10 +26,12 @@ export function isInstalled(
   return matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 }
 
-export type StartScreen = 'home' | 'install-first' | 'first-launch';
+export type StartScreen = 'home' | 'install-first' | 'first-launch' | 'unreadable';
 
 export interface StartFacts {
   hasDiary: boolean;
+  /** Something is stored, but the app can't read it as a diary (D-02). */
+  unreadable: boolean;
   installed: boolean;
   platform: Platform;
   /** «подивитися тут, без встановлення» was chosen earlier */
@@ -41,8 +43,10 @@ export interface StartFacts {
  * is asked to install first, with a quiet way to go on; a computer goes
  * straight to the first screen.
  */
-export function startScreen({ hasDiary, installed, platform, browserChosen }: StartFacts): StartScreen {
+export function startScreen({ hasDiary, unreadable, installed, platform, browserChosen }: StartFacts): StartScreen {
   if (hasDiary) return 'home';
+  // never the first screen over records that are there: it would look as if they were gone
+  if (unreadable) return 'unreadable';
   const phoneInBrowser = !installed && platform !== 'unknown';
   return phoneInBrowser && !browserChosen ? 'install-first' : 'first-launch';
 }

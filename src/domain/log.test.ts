@@ -158,11 +158,21 @@ describe('movement laps', () => {
 
 describe('rememberNames', () => {
   it('keeps the names of the exercises used that day', () => {
-    const logged = day({ mw: { ticks: ['a', 'gone'], times: {}, rows: {} }, wo: { session: 's', ex: { x: [] }, rows: {} } });
+    const logged = day({ mw: { ticks: ['a', 'gone'], times: {}, rows: {} }, wo: { session: 's', ex: { x: [set(20, 10)] }, rows: {} } });
     expect(rememberNames(settings)(logged).names).toEqual({ a: 'вправа а', x: 'вправа х' });
   });
 
-  it('keeps names it already has', () => {
-    expect(rememberNames(settings)(day({ names: { old: 'стара' } })).names).toEqual({ old: 'стара' });
+  it('keeps no name for a workout exercise without a filled field (Olesia, 2026-11-14)', () => {
+    const untouched = day({ wo: { session: 's', ex: { x: [], b: [set(null), set(null)] }, rows: { x: 3 } } });
+    expect(rememberNames(settings)(untouched).names).toEqual({});
+  });
+
+  it('keeps the name it already has for a used exercise that is gone from the settings', () => {
+    const logged = day({ mw: { ticks: ['old'], times: {}, rows: {} }, names: { old: 'стара' } });
+    expect(rememberNames(settings)(logged).names).toEqual({ old: 'стара' });
+  });
+
+  it('lets go of the name of an exercise the day no longer uses', () => {
+    expect(rememberNames(settings)(day({ names: { x: 'вправа х' } })).names).toEqual({});
   });
 });

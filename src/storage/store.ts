@@ -25,6 +25,12 @@ export interface DiaryStore {
    * lives in memory only and is tried again on the next launch.
    */
   load(): Diary | null;
+  /**
+   * What is stored when the app can't read it as a diary (D-02): the text as
+   * it is, so the person can keep it as a file. Null with no entry, an empty
+   * one, or one that reads fine.
+   */
+  unreadable(): string | null;
   /** Throws when the phone refuses to store it (e.g. storage full). */
   save(diary: Diary): void;
   /** «стерти все»: no diary on this phone; an entry set aside as unreadable stays. */
@@ -51,6 +57,10 @@ export function diaryStore(storage: KeyValue, now: () => Date): DiaryStore {
         }
       }
       return read.diary;
+    },
+    unreadable() {
+      const stored = storage.getItem(DIARY_KEY);
+      return stored === null || stored.trim() === '' || parseDiary(stored) !== null ? null : stored;
     },
     save(diary) {
       const previous = storage.getItem(DIARY_KEY);

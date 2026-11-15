@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { DayKey } from './dates';
-import { backupLine, copyFileName, needsBackup } from './backup';
+import { backupLine, copyFileName, needsBackup, unreadableFileName } from './backup';
 
 const key = (text: string) => text as DayKey;
 const TODAY = key('2026-11-20');
@@ -30,7 +30,7 @@ describe('backupLine (COPY.md, Menu)', () => {
   });
 });
 
-describe('needsBackup: the reminder every 3 days (Olesia, 2026-10-29)', () => {
+describe('needsBackup: the reminder after 1 day (D-03; Olesia, 2026-11-08 and 2026-11-14)', () => {
   it('reminds when there are records and no copy', () => {
     expect(needsBackup(null, TODAY, true)).toBe(true);
   });
@@ -39,9 +39,20 @@ describe('needsBackup: the reminder every 3 days (Olesia, 2026-10-29)', () => {
     expect(needsBackup(null, TODAY, false)).toBe(false);
   });
 
-  it('reminds from the third day after the copy', () => {
-    expect(needsBackup(key('2026-11-18'), TODAY, true)).toBe(false);
+  it('stays quiet on the day of the copy and reminds from the next day', () => {
+    expect(needsBackup(TODAY, TODAY, true)).toBe(false);
+    expect(needsBackup(key('2026-11-19'), TODAY, true)).toBe(true);
     expect(needsBackup(key('2026-11-17'), TODAY, true)).toBe(true);
+  });
+
+  it('a copy dated after today (the clock moved back) does not remind', () => {
+    expect(needsBackup(key('2026-11-22'), TODAY, true)).toBe(false);
+  });
+});
+
+describe('unreadableFileName', () => {
+  it('does not name records the app could not read as a copy', () => {
+    expect(unreadableFileName(TODAY)).toBe('trekr-nechytani-zapysy-2026-11-20.json');
   });
 });
 

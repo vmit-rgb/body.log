@@ -27,11 +27,16 @@ describe('isInstalled', () => {
 
 describe('startScreen', () => {
   const facts = (over: Partial<StartFacts>): StartFacts => ({
-    hasDiary: false, installed: false, platform: 'android', browserChosen: false, ...over,
+    hasDiary: false, unreadable: false, installed: false, platform: 'android', browserChosen: false, ...over,
   });
 
   it('opens home when the diary is already set up', () => {
     expect(startScreen(facts({ hasDiary: true }))).toBe('home');
+  });
+  it('says the diary cannot be read instead of looking like a first start (D-02)', () => {
+    expect(startScreen(facts({ unreadable: true }))).toBe('unreadable');
+    expect(startScreen(facts({ unreadable: true, installed: true }))).toBe('unreadable');
+    expect(startScreen(facts({ unreadable: true, platform: 'unknown' }))).toBe('unreadable');
   });
   it('asks a phone in the browser to install first', () => {
     expect(startScreen(facts({ platform: 'android' }))).toBe('install-first');

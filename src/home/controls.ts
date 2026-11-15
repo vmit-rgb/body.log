@@ -10,6 +10,7 @@ import { bpm } from '../domain/stats';
 import {
   control, rowAdded, rowLeaving, rowsBack, rowsNow, sliderReset, sliderSaved, stopwatchMoved, stopwatchSeen, timeDissolves, workoutAssembles,
 } from './control-motion';
+import { forgetTyped, wireNumberErrors } from './number-errors';
 import { dropPulse, pulseRunning, PULSE_READY_MS, schedulePulse, type HomeSession } from './session';
 import { prepareSound } from './signal';
 
@@ -53,12 +54,14 @@ const planned = (c: SectionControls, exercise: string) => workoutItem(c, exercis
 /** Applies an edit that removes something and offers «скасувати». */
 function removeWithUndo(c: SectionControls, edit: Edit, message: string): void {
   const before = c.day();
+  forgetTyped(c.session, before.date);
   c.edit(edit, true);
   c.toast({
     message,
     showIcon: true,
     action: undo(() => {
       const rows = rowsNow(c.screen());
+      forgetTyped(c.session, before.date);
       c.edit(() => before, true);
       rowsBack(c.screen(), rows);
     }),
@@ -361,4 +364,5 @@ export function wireSections(root: HTMLElement, c: SectionControls): void {
     const field = event.target as HTMLInputElement;
     CHANGES[data(field, 'input')]?.(c, field);
   });
+  wireNumberErrors(root, c.session);
 }
