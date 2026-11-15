@@ -171,6 +171,15 @@ describe('stylesheets', () => {
     expect(css).toMatch(/:is\(\.accordion__icon, \.toast__check\)\[data-g\] \.icon \{ visibility: hidden; \}/);
   });
 
+  it('melt the bar of a 4 s toast only when motion is allowed, and stop it while the toast is held', () => {
+    const css = read('./components.css');
+    const moving = css.slice(css.indexOf('.toast__life[hidden]'));
+    expect(moving).toMatch(/@media \(prefers-reduced-motion: no-preference\) \{\s*:root:not\(\[data-no-motion\]\) \.toast__life \{\s*animation: toast-life 4s linear forwards;/);
+    // the pause must be as specific as the rule that starts the animation, or it never applies (seen in the browser)
+    expect(moving).toMatch(/:root:not\(\[data-no-motion\]\) \.toast--held \.toast__life \{\s*animation-play-state: paused;/);
+    expect(block(css, '.toast__life')).not.toContain('animation');
+  });
+
   it('draw × (and its ✓) in the sections at 16 px, tap zone untouched (Olesia, 2026-11-12)', () => {
     const rule = block(read('./sections.css'), '.rm .icon');
     expect(rule).toContain('width: 16px;');

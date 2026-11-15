@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { mountToast, undo, type Toast } from './toast';
+import { mountAnnouncer } from './announce';
+import { mountToast, TOAST_MS, undo, type Toast } from './toast';
 import { fakeAnimate } from './test-animate';
 
 describe('toast', () => {
@@ -15,9 +16,10 @@ describe('toast', () => {
     toast = mountToast(host);
   });
 
-  it('stays hidden until something happens, but is already announced as a status', () => {
+  it('stays hidden until something happens and is not a live region itself', () => {
     expect(box().hidden).toBe(true);
-    expect(box().getAttribute('role')).toBe('status');
+    expect(box().getAttribute('role')).toBe('region');
+    expect(box().getAttribute('aria-label')).toBe('повідомлення');
   });
 
   it('shows the message with the emoticon in its own accent span', () => {
@@ -34,14 +36,10 @@ describe('toast', () => {
     expect(host.querySelector('.toast__check')!.hasAttribute('hidden')).toBe(true);
   });
 
-  it('never closes on its own, only with ×', () => {
-    vi.useFakeTimers();
+  it('closes with × at any moment', () => {
     toast.show({ message: 'видалено', showIcon: true });
-    vi.advanceTimersByTime(60_000);
-    expect(box().hidden).toBe(false);
     close().click();
     expect(box().hidden).toBe(true);
-    vi.useRealTimers();
   });
 
   it('runs undo once and then says «скасовано» without another undo', () => {
@@ -79,6 +77,206 @@ describe('toast', () => {
   });
 });
 
+describe('how long a toast stays (ACCESSIBILITY.md rule 7)', () => {
+  let host: HTMLElement;
+  let toast: Toast;
+  const box = () => host.querySelector<HTMLElement>('.toast')!;
+  const life = () => host.querySelector<HTMLElement>('.toast__life')!;
+  const action = () => host.querySelector<HTMLButtonElement>('.toast__action')!;
+  const close = () => host.querySelector<HTMLButtonElement>('.toast__close')!;
+  const wait = (ms: number) => vi.advanceTimersByTime(ms);
+  const say = (type: string, init: FocusEventInit = {}) => box().dispatchEvent(new FocusEvent(type, { bubbles: true, ...init }));
+  const tick = () => Promise.resolve();
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    document.body.innerHTML = '';
+    host = document.body;
+    toast = mountToast(host);
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('closes a success or neutral message after 4 s, and shows the time on its top stroke', () => {
+    toast.show({ message: 'збережено', showIcon: true });
+    expect(life().hidden).toBe(false);
+    wait(TOAST_MS - 1);
+    expect(box().hidden).toBe(false);
+    wait(1);
+    expect(box().hidden).toBe(true);
+  });
+
+  it('counts the 4 s anew for a message that replaces another', () => {
+    toast.show({ message: 'один' });
+    const first = life();
+    wait(3000);
+    toast.show({ message: 'два' });
+    expect(life()).not.toBe(first);
+    wait(3000);
+    expect(box().hidden).toBe(false);
+    wait(1000);
+    expect(box().hidden).toBe(true);
+  });
+
+  it('keeps «скасувати» until × or the next change, without the stroke', async () => {
+    toast.show({ message: 'підхід видалено', showIcon: true, action: undo(() => {}) });
+    expect(life().hidden).toBe(true);
+    wait(600_000);
+    expect(box().hidden).toBe(false);
+    toast.changed();
+    await tick();
+    expect(box().hidden).toBe(true);
+  });
+
+  it('F-01: a change that brings its own toast replaces the old «скасувати» in place', async () => {
+    const first = vi.fn();
+    const second = vi.fn();
+    toast.show({ message: 'коло видалено', action: undo(first) });
+    toast.changed();
+    toast.show({ message: 'підхід видалено', action: undo(second) });
+    await tick();
+    expect(box().hidden).toBe(false);
+    action().click();
+    expect(first).not.toHaveBeenCalled();
+    expect(second).toHaveBeenCalledTimes(1);
+  });
+
+  it('F-01: what «скасувати» itself changes does not close its «скасовано»', async () => {
+    toast.show({ message: 'видалено', action: undo(() => toast.changed()) });
+    action().click();
+    await tick();
+    expect(box().hidden).toBe(false);
+    expect(host.querySelector('.toast__message')!.textContent).toBe('скасовано');
+    wait(TOAST_MS);
+    expect(box().hidden).toBe(true);
+  });
+
+  it('keeps «є нова версія» until × or «оновити»: a change does not close it', async () => {
+    toast.show({ message: 'є нова версія', emoticon: ':)', action: { label: 'оновити', run: () => {} } });
+    wait(600_000);
+    toast.changed();
+    await tick();
+    expect(box().hidden).toBe(false);
+    close().click();
+    expect(box().hidden).toBe(true);
+  });
+
+  it('keeps an error until ×', () => {
+    toast.show({ message: 'не вдалося зберегти файл', emoticon: '>_<', error: true });
+    expect(life().hidden).toBe(true);
+    wait(600_000);
+    expect(box().hidden).toBe(false);
+  });
+
+  it('A-02: a message about one screen goes when another screen comes; others stay', () => {
+    toast.show({ message: 'форму ще робимо, скоро буде', local: true });
+    toast.screenChanged();
+    expect(box().hidden).toBe(true);
+    toast.show({ message: 'копію збережено', showIcon: true });
+    toast.screenChanged();
+    expect(box().hidden).toBe(false);
+  });
+
+  it('B-09: does not close while the focus is on it, and goes when the focus leaves', () => {
+    toast.show({ message: 'збережено' });
+    wait(1000);
+    close().focus();
+    say('focusin');
+    expect(box().classList).toContain('toast--held');
+    wait(600_000);
+    expect(box().hidden).toBe(false);
+    say('focusout', { relatedTarget: null });
+    expect(box().hidden).toBe(true);
+  });
+
+  it('B-09: the focus a tap leaves on a button does not hold the toast', () => {
+    toast.show({ message: 'збережено' });
+    box().dispatchEvent(new Event('pointerdown'));
+    close().focus();
+    expect(box().classList).not.toContain('toast--held');
+    wait(TOAST_MS);
+    expect(box().hidden).toBe(true);
+  });
+
+  it('B-09: the focus moving inside the toast is not leaving it', () => {
+    toast.show({ message: 'збережено' });
+    close().focus();
+    say('focusin');
+    say('focusout', { relatedTarget: close() });
+    expect(box().hidden).toBe(false);
+  });
+
+  it('B-09: waits while a finger or the pointer is on it, then counts what was left', () => {
+    toast.show({ message: 'збережено' });
+    wait(3000);
+    box().dispatchEvent(new Event('pointerenter'));
+    wait(600_000);
+    expect(box().hidden).toBe(false);
+    box().dispatchEvent(new Event('pointerleave'));
+    expect(box().classList).not.toContain('toast--held');
+    wait(999);
+    expect(box().hidden).toBe(false);
+    wait(1);
+    expect(box().hidden).toBe(true);
+  });
+
+  it('B-09: a toast closed under the pointer does not hold the next one', () => {
+    toast.show({ message: 'один' });
+    box().dispatchEvent(new Event('pointerenter'));
+    close().click();
+    toast.show({ message: 'два' });
+    wait(TOAST_MS);
+    expect(box().hidden).toBe(true);
+  });
+
+  it('keeps the focus in the toast when «скасувати» gives way to «скасовано»', () => {
+    toast.show({ message: 'видалено', action: undo(() => {}) });
+    action().focus();
+    action().click();
+    expect(document.activeElement).toBe(close());
+  });
+
+  it('«вимкнути зникання повідомлень»: every toast stays until ×, without the stroke', () => {
+    toast.keep(true);
+    toast.show({ message: 'збережено' });
+    expect(life().hidden).toBe(true);
+    wait(600_000);
+    expect(box().hidden).toBe(false);
+    close().click();
+    expect(box().hidden).toBe(true);
+  });
+
+  it('«вимкнути зникання повідомлень» switched off starts the 4 s of the toast shown', () => {
+    toast.keep(true);
+    toast.show({ message: 'збережено' });
+    toast.keep(false);
+    expect(life().hidden).toBe(false);
+    wait(TOAST_MS);
+    expect(box().hidden).toBe(true);
+  });
+});
+
+describe('what a screen reader hears from a toast (B-09)', () => {
+  let toast: Toast;
+  beforeEach(() => {
+    document.body.innerHTML = '';
+    toast = mountToast(document.body);
+  });
+
+  it('hears the message whole, from the region that is always there', () => {
+    const region = mountAnnouncer();
+    toast.show({ message: 'копію збережено', showIcon: true });
+    expect(mountAnnouncer()).toBe(region);
+    expect(region.textContent).toBe('копію збережено');
+  });
+
+  it('hears the button after the message, and not the emoticon', () => {
+    toast.show({ message: 'збережено', emoticon: ':)', action: undo(() => {}) });
+    expect(mountAnnouncer().textContent).toBe('збережено. скасувати');
+  });
+});
+
 describe('toast in motion (MICROINTERACTIONS.md)', () => {
   let fake: ReturnType<typeof fakeAnimate>;
   let host: HTMLElement;
@@ -109,6 +307,15 @@ describe('toast in motion (MICROINTERACTIONS.md)', () => {
     expect(host.querySelector('.toast__message')!.textContent).toBe('ок :)');
     expect(fake.on(host.querySelector('.toast__emoticon'))).toHaveLength(1);
     expect(fake.played.filter((run) => run.el.classList.contains('fx-ch'))).toHaveLength(3);
+  });
+
+  it('B-09: leaves the typed letters as plain text once they are in', () => {
+    toast.show({ message: 'ок', emoticon: ':)' });
+    vi.advanceTimersByTime(600);
+    const message = host.querySelector('.toast__message')!;
+    expect(message.querySelector('.fx-ch')).toBeNull();
+    expect(message.textContent).toBe('ок :)');
+    expect(message.querySelector('.toast__emoticon')!.textContent).toBe(':)');
   });
 
   it('assembles ✓ out of characters', () => {
