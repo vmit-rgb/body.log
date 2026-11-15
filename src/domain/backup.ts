@@ -5,8 +5,12 @@ import { daysBetween, type DayKey } from './dates';
  * The day of the last copy is kept on this phone only, not in the copy itself.
  */
 
-/** The reminder shows from this many days after the last copy (Olesia, 2026-10-29: fixed). */
-export const REMIND_AFTER_DAYS = 3;
+/**
+ * The reminder shows from this many days after the last copy: 1 (D-03;
+ * Olesia, 2026-11-08 and again 2026-11-14: «воно ненав'язливо і легко
+ * ігнорується»). It was 3 until then.
+ */
+export const REMIND_AFTER_DAYS = 1;
 
 /** «1 день», «3 дні», «5 днів», «21 день»… */
 function dayWord(n: number): string {
@@ -26,7 +30,7 @@ export function backupLine(saved: DayKey | null, today: DayKey): string {
   return n === 0 ? 'остання копія — сьогодні' : `остання копія — ${n} ${dayWord(n)} тому`;
 }
 
-/** Remind when there are records and no copy, or the copy is 3 days old or older. */
+/** Remind when there are records and no copy, or the copy is from yesterday or older. */
 export function needsBackup(saved: DayKey | null, today: DayKey, hasRecords: boolean): boolean {
   return saved === null ? hasRecords : daysSince(saved, today) >= REMIND_AFTER_DAYS;
 }
@@ -34,4 +38,9 @@ export function needsBackup(saved: DayKey | null, today: DayKey, hasRecords: boo
 /** The same name «бета 0.81» gives its copies. */
 export function copyFileName(today: DayKey): string {
   return `trekr-kopiya-${today}.json`;
+}
+
+/** What the phone stores but the app can't read, saved as it is (D-02); not a copy, so not named as one. */
+export function unreadableFileName(today: DayKey): string {
+  return `trekr-nechytani-zapysy-${today}.json`;
 }

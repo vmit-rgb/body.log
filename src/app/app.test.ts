@@ -304,6 +304,68 @@ describe('coming back', () => {
   });
 });
 
+describe('coming back to a diary the app cannot read (D-02)', () => {
+  const BROKEN = '{"format":"phys-activity-backup","version":1,"profile":{"lang":"uk"},"days":{"2026-11-07":{"note":"вправа';
+
+  beforeEach(() => {
+    localStorage.setItem(DIARY_KEY, BROKEN);
+    start();
+  });
+
+  it('says so, instead of greeting as if nothing was ever logged', () => {
+    expect(heading()).toBe('не вдалося прочитати щоденник');
+    expect(host.textContent).toContain('записи на місці, але застосунок не може їх відкрити.');
+    expect(host.querySelector('[data-copy-prompt]')).toBeNull();
+    expect(localStorage.getItem(DIARY_KEY)).toBe(BROKEN);
+  });
+
+  it('«зберегти як файл» hands over what is stored, untouched', () => {
+    click('[data-save-file]');
+    expect(device.saved).toEqual([{ name: 'trekr-nechytani-zapysy-2026-11-09.json', text: BROKEN }]);
+    expect(toastSays()).toBe('✓ збережено');
+    expect(localStorage.getItem(DIARY_KEY)).toBe(BROKEN);
+  });
+
+  it('says so when the phone refuses the file', () => {
+    device.saveWorks = false;
+    click('[data-save-file]');
+    expect(toastSays()).toBe('не вдалося зберегти файл >_<');
+  });
+
+  it('«відновити з копії» brings a copy in and keeps the unread entry aside', async () => {
+    await restoreFile(COPY_081);
+    expect(heading()).toBe('головна');
+    expect(Object.keys(stored()!.days)).toEqual(['2026-11-07']);
+    expect(localStorage.getItem(`${DIARY_KEY}/unreadable`)).toBe(BROKEN);
+  });
+
+  it('a file that is not a copy changes nothing', async () => {
+    await restoreFile('не копія');
+    expect(heading()).toBe('не вдалося прочитати щоденник');
+    expect(localStorage.getItem(DIARY_KEY)).toBe(BROKEN);
+  });
+
+  it('«почати заново» opens the first screen and touches nothing until something is saved', () => {
+    click('[data-start-over]');
+    expect(heading()).toBe('привіт! почнімо з налаштувань :)');
+    expect(localStorage.getItem(DIARY_KEY)).toBe(BROKEN);
+    click('[data-start-without-ai]');
+    expect(heading()).toBe('головна');
+    expect(localStorage.getItem(`${DIARY_KEY}/unreadable`)).toBe(BROKEN);
+  });
+
+  it('shows the same screen again next time when nothing was saved', () => {
+    click('[data-start-over]');
+    start();
+    expect(heading()).toBe('не вдалося прочитати щоденник');
+  });
+
+  it('comes first even on a phone in the browser', () => {
+    start({ platform: 'iphone', installed: false });
+    expect(heading()).toBe('не вдалося прочитати щоденник');
+  });
+});
+
 describe('coming back with a diary from before format 0.1', () => {
   it('converts the old `timed` and `side` once, shows the exercises as before and keeps the days', () => {
     // invented: the shape «бета 0.81» leaves on the phone
