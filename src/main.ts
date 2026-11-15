@@ -23,6 +23,7 @@ import { mountToast } from './ui/toast';
 import { wireTapMotion } from './ui/taps';
 import { wireNotes } from './ui/notes';
 import { leaveLoading } from './ui/boot';
+import { within } from './ui/patience';
 import { copyWith, saveFile, screenHistory, shareWith } from './ui/device';
 import type { PdfFonts } from './pdf/pdf';
 
@@ -76,7 +77,8 @@ startApp({
   backups: backupMemory(storage),
   saveFile: (name, content) => saveFile(document, name, content),
   // a separate file, loaded with the first PDF (and kept offline with the rest)
-  pdfFonts: async () => (await import('./pdf/noto-sans-mono-pdf.json')).default as PdfFonts,
+  // D-10: a font that never arrives becomes «не вдалося зібрати PDF» after 7 s, not an endless spinner
+  pdfFonts: () => within(import('./pdf/noto-sans-mono-pdf.json').then((font) => font.default as PdfFonts)),
   share: (data) => shareWith(navigator, data),
   copyText: (text) => copyWith(navigator.clipboard, text),
   now: () => new Date(),

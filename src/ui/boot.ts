@@ -40,7 +40,8 @@ export function leaveLoading(doc: Document, host: HTMLElement, sinceStart: numbe
     layer.remove();
     return;
   }
-  // the app under it is ready: taps go through at once
+  // the app under it is ready: taps go through at once, and index.html's 7 s check leaves it alone (D-10)
+  layer.dataset.leaving = '';
   layer.style.pointerEvents = 'none';
   layer.removeAttribute('role');
   const wait = Math.max(0, Math.round(MS.s - sinceStart));
