@@ -203,6 +203,17 @@ describe('workout', () => {
     expect($('.bar__goal').textContent).toBe('цей тиждень: 2 з 3 днів');
   });
 
+  it('an exercise without a single filled field leaves nothing in the records (Olesia, 2026-11-14)', () => {
+    type(byLabel<HTMLInputElement>('присідання, підхід 1, вага, кг'), '20');
+    // typed and emptied again: the same as never touched
+    type(byLabel<HTMLInputElement>('присідання, підхід 1, вага, кг'), '');
+    expect(saved().wo!.ex).toEqual({});
+    expect(saved().names).toEqual({});
+    type(byLabel<HTMLInputElement>('присідання, підхід 2, повторення'), '8');
+    expect(Object.keys(saved().wo!.ex)).toEqual(['w']);
+    expect(saved().names).toEqual({ w: 'присідання' });
+  });
+
   it('«додати підхід» adds a row; × removes it after a second tap, with «скасувати»', () => {
     byText('додати підхід').click();
     expect(host.querySelectorAll('.wo-ex')[0]!.querySelectorAll('.set-row')).toHaveLength(3);

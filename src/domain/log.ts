@@ -1,4 +1,4 @@
-import type { Answer, Day, MovementLog, SetLog } from './day';
+import { hasSet, type Answer, type Day, type MovementLog, type SetLog } from './day';
 import type { Level, Moment, Settings } from './settings';
 
 /*
@@ -114,9 +114,16 @@ export const removeLap = (kind: string, index: number): Edit => (day) => {
   return { ...day, mv: laps.length ? { ...day.mv, [kind]: laps } : omit(day.mv, kind) };
 };
 
-/** Keeps the names of the exercises used that day, so a deleted exercise still reads fine later (0.81). */
+/**
+ * Keeps the names of the exercises used that day, so a deleted exercise still reads fine later (0.81).
+ * A workout exercise without a single filled field was not done: nothing of it goes into the
+ * records, its name included (Olesia, 2026-11-14), also when a field was filled and emptied again.
+ * Only the day being edited is touched; days stored before stay as they are.
+ */
 export const rememberNames = (settings: Settings): Edit => (day) => {
-  const used = [...day.mw.ticks, ...Object.keys(day.wo?.ex ?? {})];
+  const done = Object.entries(day.wo?.ex ?? {}).filter(([, sets]) => sets.some(hasSet)).map(([id]) => id);
+  const used = [...day.mw.ticks, ...done];
+  const kept = Object.entries(day.names).filter(([id]) => used.includes(id));
   const named = settings.exercises.filter((exercise) => used.includes(exercise.id));
-  return { ...day, names: { ...day.names, ...Object.fromEntries(named.map((exercise) => [exercise.id, exercise.name])) } };
+  return { ...day, names: { ...Object.fromEntries(kept), ...Object.fromEntries(named.map((exercise) => [exercise.id, exercise.name])) } };
 };
