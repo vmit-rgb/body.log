@@ -10,7 +10,7 @@ import type { Toast, ToastMessage } from '../ui/toast';
 export const SAVE_DELAY_MS = 400;
 
 /* COPY.md, Home: «save error» */
-const LOG_NOT_SAVED: ToastMessage = { message: 'не вдалося зберегти :( спробуй ще раз. якщо повторюється — збережи копію в меню.' };
+const LOG_NOT_SAVED: ToastMessage = { message: 'не вдалося зберегти :( спробуй ще раз. якщо повторюється — збережи копію в меню.', error: true };
 
 export interface LogKeeper {
   /** The diary with the edit applied to one day; saved a moment later. */

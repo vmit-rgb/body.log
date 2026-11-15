@@ -146,6 +146,13 @@ describe('first launch in the installed app', () => {
     expect(toastSays()).toBe('✓ збережено :)');
   });
 
+  it('names a pasted «вимкнути зникання повідомлень» in the preview and keeps it', () => {
+    pasteText(JSON.stringify({ ...PASTED, accessibility: { keepToasts: true } }));
+    expect(result().textContent).toContain('доступність: повідомлення не зникають');
+    resultButton('зберегти').click();
+    expect(stored()!.profile.accessibility).toEqual({ keepToasts: true });
+  });
+
   it('accepts first settings without `theme`: the colour is the usual one', () => {
     const { theme: _theme, ...noTheme } = PASTED;
     pasteText(JSON.stringify(noTheme));

@@ -36,6 +36,7 @@ describe('profile edits keep what they don’t touch', () => {
     expect(next.theme).toEqual(PROFILE.theme);
     expect(next.accessibility).toEqual({
       noMotion: true, noBackgroundMotion: false, noVibration: false, noSound: false, largerTargets: false, largerText: true, mirrored: false,
+      keepToasts: false,
     });
   });
 

@@ -34,9 +34,9 @@ export interface PasteDeps {
 }
 
 const COPIED: ToastMessage = { message: 'скопійовано — встав у чат зі своїм ШІ', showIcon: true };
-const NOT_COPIED: ToastMessage = { message: 'не вдалося скопіювати', emoticon: '>_<' };
+const NOT_COPIED: ToastMessage = { message: 'не вдалося скопіювати', emoticon: '>_<', error: true };
 /** «відновити з копії» refuses a copy whose settings are russian (D-05). Serious: no emoticon. Нитка's draft. */
-export const RUSSIAN_COPY: ToastMessage = { message: 'копію не відновлено: налаштування в ній російською мовою.' };
+export const RUSSIAN_COPY: ToastMessage = { message: 'копію не відновлено: налаштування в ній російською мовою.', error: true };
 
 /** «скопіювати промпт»: the bundled prompt file goes to the clipboard; the toast names its version (Olesia, 2026-11-15). */
 export async function copyPrompt(copyText: (text: string) => Promise<boolean>, say: (message: ToastMessage) => void): Promise<boolean> {

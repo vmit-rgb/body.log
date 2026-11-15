@@ -13,7 +13,9 @@ import { iconSvg } from '../ui/icons';
 import { smallUnits } from '../ui/units';
 import { withGrip } from '../ui/grip';
 import { beatsLine } from '../domain/stats';
-import { formatCountdown, formatStopwatch, pulseRunning, pulseTime, stopwatchState, type HomeSession, type PulseRun, type StopwatchState } from './session';
+import {
+  formatCountdown, formatStopwatch, PULSE_SAYS, pulseQuestion, pulseRunning, pulseTime, stopwatchState, type HomeSession, type PulseRun, type StopwatchState,
+} from './session';
 
 /*
  * The inside of the home sections (Figma `activity/section` 112:4468 and its
@@ -241,17 +243,16 @@ function pulseTimer(ctx: SectionContext, moment: Moment, tracker: Tracker & { ki
 
 /** «приготуйся» / «рахуй удари» while it runs; «42 удари за 30 с × 2» after «готово», until the day changes. */
 function pulseNote(run: PulseRun | null): string {
-  if (run?.phase === 'ready') return '<p class="pulse__note t-3rd-regular muted" role="status">приготуйся</p>';
-  if (run?.phase === 'counting') return '<p class="pulse__note t-3rd-regular muted" role="status">рахуй удари</p>';
+  if (run?.phase === 'ready' || run?.phase === 'counting') return `<p class="pulse__note t-3rd-regular muted">${PULSE_SAYS[run.phase]}</p>`;
   if (run?.phase === 'done') return `<p class="pulse__note t-3rd-regular muted">${beatsLine(run.beats ?? 0, run.seconds)}</p>`;
   return '';
 }
 
 /** «скільки ударів за 30 с?», the field, «готово» and «скасувати». */
 function pulseBeats(run: PulseRun, data: string): string {
-  const question = `скільки ударів за ${run.seconds} с?`;
+  const question = pulseQuestion(run.seconds);
   return `
-    <p class="pulse__note t-1st-regular" role="status">${question}</p>
+    <p class="pulse__note t-1st-regular">${question}</p>
     <div class="labeled__fields">${numberField({ key: `${run.key}|beats`, label: question, value: '', unit: 'ударів', data: 'data-input="beats"' })}
       <button type="button" class="ctl btn btn--primary" data-act="pulse-done" ${data}>готово</button>
       <button type="button" class="ctl btn btn--tertiary" data-act="pulse-cancel" ${data}>скасувати</button></div>`;

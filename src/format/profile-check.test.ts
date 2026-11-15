@@ -36,6 +36,11 @@ describe('checkProfile: what passes', () => {
     expect(checkProfile({ ...rest, accessibility: { largerText: true } })).toEqual({ issues: [], unknown: [] });
   });
 
+  it('knows «вимкнути зникання повідомлень» as the eighth switch of «доступність», true or false only', () => {
+    expect(checkProfile({ ...example, accessibility: { keepToasts: true } })).toEqual({ issues: [], unknown: [] });
+    expect(checkProfile({ ...example, accessibility: { keepToasts: 'так' } }).issues).toHaveLength(1);
+  });
+
   it('takes `reps` as text or as a whole number', () => {
     expect(issuesAt('morningWarmup.levels.0.items.0.reps', 10)).toEqual([]);
     expect(issuesAt('morningWarmup.levels.0.items.0.reps', '8–12 на кожну ногу')).toEqual([]);

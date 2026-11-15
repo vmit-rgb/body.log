@@ -74,11 +74,12 @@ export interface Home {
 
 /* COPY.md, Toasts; «не вдалося зберегти файл» as «бета 0.81» says it. */
 const COPY_SAVED: ToastMessage = { message: 'копію збережено', showIcon: true };
-const FILE_NOT_SAVED: ToastMessage = { message: 'не вдалося зберегти файл', emoticon: '>_<' };
+const FILE_NOT_SAVED: ToastMessage = { message: 'не вдалося зберегти файл', emoticon: '>_<', error: true };
 const LINK_COPIED: ToastMessage = { message: 'посилання скопійовано — надішли, кому хочеш', emoticon: ':)', showIcon: true };
 /* Нитка's drafts (stage 6a): what the menu offers before it is built. */
-const NOT_SHARED: ToastMessage = { message: 'не вдалося поділитися', emoticon: '>_<' };
-const soon = (message: string): ToastMessage => ({ message, emoticon: ':)' });
+const NOT_SHARED: ToastMessage = { message: 'не вдалося поділитися', emoticon: '>_<', error: true };
+/* A-02: «скоро» speaks about the screen it came on and goes with it. */
+const soon = (message: string): ToastMessage => ({ message, emoticon: ':)', local: true });
 const FEEDBACK_SOON = soon('форму для фідбеку ще робимо, скоро буде');
 
 /** «поділитися застосунком» (Figma caption, Нитка's draft): the landing page, not the app itself. */
@@ -207,6 +208,8 @@ export function pagesOverHome(env: DeviceEnv, home: Home): { open(page: Page): v
     const page = pages.at(-1);
     const from = drawn;
     drawn = page;
+    // A-02: a toast about the screen before does not follow to this one
+    if (page !== from) home.toast.screenChanged();
     if (page) home.replace(SCREENS[page], comeInFor(page, from));
     else home.showHome(home.date());
   }

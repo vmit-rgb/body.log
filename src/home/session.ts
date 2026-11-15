@@ -51,6 +51,13 @@ export interface PulseRun {
   readonly beats: number | null;
 }
 
+/**
+ * What the pulse timer says in each phase: on screen, and to a screen reader
+ * through the announcer (B-02: the lines themselves are drawn anew each time).
+ */
+export const PULSE_SAYS = { ready: 'приготуйся', counting: 'рахуй удари' } as const;
+export const pulseQuestion = (seconds: number) => `скільки ударів за ${seconds} с?`;
+
 /** Time to find the pulse before the count starts (Olesia, 2026-11-12). */
 export const PULSE_READY_MS = 3000;
 

@@ -1,4 +1,5 @@
-import type { DayKey } from '../domain/dates';
+import { formatLong, type DayKey } from '../domain/dates';
+import type { Day } from '../domain/day';
 import { readCopy, type Diary } from '../domain/diary';
 import { EXAMPLE_DIARY } from '../domain/examples';
 import { readSettings } from '../domain/settings';
@@ -12,6 +13,7 @@ import { showInstallFirst } from '../screens/install-first';
 import { showUnreadable } from '../screens/unreadable';
 import { unreadableFileName } from '../domain/backup';
 import type { DiaryStore, sectionMemory } from '../storage/store';
+import { announce } from '../ui/announce';
 import { enter } from '../ui/motion';
 import type { Toast, ToastMessage } from '../ui/toast';
 import { copyPrompt as copyPromptText, PasteFlow, RUSSIAN_COPY } from './paste-flow';
@@ -41,12 +43,12 @@ export interface AppEnv extends DeviceEnv {
 const SAVED: ToastMessage = { message: 'збережено', emoticon: ':)', showIcon: true };
 const UNDONE: ToastMessage = { message: 'скасовано', showIcon: true };
 /* Нитка's draft. */
-const HAS_RECORDS: ToastMessage = { message: 'уже є записи, тож скасувати не вийде. налаштування можна змінити в меню' };
-const NOT_A_COPY: ToastMessage = { message: 'цей файл не схожий на копію з трекера', emoticon: '>_<' };
+const HAS_RECORDS: ToastMessage = { message: 'уже є записи, тож скасувати не вийде. налаштування можна змінити в меню', error: true };
+const NOT_A_COPY: ToastMessage = { message: 'цей файл не схожий на копію з трекера', emoticon: '>_<', error: true };
 const RESTORED: ToastMessage = { message: 'відновлено з файлу', emoticon: ':)', showIcon: true };
 const FILE_SAVED: ToastMessage = { message: 'збережено', showIcon: true };
-const FILE_NOT_SAVED: ToastMessage = { message: 'не вдалося зберегти файл', emoticon: '>_<' };
-const NOT_SAVED: ToastMessage ={ message: 'не вдалося зберегти: схоже, на телефоні забракло місця', emoticon: '>_<' };
+const FILE_NOT_SAVED: ToastMessage = { message: 'не вдалося зберегти файл', emoticon: '>_<', error: true };
+const NOT_SAVED: ToastMessage = { message: 'не вдалося зберегти: схоже, на телефоні забракло місця', emoticon: '>_<', error: true };
 
 /** Stores the diary; false and the «no space» toast when the phone refuses. */
 function saved(store: DiaryStore, next: Diary, toast: Toast): boolean {
@@ -75,10 +77,20 @@ export function startApp(env: AppEnv): void {
   let diary = store.load();
   let date = env.today();
   let leave = () => {};
+  /** Home is the screen shown now. */
+  let onHome = false;
+  /** «вимкнути зникання повідомлень» follows the settings shown, saved or still a draft. */
+  const followToasts = (profile: Diary['profile']) => toast.keep(readSettings(profile).accessibility.keepToasts);
   const session = homeSession();
   const log = logKeeper(store, toast);
   // the menu opens only from home, so there is a diary whenever it asks
-  const pages = pagesOverHome(env, {
+  const pages = pagesOverHome({
+    ...env,
+    look(profile) {
+      env.look(profile);
+      followToasts(profile);
+    },
+  }, {
     host,
     toast,
     today: env.today,
@@ -86,11 +98,15 @@ export function startApp(env: AppEnv): void {
     date: () => date,
     // after «стерти все» there is no diary, and `show` gives the first screen instead
     showHome(day) {
+      const moved = day !== date;
       date = day;
       show('home');
+      // B-02: home on another day (from the menu's arrows, the history): the day is said, as on home itself
+      if (moved && diary) announce(formatLong(day));
     },
     replace(draw, comeIn) {
       leave();
+      onHome = false;
       leave = draw();
       document.documentElement.scrollTop = 0;
       comeIn(host);
@@ -109,6 +125,7 @@ export function startApp(env: AppEnv): void {
     const cameFrom = date;
     date = next;
     leave();
+    onHome = true;
     let shown = current;
     leave = showHome(host, { settings: readSettings(current.profile), days: current.days, date, today: env.today(), session, cameFrom, inTab: !env.installed }, {
       goTo: (day) => {
@@ -123,19 +140,36 @@ export function startApp(env: AppEnv): void {
       sectionOpen: env.sections.open,
       rememberSection: env.sections.remember,
       edit(change, render) {
+        // F-01: «скасувати» for an earlier change is no longer true
+        toast.changed();
         shown = log.edit(shown, date, change);
         diary = shown;
         if (render) showDay(shown, date);
         return shown.days;
       },
+      restore: restoreDay,
       refresh: () => showDay(shown, date),
       toast: (message) => toast.show(message),
     });
   }
 
+  /**
+   * «скасувати» on home (F-01): puts a day back as it was, under its own
+   * date, whatever day or screen is shown by now. Nothing else can have
+   * changed since: the next change closes the toast.
+   */
+  function restoreDay(day: Day): void {
+    if (!diary) return;
+    diary = log.edit(diary, day.date, () => day);
+    if (onHome) showDay(diary, date);
+  }
+
   function show(screen: StartScreen): void {
     leave();
     leave = () => {};
+    onHome = false;
+    // A-02: a toast about the screen before does not follow to this one
+    toast.screenChanged();
     paste.reset();
     // home is only chosen when there is a diary (startScreen)
     if (screen === 'home' && diary) showDay(diary, date);
@@ -155,8 +189,11 @@ export function startApp(env: AppEnv): void {
   /** Stores the diary and makes it the one shown; false (and a toast) when the phone refuses. */
   function persist(next: Diary): boolean {
     if (!saved(store, next, toast)) return false;
+    // F-01: «скасувати» for an earlier change is no longer true
+    toast.changed();
     diary = next;
     env.onDiary(next);
+    followToasts(next.profile);
     return true;
   }
 
@@ -209,6 +246,9 @@ export function startApp(env: AppEnv): void {
     session.flush();
     log.saveNow();
   });
-  if (diary) env.onDiary(diary);
+  if (diary) {
+    env.onDiary(diary);
+    followToasts(diary.profile);
+  }
   show(startScreen({ hasDiary: diary !== null, unreadable: diary === null && store.unreadable() !== null, installed: env.installed, platform: env.platform, browserChosen: browser.chosen() }));
 }

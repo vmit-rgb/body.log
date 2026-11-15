@@ -79,11 +79,12 @@ interface Activity { readonly enabled: boolean; readonly weeklyTarget: number; r
 
 /**
  * Settings section «доступність» (ACCESSIBILITY.md; stored in the profile,
- * Olesia 2026-11-08). `noSound` is the seventh checkbox (Olesia, 2026-11-10).
+ * Olesia 2026-11-08). `noSound` is the seventh checkbox (Olesia, 2026-11-10),
+ * `keepToasts` («вимкнути зникання повідомлень») the eighth (Olesia, 2026-11-15).
  * All off by default.
  */
 export const ACCESSIBILITY_KEYS = [
-  'noMotion', 'noBackgroundMotion', 'noVibration', 'noSound', 'largerTargets', 'largerText', 'mirrored',
+  'noMotion', 'noBackgroundMotion', 'noVibration', 'noSound', 'largerTargets', 'largerText', 'mirrored', 'keepToasts',
 ] as const;
 export type AccessibilityKey = (typeof ACCESSIBILITY_KEYS)[number];
 export type Accessibility = Readonly<Record<AccessibilityKey, boolean>>;
