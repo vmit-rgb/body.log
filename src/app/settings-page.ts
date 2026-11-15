@@ -71,12 +71,12 @@ export interface SettingsPage {
 /* COPY.md, Toasts and Settings; Нитка's drafts marked. */
 const SAVED: ToastMessage = { message: 'збережено', emoticon: ':)', showIcon: true };
 const COPIED: ToastMessage = { message: 'скопійовано — встав у чат зі своїм ШІ', showIcon: true };
-const NOT_COPIED: ToastMessage = { message: 'не вдалося скопіювати', emoticon: '>_<' }; // draft
+const NOT_COPIED: ToastMessage = { message: 'не вдалося скопіювати', emoticon: '>_<', error: true }; // draft
 const FILE_SAVED: ToastMessage = { message: 'збережено', showIcon: true };
-const FILE_NOT_SAVED: ToastMessage = { message: 'не вдалося зберегти файл', emoticon: '>_<' };
-const NOT_A_COPY: ToastMessage = { message: 'цей файл не схожий на копію з трекера', emoticon: '>_<' };
+const FILE_NOT_SAVED: ToastMessage = { message: 'не вдалося зберегти файл', emoticon: '>_<', error: true };
+const NOT_A_COPY: ToastMessage = { message: 'цей файл не схожий на копію з трекера', emoticon: '>_<', error: true };
 const RESTORED: ToastMessage = { message: 'відновлено з файлу', emoticon: ':)', showIcon: true };
-const PDF_NOT_MADE: ToastMessage = { message: 'не вдалося зібрати PDF', emoticon: '>_<' }; // «бета 0.81»
+const PDF_NOT_MADE: ToastMessage = { message: 'не вдалося зібрати PDF', emoticon: '>_<', error: true }; // «бета 0.81»
 const PDF_FOOTER = `трекер · ${VERSION_LABEL}`; // Olesia, 2026-11-10
 const PHRASE_MAX = 80;
 const DAYS = ['день', 'дні', 'днів'] as const;
@@ -142,6 +142,7 @@ class Draft implements SettingsPage {
       pasted: this.pasted,
       pasteView: this.paste.view,
       sections: this.sections.view(),
+      unsaved: !same(this.draft, this.saved),
     }, {
       act: (action) => ACTS[action.act](this, action as never),
       paste: (text) => {
@@ -161,6 +162,8 @@ class Draft implements SettingsPage {
   }
 
   change(edit: ProfileEdit): void {
+    // F-01: «скасувати» for an earlier change is no longer true
+    this.home.toast.changed();
     this.draft = edit(this.draft);
     this.env.look(this.draft);
     this.redraw();
@@ -353,6 +356,7 @@ class Draft implements SettingsPage {
    * of that moment, so leaving meanwhile never brings back an unsaved accent.
    */
   accent(accent: Accent): void {
+    this.home.toast.changed();
     this.draft = withAccent(accent)(this.draft);
     this.redraw();
     accentFlicker(document.documentElement, () => this.env.look(this.draft));
@@ -361,7 +365,8 @@ class Draft implements SettingsPage {
   /* ---- deleting (ACCESSIBILITY.md: a tap and a confirmation, no hold) ---- */
 
   async deleteRecords(): Promise<void> {
-    const answer = await confirmDialog({ title: 'видалити тільки записи?', body: 'видалене не повернути.', confirm: 'видалити', cancel: 'скасувати' });
+    // E-04: no «видалене не повернути»: the toast that follows offers «скасувати»
+    const answer = await confirmDialog({ title: 'видалити тільки записи?', confirm: 'видалити', cancel: 'скасувати' });
     if (answer !== 'confirm') return;
     const before = this.home.diary();
     if (!this.home.keep({ ...before, days: {} })) return;
@@ -371,7 +376,7 @@ class Draft implements SettingsPage {
   async deleteAll(): Promise<void> {
     const answer = await confirmDialog({
       title: 'стерти все разом з налаштуваннями?',
-      body: 'спершу збережи копію: видалене не повернути.',
+      body: 'спершу збережи копію.',
       extra: 'зберегти копію',
       confirm: 'стерти все',
       cancel: 'скасувати',

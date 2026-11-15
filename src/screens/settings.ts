@@ -43,6 +43,8 @@ export interface SettingsState {
   /** What «застосувати» answered. */
   readonly pasteView: PasteView;
   readonly sections: SectionsView;
+  /** The page holds changes that 💾 has not kept yet (F-02). */
+  readonly unsaved: boolean;
 }
 
 export type AddWhat = 'tracker' | 'level' | 'zone' | 'session' | 'movement' | 'exercise';
@@ -101,6 +103,11 @@ const ACCESS_LABELS: Record<AccessibilityKey, string> = {
   largerTargets: 'збільшені зони тапу',
   largerText: 'збільшити розмір тексту',
   mirrored: 'віддзеркалити нижню панель',
+  keepToasts: 'вимкнути зникання повідомлень',
+};
+/* Small text under a checkbox whose name needs it (Olesia, 2026-11-15: words that work without «тост»). */
+const ACCESS_HINTS: Partial<Record<AccessibilityKey, string>> = {
+  keepToasts: 'повідомлення внизу екрана лишаються, поки не натиснеш ×',
 };
 /* The closed part's line (Figma layer 347:9003: «без анімацій, більші зони тапу»); Нитка's words for the rest. */
 export const ACCESS_SHORT: Record<AccessibilityKey, string> = {
@@ -111,6 +118,7 @@ export const ACCESS_SHORT: Record<AccessibilityKey, string> = {
   largerTargets: 'більші зони тапу',
   largerText: 'більший текст',
   mirrored: 'дзеркальна панель',
+  keepToasts: 'повідомлення не зникають',
 };
 const MOTION_KEYS: readonly AccessibilityKey[] = ['noMotion', 'noBackgroundMotion'];
 
@@ -164,7 +172,9 @@ function accentBody(settings: Settings): string {
 function accessBody(settings: Settings, reduced: boolean): string {
   const row = (key: AccessibilityKey) => {
     const locked = reduced && MOTION_KEYS.includes(key);
-    return checkbox(ACCESS_LABELS[key], locked || settings.accessibility[key], `${act('access')} data-key="${key}"`, locked);
+    const hint = ACCESS_HINTS[key];
+    const box = checkbox(ACCESS_LABELS[key], locked || settings.accessibility[key], `${act('access')} data-key="${key}"${hint ? ` aria-describedby="access-${key}-hint"` : ''}`, locked);
+    return hint ? `${box}<p class="t-3rd-regular muted st-hint" id="access-${key}-hint">${hint}</p>` : box;
   };
   const note = reduced ? '<p class="t-3rd-regular muted">на телефоні ввімкнено «зменшити рух», тож анімації вимкнені.</p>' : '';
   return `${ACCESSIBILITY_KEYS.map(row).join('')}${note}`;
@@ -209,7 +219,7 @@ function backupBody(state: SettingsState): string {
 function deleteBody(): string {
   return `
       <div class="st-backup">
-        <p class="t-2nd-bold">спершу збережи копію: видалене не повернути.</p>
+        <p class="t-2nd-bold">спершу збережи копію.</p>
         <div>${tertiary('зберегти копію', act('backup'))}</div>
       </div>
       <div>${destructive('видалити тільки записи', act('delete-records'))}</div>
@@ -274,9 +284,17 @@ function markup(state: SettingsState): string {
       ${FOOTER}
     </div>
     <nav class="bar bar--edit" aria-label="навігація">
-      <button type="button" class="ctl icon-btn icon-btn--secondary bar__menu" ${act('save')} aria-label="зберегти налаштування">${iconSvg('save')}</button>
+      ${saveButton(state.unsaved)}
       <button type="button" class="ctl icon-btn icon-btn--secondary bar__menu" ${act('close')} aria-label="закрити налаштування">${iconSvg('close')}</button>
     </nav>`;
+}
+
+/** 💾; with changes not saved yet it carries a dot, and a screen reader hears «є незбережені зміни» after its name (F-02). */
+function saveButton(unsaved: boolean): string {
+  const mark = unsaved ? ' bar__menu--unsaved' : '';
+  const note = unsaved ? ' aria-describedby="unsaved-note"' : '';
+  return `<button type="button" class="ctl icon-btn icon-btn--secondary bar__menu${mark}" ${act('save')} aria-label="зберегти налаштування"${note}>${iconSvg('save')}</button>${
+    unsaved ? '<span class="visually-hidden" id="unsaved-note">є незбережені зміни</span>' : ''}`;
 }
 
 /* ---- taps ---- */

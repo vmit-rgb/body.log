@@ -39,10 +39,10 @@ const GROUPED: ToastMessage = { message: 'групу зібрано', emoticon: 
 const LEFT: ToastMessage = { message: 'вправу винесено з групи', showIcon: true };
 const MOVED: ToastMessage = { message: 'переміщено', showIcon: true };
 const REMOVED: ToastMessage = { message: 'видалено', showIcon: true }; // «бета 0.81»
-const FULL: ToastMessage = { message: 'у групі вже 3 вправи — більше не влізе', emoticon: '>_<' };
-const NOT_A_NUMBER: ToastMessage = { message: 'тут потрібне число', emoticon: '>_<' }; // draft
-const NEGATIVE: ToastMessage = { message: NUMBER_ERRORS.negative, emoticon: '>_<' }; // draft
-const ONE_FIELD: ToastMessage = { message: 'хоч одне поле має лишитися', emoticon: '>_<' }; // draft
+const FULL: ToastMessage = { message: 'у групі вже 3 вправи — більше не влізе', emoticon: '>_<', error: true };
+const NOT_A_NUMBER: ToastMessage = { message: 'тут потрібне число', emoticon: '>_<', error: true }; // draft
+const NEGATIVE: ToastMessage = { message: NUMBER_ERRORS.negative, emoticon: '>_<', error: true }; // draft
+const ONE_FIELD: ToastMessage = { message: 'хоч одне поле має лишитися', emoticon: '>_<', error: true }; // draft
 
 const MAX: Record<EditKind, number> = { text: 120, long: 500, url: 500, number: 12, rx: 60 };
 const FIELD_ORDER = { wfield: ['weight', 'reps', 'seconds'], mfield: ['km', 'minutes', 'steps'] } as const;
@@ -87,7 +87,16 @@ export class SectionsEditor {
   private undoable(edit: ProfileEdit, message: ToastMessage): void {
     const before = this.draft.profile();
     this.draft.change(edit);
-    this.draft.say({ ...message, action: undo(() => this.draft.replace(before)) });
+    this.sayUndoable(message, before);
+  }
+
+  /**
+   * «скасувати» puts the draft back as it was before the change. It belongs
+   * to this visit of the settings (`local`): once the page is left, the
+   * draft it would put back is gone.
+   */
+  private sayUndoable(message: ToastMessage, before: JsonObject): void {
+    this.draft.say({ ...message, local: true, action: undo(() => this.draft.replace(before)) });
   }
 
   private entry(slot: Slot): Obj {
@@ -236,7 +245,7 @@ export class SectionsEditor {
     const joined = joinGroup(before, from, onto);
     if (joined.result === 'full') return this.draft.say(FULL);
     this.draft.replace(joined.profile);
-    this.draft.say({ ...GROUPED, action: undo(() => this.draft.replace(before)) });
+    this.sayUndoable(GROUPED, before);
   }
 
   /** The neighbour up or down; trackers count only those of their own kind. */

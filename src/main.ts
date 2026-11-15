@@ -19,6 +19,7 @@ import { backupMemory, browserChoice, diaryStore, sectionMemory, storageFor, the
 import { DEFAULT_APPEARANCE, lookOf, startAppearance, type Appearance } from './ui/appearance';
 import { trackNumberFill } from './ui/number-fill';
 import { watchForUpdates } from './pwa/updates';
+import { mountAnnouncer } from './ui/announce';
 import { mountToast } from './ui/toast';
 import { wireTapMotion } from './ui/taps';
 import { wireNotes } from './ui/notes';
@@ -37,6 +38,8 @@ const appearance = (): Appearance => ({ ...look, theme: themes.chosen() ?? 'syst
 const applyAppearance = startAppearance(root, matchMedia('(prefers-color-scheme: light)'), appearance());
 trackNumberFill(root);
 
+// B-02: the one live region is in the page from the start, before there is anything to say
+mountAnnouncer();
 const toast = mountToast(document.body);
 wireTapMotion(document);
 wireNotes(document);

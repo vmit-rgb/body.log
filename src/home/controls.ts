@@ -11,7 +11,8 @@ import {
   control, rowAdded, rowLeaving, rowsBack, rowsNow, sliderReset, sliderSaved, stopwatchMoved, stopwatchSeen, timeDissolves, workoutAssembles,
 } from './control-motion';
 import { forgetTyped, wireNumberErrors } from './number-errors';
-import { dropPulse, pulseRunning, PULSE_READY_MS, schedulePulse, type HomeSession } from './session';
+import { announce } from '../ui/announce';
+import { dropPulse, pulseRunning, PULSE_READY_MS, PULSE_SAYS, schedulePulse, type HomeSession } from './session';
 import { prepareSound } from './signal';
 
 /*
@@ -28,6 +29,8 @@ export interface SectionControls {
   day(): Day;
   /** Applies an edit to the day shown; `render` draws the screen again. */
   edit(edit: Edit, render: boolean): void;
+  /** Puts a day back as it was before something was removed («скасувати»). */
+  restore(day: Day): void;
   /** Draws the screen again without changing the day. */
   render(): void;
   /** The screen as drawn now: a change draws it anew, and the motion plays on the new one. */
@@ -59,10 +62,11 @@ function removeWithUndo(c: SectionControls, edit: Edit, message: string): void {
   c.toast({
     message,
     showIcon: true,
+    // F-01: the day comes back under its own date, also when another day or screen is shown by now
     action: undo(() => {
       const rows = rowsNow(c.screen());
       forgetTyped(c.session, before.date);
-      c.edit(() => before, true);
+      c.restore(before);
       rowsBack(c.screen(), rows);
     }),
   });
@@ -250,6 +254,7 @@ function startPulse(c: SectionControls, element: HTMLElement, key: string): void
   if (tracker?.kind !== 'number' || tracker.timer === null) return;
   prepareSound();
   c.session.pulse = { key, seconds: tracker.timer, phase: 'ready', ends: Date.now() + PULSE_READY_MS, beats: null };
+  announce(PULSE_SAYS.ready);
   schedulePulse(c.session, PULSE_READY_MS);
   c.render();
 }

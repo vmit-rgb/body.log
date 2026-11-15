@@ -41,7 +41,12 @@
         "noSound": { "title": "вимкнути звук", "type": "boolean" },
         "largerTargets": { "title": "збільшені зони тапу", "type": "boolean" },
         "largerText": { "title": "збільшити розмір тексту", "type": "boolean" },
-        "mirrored": { "title": "віддзеркалити нижню панель", "type": "boolean" }
+        "mirrored": { "title": "віддзеркалити нижню панель", "type": "boolean" },
+        "keepToasts": {
+          "title": "вимкнути зникання повідомлень",
+          "description": "Повідомлення внизу екрана лишаються, поки людина не натисне ×. Без цього повідомлення про успіх зникають самі через 4 секунди.",
+          "type": "boolean"
+        }
       }
     },
     "goal": {

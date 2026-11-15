@@ -136,6 +136,33 @@ describe('settings: saving and leaving', () => {
     expect(checkbox('рахувати тижневу ціль').checked).toBe(true);
   });
 
+  it('F-02: 💾 carries a mark while something is not saved, and says so to a screen reader', async () => {
+    const save = () => button('зберегти налаштування');
+    const note = () => host.querySelector(`#${save().getAttribute('aria-describedby')}`)?.textContent;
+    expect(save().classList).not.toContain('bar__menu--unsaved');
+    expect(save().hasAttribute('aria-describedby')).toBe(false);
+    await tick('рахувати тижневу ціль');
+    expect(save().classList).toContain('bar__menu--unsaved');
+    expect(note()).toBe('є незбережені зміни');
+    await tap('зберегти налаштування');
+    expect(save().classList).not.toContain('bar__menu--unsaved');
+    expect(toastSays()).toBe('✓ збережено :)');
+  });
+
+  it('F-02: the mark goes when the change is taken back by hand', async () => {
+    await tick('рахувати тижневу ціль');
+    await tick('рахувати тижневу ціль');
+    expect(button('зберегти налаштування').classList).not.toContain('bar__menu--unsaved');
+  });
+
+  it('F-01: «скасувати» after 💾 goes with the next change, so it can’t take newer changes back', async () => {
+    await tick('рахувати тижневу ціль');
+    await tap('зберегти налаштування');
+    expect(button('скасувати')).toBeTruthy();
+    await tick('рахувати тижневу ціль');
+    expect(toastSays()).toBeUndefined();
+  });
+
   it('keeps fields of the profile the screen doesn’t know', async () => {
     await tick('рахувати тижневу ціль');
     await tap('зберегти налаштування');
@@ -306,13 +333,13 @@ describe('settings: accent and «доступність»', () => {
     expect((device.looks.at(-1)!.theme as JsonObject).accent).toBe('pink');
   });
 
-  it('has seven checkboxes, applied at once and kept on 💾', async () => {
+  it('has eight checkboxes, applied at once and kept on 💾', async () => {
     await openSettings();
     await openPart('доступність');
     const labels = [...host.querySelectorAll('#st-access label.checkbox')].map((l) => l.textContent!.trim());
     expect(labels).toEqual([
       'вимкнути всі анімації', 'вимкнути фонові анімації (ASCII)', 'вимкнути вібровідгук', 'вимкнути звук',
-      'збільшені зони тапу', 'збільшити розмір тексту', 'віддзеркалити нижню панель',
+      'збільшені зони тапу', 'збільшити розмір тексту', 'віддзеркалити нижню панель', 'вимкнути зникання повідомлень',
     ]);
     await tick('збільшити розмір тексту');
     expect((device.looks.at(-1)!.accessibility as JsonObject).largerText).toBe(true);
@@ -321,6 +348,41 @@ describe('settings: accent and «доступність»', () => {
     expect(storedProfile().accessibility).toMatchObject({ largerText: true, noSound: true, noMotion: false });
     await tap('доступність');
     expect(meta('доступність')).toBe('без звуку, більший текст');
+  });
+
+  it('«вимкнути зникання повідомлень» explains itself in small text, tied to the checkbox', async () => {
+    await openSettings();
+    await openPart('доступність');
+    const box = checkbox('вимкнути зникання повідомлень');
+    const hint = host.querySelector(`#${box.getAttribute('aria-describedby')}`)!;
+    expect(hint.textContent).toBe('повідомлення внизу екрана лишаються, поки не натиснеш ×');
+  });
+
+  it('«вимкнути зникання повідомлень» keeps toasts at once, before 💾, and lets them go again when switched off', async () => {
+    const life = () => document.querySelector<HTMLElement>('.toast__life')!;
+    await openSettings();
+    await openPart('копія й експорт');
+    await tap('зберегти копію');
+    expect(toastSays()).toBe('✓ копію збережено');
+    expect(life().hidden).toBe(false);
+    await openPart('доступність');
+    await tick('вимкнути зникання повідомлень');
+    expect(life().hidden).toBe(true);
+    await tap('зберегти копію');
+    expect(life().hidden).toBe(true);
+    await tick('вимкнути зникання повідомлень');
+    expect(life().hidden).toBe(false);
+    await tap('доступність');
+    expect(meta('доступність')).toBe('стандартно');
+  });
+
+  it('«вимкнути зникання повідомлень» saved in the settings holds from the start of the app', async () => {
+    const kept = { ...WITH_A_DAY, profile: { ...WITH_A_DAY.profile, accessibility: { keepToasts: true } } };
+    await openSettings(kept);
+    expect(meta('доступність')).toBe('повідомлення не зникають');
+    await openPart('копія й експорт');
+    await tap('зберегти копію');
+    expect(document.querySelector<HTMLElement>('.toast__life')!.hidden).toBe(true);
   });
 
   it('locks the two animation checkboxes when the phone reduces motion', async () => {
@@ -669,6 +731,9 @@ describe('settings: deleting', () => {
     expect(host.textContent).toContain('після натискання зʼявиться вікно з підтвердженням. утримувати нічого не треба.');
     await tap('видалити тільки записи');
     expect(dialog()!.textContent).toContain('видалити тільки записи?');
+    // E-04: nothing says «видалене не повернути» while the toast offers «скасувати»
+    expect(dialog()!.textContent).not.toContain('не повернути');
+    expect(host.textContent).not.toContain('не повернути');
     await tap('скасувати');
     expect(Object.keys(stored().days)).toHaveLength(1);
     await tap('видалити тільки записи');
@@ -684,7 +749,8 @@ describe('settings: deleting', () => {
   it('erases everything after asking, offering a copy first', async () => {
     await tap('стерти все разом з налаштуваннями');
     expect(dialog()!.textContent).toContain('стерти все разом з налаштуваннями?');
-    expect(dialog()!.textContent).toContain('спершу збережи копію: видалене не повернути.');
+    expect(dialog()!.textContent).toContain('спершу збережи копію.');
+    expect(dialog()!.textContent).not.toContain('не повернути');
     button('зберегти копію', dialog()!).click();
     await settle();
     expect(device.saved[0]!.name).toBe('trekr-kopiya-2026-11-09.json');

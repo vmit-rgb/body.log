@@ -32,10 +32,10 @@ export function barMarkup(left: keyof typeof LEFT): string {
   <nav class="bar" aria-label="навігація">
     ${LEFT[left]}
     <div class="bar__right">
-      <p class="bar__goal t-3rd-semibold" aria-live="polite"></p>
+      <p class="bar__goal t-3rd-semibold"></p>
       <div class="date-nav">
         <button type="button" class="ctl icon-btn icon-btn--secondary date-nav__step" data-step="-1" aria-label="попередній день">${iconSvg('chevron-left')}</button>
-        <button type="button" class="ctl date-nav__date" aria-live="polite" aria-haspopup="dialog" aria-expanded="false"><span aria-hidden="true"></span><span class="visually-hidden"></span></button>
+        <button type="button" class="ctl date-nav__date" aria-haspopup="dialog" aria-expanded="false"><span aria-hidden="true"></span><span class="visually-hidden"></span></button>
         <button type="button" class="ctl icon-btn icon-btn--secondary date-nav__step" data-step="1" aria-label="наступний день">${iconSvg('chevron-right')}</button>
       </div>
     </div>
@@ -64,12 +64,21 @@ export function wirePagesBar(host: HTMLElement, actions: Record<'menu' | 'search
   });
 }
 
-export function fillBar(host: HTMLElement, state: BarState): void {
+/** «цей тиждень: 2 з 5 днів»; null without a weekly goal. */
+export function goalText(state: BarState): string | null {
   const dayAt = (key: DayKey): Day => state.days[key] ?? emptyDay(key);
-  const goal = goalLine(weekGoal(state.date, state.today, dayAt, state.settings));
-  const goalText = part<HTMLElement>(host, '.bar__goal');
-  goalText.textContent = goal ?? '';
-  goalText.hidden = goal === null;
+  return goalLine(weekGoal(state.date, state.today, dayAt, state.settings));
+}
+
+/**
+ * The week line and the date. Neither is a live region (B-02): the bar is
+ * drawn anew with the screen, so home says what changed through the announcer.
+ */
+export function fillBar(host: HTMLElement, state: BarState): void {
+  const goal = goalText(state);
+  const line = part<HTMLElement>(host, '.bar__goal');
+  line.textContent = goal ?? '';
+  line.hidden = goal === null;
   const date = part<HTMLElement>(host, '.date-nav__date');
   // without the goal line the date takes header 4 (Olesia, 2026-10-29)
   date.className = `ctl date-nav__date ${goal === null ? 't-h4' : 't-h5'}`;

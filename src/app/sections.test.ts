@@ -304,6 +304,24 @@ describe('ранкова розминка', () => {
     expect(buttons('дії: рівень 2')).toHaveLength(1);
   });
 
+  it('F-01: «скасувати» for a removed level goes with the next change on the page', async () => {
+    await tap('розгорнути: рівень 2');
+    await tap('видалити рівень: рівень 2');
+    await tap('видалити');
+    await tick('показувати на головній');
+    expect(toastSays()).toBeUndefined();
+  });
+
+  it('F-01: «скасувати» for a change in the draft goes when the settings are left', async () => {
+    await tap('розгорнути: рівень 2');
+    await tap('видалити рівень: рівень 2');
+    await tap('видалити');
+    await tap('закрити налаштування');
+    await tap('вийти');
+    expect(host.querySelector('h1')!.textContent).toBe('головна');
+    expect(toastSays()).toBeUndefined();
+  });
+
   it('turns the section off and on, and changes its days', async () => {
     await tap('більше: ціль, ранкова розминка: днів на тиждень');
     expect(host.querySelector('.st-days__value')!.textContent).toBe('6/7');

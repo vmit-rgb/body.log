@@ -5,6 +5,7 @@ import type { DayKey } from '../domain/dates';
 import { emptyDay, readDay } from '../domain/day';
 import type { Diary } from '../domain/diary';
 import { diaryStore, type DiaryStore } from '../storage/store';
+import { mountAnnouncer } from '../ui/announce';
 import { mountToast } from '../ui/toast';
 import { AUTOSAVE_MS } from './controls';
 
@@ -471,6 +472,99 @@ describe('a number field with something that is not a number (D-01)', () => {
     byLabel('видалити коло 2').click();
     byLabel('точно видалити коло 2').click();
     expect(errors()).toEqual([]);
+  });
+});
+
+describe('«скасувати» brings back only what its toast removed (F-01)', () => {
+  const YESTERDAY = '2026-11-10' as DayKey;
+  const twoLaps = () => start({ [TODAY]: readDay({ mv: { walk: { km: 1, more: [{ km: 2 }] } } }, TODAY) });
+  const removeLap2 = () => {
+    byLabel('видалити коло 2').click();
+    byLabel('точно видалити коло 2').click();
+  };
+  const tick = () => Promise.resolve();
+
+  it('puts the removed lap back', () => {
+    twoLaps();
+    removeLap2();
+    toastAction().click();
+    expect(toastText()).toBe('скасовано');
+    expect(saved().mv.walk).toHaveLength(2);
+  });
+
+  it('goes with the next change, so what was logged after it can’t be lost', async () => {
+    twoLaps();
+    removeLap2();
+    $('[data-act="chip"]').click();
+    await tick();
+    expect(toastText()).toBeUndefined();
+    expect(saved().dw).toEqual(['back']);
+    expect(saved().mv.walk).toHaveLength(1);
+  });
+
+  it('goes when something is typed, too', async () => {
+    twoLaps();
+    removeLap2();
+    type($<HTMLTextAreaElement>('[data-input="note"]'), 'д');
+    await tick();
+    expect(toastText()).toBeUndefined();
+    expect(saved().note).toBe('д');
+  });
+
+  it('stays while the person only looks at another day, and brings the lap back to its own day', () => {
+    twoLaps();
+    removeLap2();
+    byLabel('попередній день').click();
+    expect(toastText()).toBe('коло видалено');
+    toastAction().click();
+    expect(saved().mv.walk).toHaveLength(2);
+    expect(store.load()!.days[YESTERDAY]).toBeUndefined();
+    expect($('.hero__text').textContent).toContain('10.11.2026');
+  });
+
+  it('brings the lap back from the menu as well', () => {
+    twoLaps();
+    removeLap2();
+    byLabel('меню').click();
+    toastAction().click();
+    expect(host.querySelector('h1')!.textContent).toBe('меню');
+    expect(saved().mv.walk).toHaveLength(2);
+  });
+
+  it('a removal after a removal offers to undo only the last one', async () => {
+    start({ [TODAY]: readDay({ mv: { walk: { km: 1, more: [{ km: 2 }, { km: 3 }] } } }, TODAY) });
+    byLabel('видалити коло 3').click();
+    byLabel('точно видалити коло 3').click();
+    removeLap2();
+    await tick();
+    expect(toastText()).toBe('коло видалено');
+    toastAction().click();
+    expect(saved().mv.walk).toEqual([{ km: 1, min: null, steps: null }, { km: 2, min: null, steps: null }]);
+  });
+});
+
+describe('what a screen reader hears on home (B-02)', () => {
+  const heard = () => document.querySelector('#announcer')!.textContent;
+
+  it('hears the day it came to, from the region that is always there', () => {
+    const region = mountAnnouncer();
+    byLabel('попередній день').click();
+    expect(document.querySelector('#announcer')).toBe(region);
+    expect(heard()).toBe('вівторок, 10.11.2026');
+    expect($('.date-nav__date').hasAttribute('aria-live')).toBe(false);
+    expect($('.bar__goal').hasAttribute('aria-live')).toBe(false);
+  });
+
+  it('does not repeat the day when the screen is only drawn again', () => {
+    byLabel('попередній день').click();
+    $('[data-act="chip"]').click();
+    expect(heard()).toBe('вівторок, 10.11.2026');
+  });
+
+  it('hears the week line when a day gets counted', () => {
+    byText('тренування А').click();
+    type(byLabel<HTMLInputElement>('присідання, підхід 1, повторення'), '9');
+    expect(heard()).toBe('цей тиждень: 1 з 3 днів');
   });
 });
 

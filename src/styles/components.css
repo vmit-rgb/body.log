@@ -583,3 +583,35 @@ body:has(.bar:not(.bar--hidden)) .toast {
   width: 20px;
   height: 20px;
 }
+/*
+ * The 4 s of a toast that closes on its own (Olesia, 2026-11-15): a bar in
+ * the accent colour on its top edge that melts towards the left. It stands
+ * still while the focus, a finger or the pointer holds the toast; without
+ * motion it stays whole and goes with the toast.
+ */
+.toast__life {
+  position: absolute;
+  top: calc(-1 * var(--stroke-4));
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: var(--accent);
+  transform-origin: left;
+}
+.toast__life[hidden] {
+  display: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  :root:not([data-no-motion]) .toast__life {
+    animation: toast-life 4s linear forwards;
+  }
+  /* as specific as the rule above, or its `animation` would set the bar running again */
+  :root:not([data-no-motion]) .toast--held .toast__life {
+    animation-play-state: paused;
+  }
+}
+@keyframes toast-life {
+  to {
+    transform: scaleX(0);
+  }
+}

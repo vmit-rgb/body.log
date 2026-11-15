@@ -265,6 +265,10 @@ describe('pulse timer', () => {
     expect(sw().getAttribute('aria-label')).toBe('зупинити й скасувати');
     expect(time()).toBe('3');
     expect(pulse().textContent).toContain('приготуйся');
+    // B-02: each phase is said through the region that is always there; the lines are drawn anew
+    const heard = () => document.querySelector('#announcer')!.textContent;
+    expect(heard()).toBe('приготуйся');
+    expect(pulse().querySelector('[role="status"]')).toBeNull();
     vi.advanceTimersByTime(1_000);
     expect(time()).toBe('2');
     expect(vibrate).not.toHaveBeenCalled();
@@ -272,12 +276,14 @@ describe('pulse timer', () => {
     expect(vibrate).toHaveBeenCalledTimes(1);
     expect(time()).toBe('0:30');
     expect(pulse().textContent).toContain('рахуй удари');
+    expect(heard()).toBe('рахуй удари');
     vi.advanceTimersByTime(12_000);
     expect(time()).toBe('0:18');
     vi.advanceTimersByTime(18_000);
     expect(vibrate).toHaveBeenCalledTimes(2);
     expect(document.body.querySelector('.flash')).not.toBeNull();
     expect(pulse().textContent).toContain('скільки ударів за 30 с?');
+    expect(heard()).toBe('скільки ударів за 30 с?');
     const beats = $<HTMLInputElement>('[data-input="beats"]');
     expect(document.activeElement).toBe(beats);
     type(beats, '42');

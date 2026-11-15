@@ -485,3 +485,21 @@
 :root[data-no-motion] .flash {
   opacity: 0.6;
 }
+
+/* F-02: 💾 while something on the page is not saved yet: a dot in the accent colour by the icon */
+.bar__menu--unsaved::after {
+  content: '';
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+/* small text under a checkbox, on one line with its label ([ ] is three characters and a gap wide) */
+.st-hint {
+  margin: calc(-1 * var(--gap-group) - 10px) 0 0;
+  padding-left: calc(17px * var(--text-scale) * 0.6 * 3 + var(--gap-items));
+}

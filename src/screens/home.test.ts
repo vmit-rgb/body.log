@@ -55,6 +55,7 @@ beforeEach(() => {
     sectionOpen: (id) => !closed.has(id),
     rememberSection: (id, open) => (open ? closed.delete(id) : closed.add(id)),
     edit: () => ({}),
+    restore: () => {},
     refresh: () => {},
     toast: () => {},
   };

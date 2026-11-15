@@ -104,12 +104,27 @@ describe('the menu (Figma screen/menu 183:3210)', () => {
     tap('попередній день');
     expect(heading()).toBe('головна');
     expect(host.querySelector('.hero__text')!.textContent).toContain('це запис за нд, 08.11.2026.');
+    // B-02: a screen reader hears the day it landed on
+    expect(document.querySelector('#announcer')!.textContent).toBe('неділя, 08.11.2026');
   });
 
   it('says what is not there yet', () => {
     tap('додати фідбек');
     expect(toastSays()).toBe('форму для фідбеку ще робимо, скоро буде :)');
     expect(heading()).toBe('меню');
+  });
+
+  it('A-02: «скоро» does not follow to another screen', () => {
+    tap('додати фідбек');
+    tap('історія');
+    expect(heading()).toBe('історія');
+    expect(toastSays()).toBeUndefined();
+  });
+
+  it('A-02: a toast about something done stays when the screen changes', () => {
+    tap('зберегти копію');
+    tap('історія');
+    expect(toastSays()).toBe('✓ копію збережено');
   });
 });
 

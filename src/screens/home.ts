@@ -1,4 +1,4 @@
-import type { DayKey } from '../domain/dates';
+import { formatLong, type DayKey } from '../domain/dates';
 import { emptyDay, type Day } from '../domain/day';
 import type { Diary } from '../domain/diary';
 import type { Edit } from '../domain/log';
@@ -11,13 +11,14 @@ import { heroFor, homeSections, type SectionId, type SectionSpec } from '../home
 import {
   checkInBody, daytimeBody, morningBody, movementBody, noteBody, workoutBody, type SectionContext,
 } from '../home/sections';
-import { formatStopwatch, pulseRunning, pulseTime, schedulePulse, type HomeSession } from '../home/session';
+import { formatStopwatch, PULSE_SAYS, pulseQuestion, pulseRunning, pulseTime, schedulePulse, type HomeSession } from '../home/session';
 import { calendarMarkup, type CalendarView } from '../home/calendar';
 import { endSignal, startSignal } from '../home/signal';
 import { monthOf, shiftMonth } from '../domain/stats';
 import { wireAccordions } from '../ui/accordion';
+import { announce } from '../ui/announce';
 import type { ToastMessage } from '../ui/toast';
-import { barMarkup, fillBar, TO_TOP, wireDateNav, wireScroll } from './bar';
+import { barMarkup, fillBar, goalText, TO_TOP, wireDateNav, wireScroll } from './bar';
 import { FOOTER, part, TAB_NOTE } from './parts';
 
 /*
@@ -49,6 +50,8 @@ export interface HomeActions {
   rememberSection(id: string, open: boolean): void;
   /** Applies an edit to the day shown and keeps it; `render` shows home again. Returns the days after it. */
   edit(edit: Edit, render: boolean): Diary['days'];
+  /** «скасувати»: puts a day back as it was, under its own date, and shows home again if it is on screen. */
+  restore(day: Day): void;
   /** Shows home again without changing anything. */
   refresh(): void;
   toast(message: ToastMessage): void;
@@ -242,6 +245,7 @@ function sectionControls(host: HTMLElement, state: HomeState, actions: HomeActio
     day: () => dayOf(current),
     edit(edit, render) {
       const before = dayOf(current);
+      const goalBefore = goalText(current);
       let days = current.days;
       if (render) {
         keepingFocus(() => {
@@ -255,7 +259,11 @@ function sectionControls(host: HTMLElement, state: HomeState, actions: HomeActio
       }
       const after = days[state.date] ?? emptyDay(state.date);
       reward(host, state.date, completed(before, after, state.settings), state.settings.accessibility);
+      // B-02: the week line is drawn anew each time, so its change is said through the announcer
+      const goalAfter = goalText({ ...current, days });
+      if (goalAfter !== null && goalAfter !== goalBefore) announce(goalAfter);
     },
+    restore: (day) => keepingFocus(() => actions.restore(day)),
     render: () => keepingFocus(() => actions.refresh()),
     screen: () => host,
     toast: (message) => actions.toast(message),
@@ -300,12 +308,14 @@ function pulseStep(host: HTMLElement, state: HomeState, controls: SectionControl
       state.session.pulse = { ...run, phase: 'counting', ends: Date.now() + run.seconds * 1000 };
       schedulePulse(state.session, run.seconds * 1000);
       startSignal(state.settings.accessibility);
+      announce(PULSE_SAYS.counting);
       controls.render();
       return;
     }
     if (run?.phase !== 'counting') return;
     state.session.pulse = { ...run, phase: 'beats' };
     endSignal(state.settings.accessibility);
+    announce(pulseQuestion(run.seconds));
     controls.render();
     host.querySelector<HTMLElement>('[data-input="beats"]')?.focus({ preventScroll: true });
   };
@@ -343,6 +353,8 @@ export function showHome(host: HTMLElement, state: HomeState, actions: HomeActio
 
   fit();
   if (state.cameFrom) dayArrives(host, state.cameFrom, state.date);
+  // B-02: another day is said through the announcer; the date button is drawn anew and would stay silent
+  if (state.cameFrom && state.cameFrom !== state.date) announce(formatLong(state.date));
   void document.fonts?.ready.then(fit);
   addEventListener('resize', fit, { signal: listeners.signal });
   return () => listeners.abort();
