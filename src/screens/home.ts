@@ -20,6 +20,7 @@ import { esc } from '../ui/html';
 import { announce } from '../ui/announce';
 import { iconSvg } from '../ui/icons';
 import { closesOnBack } from '../ui/back';
+import { hasScene, mountHeroScene } from '../ui/hero-scene';
 import type { ToastMessage } from '../ui/toast';
 import { barMarkup, fillBar, goalText, TO_TOP, wireDateNav, wireScroll } from './bar';
 import { FOOTER, part, TAB_NOTE } from './parts';
@@ -29,7 +30,10 @@ import { FOOTER, part, TAB_NOTE } from './parts';
  * `navigation` 189:6897; `button/to-top` 288:10620). Stage 5a: the frame of
  * the screen; 5b: the inside of the sections (home/sections.ts, home/controls.ts);
  * the calendar comes in 5c.
- * The ASCII scene behind the phrase comes in stage 7 (Olesia, 2026-11-09).
+ * The month's ASCII scene behind the phrase (ui/hero-scene.ts) sits on a dark
+ * plate under a veil, as in the betas; the cover above the hero hides «Політ
+ * символів» down to 16 px below it, so the two never overlap (Olesia, 2026-10-30
+ * for 0.8x, again 2026-11-17).
  * Texts from the settings are set as text, never as HTML.
  */
 
@@ -129,16 +133,21 @@ function markup(state: HomeState, actions: HomeActions): string {
     settings: state.settings, day: dayOf(state), days: state.days, session: state.session, tipOpen: (id) => tipShows(state, actions, id),
   };
   const sections = homeSections(state.settings).map((section) => sectionMarkup(section, actions.sectionOpen(section.id), ctx));
+  const scene = hasScene(state.today);
   return `
     <div class="home">
       <h1 class="visually-hidden">головна</h1>
-      <header class="hero"><p class="hero__text"></p></header>${state.inTab ? TAB_NOTE : ''}
+      ${scene ? SCENE_COVER : ''}<header class="${scene ? 'hero hero--scene' : 'hero'}">${scene ? SCENE : ''}<p class="hero__text"></p></header>${state.inTab ? TAB_NOTE : ''}
       <div class="home__sections">${sections.join('')}</div>
       <section class="cal-block" aria-label="календар">${calendarMarkup(calendarView(state, 'home'))}</section>
       ${FOOTER}
     </div>
     ${barMarkup('menu')}${TO_TOP}`;
 }
+
+/** Hides the page background behind the hero and fades it back in under it. */
+const SCENE_COVER = '<div class="home__cover" aria-hidden="true"></div>';
+const SCENE = '<div class="hero__scene" aria-hidden="true"><canvas></canvas></div>';
 
 /** Lines a phrase takes in a style, measured on a hidden copy of the same width. */
 function measure(text: HTMLElement): (style: HeroStyle) => number {
@@ -421,6 +430,10 @@ function pulseStep(host: HTMLElement, state: HomeState, controls: SectionControl
 export function showHome(host: HTMLElement, state: HomeState, actions: HomeActions): () => void {
   host.innerHTML = markup(state, actions);
   const fit = fillHero(host, state);
+  const canvas = host.querySelector<HTMLCanvasElement>('.hero__scene canvas');
+  const stopScene = canvas
+    ? mountHeroScene({ root: document.documentElement, canvas, today: state.today, reducedMotion: typeof matchMedia === 'function' ? matchMedia('(prefers-reduced-motion: reduce)') : { matches: false, addEventListener: () => {} } })
+    : () => {};
   fillBar(host, state);
   // on .home, which every render makes anew: on host the listeners would pile up
   const home = part<HTMLElement>(host, '.home');
@@ -454,5 +467,8 @@ export function showHome(host: HTMLElement, state: HomeState, actions: HomeActio
   if (state.cameFrom && state.cameFrom !== state.date) announce(formatLong(state.date));
   void document.fonts?.ready.then(fit);
   addEventListener('resize', fit, { signal: listeners.signal });
-  return () => listeners.abort();
+  return () => {
+    listeners.abort();
+    stopScene();
+  };
 }
