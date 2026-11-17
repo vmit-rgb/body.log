@@ -14,6 +14,7 @@ const UNREADABLE_KEY = `${DIARY_KEY}/unreadable`;
 export const BEFORE_FORMAT_KEY = `${DIARY_KEY}/before-format-0.1`;
 const BROWSER_KEY = 'phys-activity-tracking-app/browser-chosen';
 const SECTION_KEY = 'phys-activity-tracking-app/section-closed/';
+const TIP_KEY = 'phys-activity-tracking-app/tip-closed/';
 const THEME_KEY = 'phys-activity-tracking-app/theme';
 const BACKUP_KEY = 'phys-activity-tracking-app/last-copy';
 
@@ -97,6 +98,14 @@ function setQuietly(storage: KeyValue, key: string, value: string): void {
   } catch {
     // nothing is lost but the remembered choice
   }
+}
+
+/** Tips for newcomers the person closed with «зрозуміло» (wave 5); on this phone only, not in the copy. */
+export function tipMemory(storage: KeyValue): { open(id: string): boolean; close(id: string): void } {
+  return {
+    open: (id) => storage.getItem(TIP_KEY + id) !== 'closed',
+    close: (id) => setQuietly(storage, TIP_KEY + id, 'closed'),
+  };
 }
 
 export type ThemeChoice = 'dark' | 'light';

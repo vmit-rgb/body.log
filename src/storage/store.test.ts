@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { parseDiary, serializeDiary } from '../domain/diary';
 import { EXAMPLE_DIARY } from '../domain/examples';
 import type { DayKey } from '../domain/dates';
-import { backupMemory, BEFORE_FORMAT_KEY, browserChoice, diaryStore, DIARY_KEY, sectionMemory, storageFor, themeMemory, type KeyValue } from './store';
+import { backupMemory, BEFORE_FORMAT_KEY, browserChoice, diaryStore, DIARY_KEY, sectionMemory, storageFor, themeMemory, tipMemory, type KeyValue } from './store';
 
 const now = () => new Date('2026-11-09T08:00:00.000Z');
 
@@ -226,5 +226,19 @@ describe('remembered on this phone only: theme and the last copy', () => {
   it('only forgets when the phone is full', () => {
     expect(() => themeMemory(full).choose('light')).not.toThrow();
     expect(() => backupMemory(full).remember('2026-11-20' as DayKey)).not.toThrow();
+  });
+});
+
+describe('tipMemory (tips for newcomers, wave 5)', () => {
+  beforeEach(() => localStorage.clear());
+
+  it('shows a tip until «зрозуміло», then remembers it on this phone; a full phone only forgets', () => {
+    const tips = tipMemory(localStorage);
+    expect(tips.open('sets')).toBe(true);
+    tips.close('sets');
+    expect(tipMemory(localStorage).open('sets')).toBe(false);
+    expect(tipMemory(localStorage).open('other')).toBe(true);
+    const full: KeyValue = { getItem: () => null, setItem: () => { throw new Error('full'); }, removeItem: () => {} };
+    expect(() => tipMemory(full).close('sets')).not.toThrow();
   });
 });

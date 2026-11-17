@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { DayKey } from '../domain/dates';
 import { readSettings } from '../domain/settings';
 import { EXAMPLE_DIARY } from '../domain/examples';
-import { goalLine, heroFor, homeSections, phraseFor } from './home-view';
+import { readDay } from '../domain/day';
+import { goalLine, heroFor, homeSections, phraseFor, sectionDone } from './home-view';
 
 const key = (text: string) => text as DayKey;
 
@@ -70,5 +71,29 @@ describe('goalLine', () => {
   });
   it('is hidden without a goal', () => {
     expect(goalLine(null)).toBeNull();
+  });
+});
+
+describe('sectionDone (wave 5: «хороша робота <3»)', () => {
+  const settings = readSettings(EXAMPLE_DIARY.profile);
+  const day = (raw: Record<string, unknown>) => readDay(raw, '2026-11-09' as DayKey);
+
+  it('nothing done on an empty day, and the note never counts', () => {
+    for (const id of ['ck-morning', 'mw', 'dw', 'wo', 'mv', 'ck-evening', 'note'] as const) expect(sectionDone(id, day({}), settings)).toBe(false);
+    expect(sectionDone('note', day({ note: 'було добре' }), settings)).toBe(false);
+  });
+
+  it('any doing counts: one ticked exercise, one timed round, one zone, one set, one lap, one answer', () => {
+    expect(sectionDone('mw', day({ mw: { ticks: ['exercise-1'] } }), settings)).toBe(true);
+    expect(sectionDone('mw', day({ mw: { times: { 'exercise-2': [12] } } }), settings)).toBe(true);
+    expect(sectionDone('dw', day({ dw: ['back'] }), settings)).toBe(true);
+    expect(sectionDone('wo', day({ wo: { session: 'a', ex: { 'exercise-6': [{ r: 8 }] } } }), settings)).toBe(true);
+    expect(sectionDone('mv', day({ mv: { 'movement-1': { min: 20 } } }), settings)).toBe(true);
+    expect(sectionDone('ck-evening', day({ t: { evening: { tiredness: 4 } } }), settings)).toBe(true);
+  });
+
+  it('a picked workout with nothing typed is not done yet; a morning answer is not the evening', () => {
+    expect(sectionDone('wo', day({ wo: { session: 'a' } }), settings)).toBe(false);
+    expect(sectionDone('ck-evening', day({ t: { morning: { energy: 5 } } }), settings)).toBe(false);
   });
 });

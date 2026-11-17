@@ -92,10 +92,19 @@ function atListEnd(dragged: HTMLElement, under: Element): Found | null {
   return { target: { kind: 'move', list: list.dataset.list!, before: list.dataset.end ? Number(list.dataset.end) : null }, mark: list, line: 'end' };
 }
 
-/** Where the dragged entry would land with the finger over `under`, at height `y`. */
+/** The group the dragged exercise sits in, when `item` is that group. */
+const ownGroup = (dragged: HTMLElement, item: HTMLElement) => isGroup(item) && dragged.dataset.list === `${item.dataset.list}.${item.dataset.index}.set`;
+
+/**
+ * Where the dragged entry would land with the finger over `under`, at height `y`.
+ * An exercise lifted inside its group stays in it until it is carried out of
+ * the group (Olesia, MY-FIXES): over itself or the group's own label and
+ * padding there is no target, so letting go changes nothing.
+ */
 export function dropAt(dragged: HTMLElement, under: Element | null, y: number): Found | null {
   if (!under) return null;
   const item = itemUnder(dragged, under);
+  if (item && ownGroup(dragged, item)) return null;
   if (item) return overItem(dragged, item, y);
   return intoClosed(dragged, under) ?? atListEnd(dragged, under);
 }
@@ -127,8 +136,8 @@ function proxyFor(el: HTMLElement): HTMLElement {
   proxy.setAttribute('aria-hidden', 'true');
   const name = document.createElement('span');
   name.className = 'st-proxy__name t-1st-semibold';
-  // every entry has its «дії» button (screens/settings-sections.ts entry)
-  name.textContent = el.querySelector('.st-actions')!.textContent!.replace(/^дії: /, '');
+  // every entry carries its shown name (screens/settings-sections.ts entry)
+  name.textContent = el.dataset.name ?? '';
   proxy.append(name);
   const how = el.querySelector(DESCRIPTION)?.textContent?.split('\n')[0];
   if (how) {

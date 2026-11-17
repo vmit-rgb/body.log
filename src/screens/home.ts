@@ -7,15 +7,16 @@ import { flushDrafts, wireSections, type SectionControls } from '../home/control
 import { HERO_STYLES, heroStyle, type HeroStyle } from '../home/hero-fit';
 import { dayArrives, popShownDay, reward, sheetIn, sheetOut, swapMonth } from '../home/home-motion';
 import { completed } from '../domain/progress';
-import { heroFor, homeSections, type SectionId, type SectionSpec } from '../home/home-view';
+import { heroFor, homeSections, sectionDone, type SectionId, type SectionSpec } from '../home/home-view';
 import {
-  checkInBody, daytimeBody, morningBody, movementBody, noteBody, workoutBody, type SectionContext,
+  checkInBody, daytimeBody, morningBody, movementBody, noteBody, sectionTop, workoutBody, type SectionContext,
 } from '../home/sections';
 import { formatStopwatch, PULSE_SAYS, pulseQuestion, pulseRunning, pulseTime, schedulePulse, type HomeSession } from '../home/session';
 import { calendarMarkup, type CalendarView } from '../home/calendar';
 import { endSignal, startSignal } from '../home/signal';
 import { monthOf, shiftMonth } from '../domain/stats';
 import { wireAccordions } from '../ui/accordion';
+import { esc } from '../ui/html';
 import { announce } from '../ui/announce';
 import { closesOnBack } from '../ui/back';
 import type { ToastMessage } from '../ui/toast';
@@ -56,6 +57,8 @@ export interface HomeActions {
   /** Shows home again without changing anything. */
   refresh(): void;
   toast(message: ToastMessage): void;
+  /** Tips for newcomers: shown until the person closes them, on this phone. */
+  tips?: { open(id: string): boolean; close(id: string): void } | undefined;
 }
 
 const BODIES: Record<SectionId, (ctx: SectionContext) => string> = {
@@ -68,23 +71,56 @@ const BODIES: Record<SectionId, (ctx: SectionContext) => string> = {
   note: noteBody,
 };
 
+/* Olesia, MY-FIXES: the line of a section where something is done; <3 in the accent. */
+const GOOD_JOB = 'хороша робота <span class="good-job__heart">&lt;3</span>';
+
+/** The section's line: its description, or «хороша робота <3» once something in it is done. */
+const leadOf = (description: string, done: boolean) => (done ? GOOD_JOB : description);
+
 function sectionMarkup({ id, title, description }: SectionSpec, open: boolean, ctx: SectionContext): string {
+  const done = sectionDone(id, ctx.day, ctx.settings);
   return `
-    <section class="home-section" aria-labelledby="sec-${id}-title">
+    <section class="home-section" aria-labelledby="sec-${id}-title" data-description="${esc(description)}">
       <h2 class="home-section__heading">
         <button type="button" class="ctl accordion accordion--section" id="sec-${id}-title" data-section="${id}"
           aria-expanded="${open}" aria-controls="sec-${id}"><span class="accordion__title">${title}</span></button>
       </h2>
-      <p class="home-section__hint t-3rd-regular" aria-hidden="true">${description}</p>
+      <p class="home-section__hint t-3rd-regular" aria-hidden="true" data-lead>${leadOf(description, done)}</p>
       <div class="home-section__body" id="sec-${id}"${open ? '' : ' hidden'}>
-        <p class="t-1st-regular">${description}</p>
+        ${sectionTop(id, ctx)}<p class="t-1st-regular" data-lead>${leadOf(description, done)}</p>
         ${BODIES[id](ctx)}
+        <div class="home-section__end"${done ? '' : ' hidden'}><button type="button" class="ctl btn btn--tertiary" data-collapse="${id}" aria-label="згорнути секцію: ${title}">згорнути секцію</button></div>
       </div>
     </section>`;
 }
 
+/** After an edit that doesn't draw home anew (typing): the lines and «згорнути секцію» follow what is done now. */
+function refreshDone(host: HTMLElement, day: Day, settings: Settings): void {
+  for (const section of host.querySelectorAll<HTMLElement>('.home-section')) {
+    const id = section.querySelector<HTMLElement>('[data-section]')?.dataset.section as SectionId | undefined;
+    if (!id) continue;
+    const done = sectionDone(id, day, settings);
+    const lead = leadOf(String(section.dataset.description), done);
+    for (const line of section.querySelectorAll<HTMLElement>('[data-lead]')) if (line.innerHTML !== lead) line.innerHTML = lead;
+    section.querySelector<HTMLElement>('.home-section__end')!.hidden = !done;
+  }
+}
+
+/** «згорнути секцію»: closes it as its title does, then the focus and the eyes go back to the title. */
+function wireCollapse(home: HTMLElement): void {
+  home.addEventListener('click', (event) => {
+    const button = (event.target as Element).closest<HTMLElement>('[data-collapse]');
+    if (!button) return;
+    const trigger = home.querySelector<HTMLButtonElement>(`#sec-${button.dataset.collapse}-title`);
+    if (!trigger || trigger.getAttribute('aria-expanded') !== 'true') return;
+    trigger.click();
+    trigger.focus({ preventScroll: true });
+    trigger.scrollIntoView?.({ block: 'nearest' });
+  });
+}
+
 function markup(state: HomeState, actions: HomeActions): string {
-  const ctx: SectionContext = { settings: state.settings, day: dayOf(state), days: state.days, session: state.session };
+  const ctx: SectionContext = { settings: state.settings, day: dayOf(state), days: state.days, session: state.session, tipOpen: actions.tips?.open };
   const sections = homeSections(state.settings).map((section) => sectionMarkup(section, actions.sectionOpen(section.id), ctx));
   return `
     <div class="home">
@@ -282,6 +318,7 @@ function sectionControls(host: HTMLElement, state: HomeState, actions: HomeActio
         current = { ...current, days };
         fillBar(host, current);
         calendar.refresh(current);
+        refreshDone(host, dayOf(current), current.settings);
       }
       const after = days[state.date] ?? emptyDay(state.date);
       reward(host, state.date, completed(before, after, state.settings), state.settings.accessibility);
@@ -293,6 +330,10 @@ function sectionControls(host: HTMLElement, state: HomeState, actions: HomeActio
     render: () => keepingFocus(() => actions.refresh()),
     screen: () => host,
     toast: (message) => actions.toast(message),
+    closeTip(id) {
+      actions.tips?.close(id);
+      keepingFocus(() => actions.refresh());
+    },
   };
 }
 
@@ -368,6 +409,7 @@ export function showHome(host: HTMLElement, state: HomeState, actions: HomeActio
   const calendar = wireCalendar(host, state, go, listeners.signal);
   const controls = sectionControls(host, state, actions, calendar);
   wireSections(home, controls);
+  wireCollapse(home);
   state.session.flush = () => flushDrafts(controls);
   state.session.pulseStep = pulseStep(host, state, controls);
   part(host, '.bar__menu').addEventListener('click', () => actions.openMenu());

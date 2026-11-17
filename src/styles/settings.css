@@ -40,6 +40,14 @@
 .st-part__heading .accordion {
   padding: 0 16px 4px;
 }
+/* open: the frame runs round the whole part, its trigger and its body (Olesia, MY-FIXES) */
+.st-part:has(> .st-part__heading [aria-expanded='true']) {
+  outline: var(--stroke-1) solid var(--accent-mid);
+  outline-offset: calc(-1 * var(--stroke-1));
+}
+.st-part__heading .accordion[aria-expanded='true'] {
+  --ring-w-0: 0px;
+}
 .st-part__body {
   display: flex;
   flex-direction: column;
@@ -253,33 +261,53 @@
   align-items: baseline;
 }
 
-/* a group of exercises (Figma settings/exercise-set): one block, label «група вправ» */
-/* a plate without a frame, «група вправ» on top, the exercises open inside (settings/exercise-group, п. 29) */
-.st-group {
+/* every exercise, in a warm-up or a workout, in a filled box (Olesia, MY-FIXES) */
+.st-item.st-ex {
+  padding: 4px 8px 12px;
+  background: var(--surface);
+}
+/* a group of exercises: an outline, «група вправ» on top; each exercise in it keeps its fill (Olesia, MY-FIXES) */
+.st-item.st-group {
   padding: 8px 8px 12px;
-  background: var(--sunk);
+  border: var(--stroke-1) solid var(--accent-mid);
+}
+/* «видалити» under the name it deletes */
+.st-rm-row {
+  display: flex;
 }
 .st-group--off {
   opacity: 0.6;
 }
 
-/* «дії: …»: for the keyboard and screen readers, seen only when focused */
+/* B-06: ⋯ at the top right of an entry opens its menu (a long press does too); its name «дії: …» is for readers */
 .st-actions {
   position: absolute;
+  top: 4px;
+  right: 0;
+  z-index: 1;
+}
+.st-item.st-ex > .st-actions,
+.st-item.st-group > .st-actions,
+.st-item.st-box > .st-actions {
+  right: 4px;
+}
+.st-actions::before {
+  content: '⋯' / '';
+  font-size: calc(20px * var(--text-scale));
+  font-weight: 700;
+  line-height: 1;
+}
+.st-actions__name {
+  position: absolute;
   width: 1px;
-  min-width: 0;
   height: 1px;
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
 }
-.st-actions:focus-visible {
-  position: static;
-  width: auto;
-  height: auto;
-  min-height: var(--tap);
-  clip-path: none;
-  color: var(--accent);
+/* the first row leaves the corner to ⋯ */
+.st-item--movable > .st-actions + * {
+  padding-right: calc(var(--tap) + var(--gap-items));
 }
 
 /* the long-press menu (Figma menu/exercise-actions 262:10665) */
@@ -524,4 +552,19 @@
 .st-hint {
   margin: calc(-1 * var(--gap-group) - 10px) 0 0;
   padding-left: calc(17px * var(--text-scale) * 0.6 * 3 + var(--gap-items));
+}
+
+/* a description or «як робити» keeps its line breaks and empty lines, as on home */
+.st-text[data-edit='long'] {
+  white-space: pre-line;
+}
+
+/* a group's «група вправ» line is as tall as its ⋯, so ⋯ never sits on the first exercise */
+.st-item.st-group > .st-actions {
+  top: 0;
+}
+.st-item.st-group > .st-actions + p {
+  display: flex;
+  align-items: center;
+  min-height: calc(var(--tap) - var(--gap-items));
 }

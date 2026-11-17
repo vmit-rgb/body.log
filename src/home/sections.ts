@@ -29,6 +29,8 @@ export interface SectionContext {
   readonly day: Day;
   readonly days: Readonly<Record<DayKey, Day>>;
   readonly session: HomeSession;
+  /** Whether a tip for newcomers still shows (the person hasn't closed it on this phone). */
+  readonly tipOpen?: ((id: string) => boolean) | undefined;
 }
 
 
@@ -71,9 +73,14 @@ function link(source: Source): string {
   return `<span class="ex-link"><a class="ctl btn btn--tertiary" href="${esc(source.url)}" target="_blank" rel="noopener noreferrer">посилання</a>${ai}</span>`;
 }
 
+/** «як робити» text: an empty line starts a new paragraph, a single line break stays (Olesia, MY-FIXES). */
+export function howParagraphs(text: string, cls = 'how t-2nd-regular'): string {
+  return text.split(/\n\s*\n/).map((part) => part.trim()).filter(Boolean).map((part) => `<p class="${cls}">${esc(part)}</p>`).join('');
+}
+
 function howTo(exercise: Exercise | undefined): string {
   if (!exercise || (!exercise.how && exercise.source.type !== 'link')) return '';
-  return `${exercise.how ? `<p class="how t-2nd-regular">${esc(exercise.how)}</p>` : ''}${link(exercise.source)}`;
+  return `${exercise.how ? `<div class="how-text">${howParagraphs(exercise.how)}</div>` : ''}${link(exercise.source)}`;
 }
 
 function howAccordion(ctx: SectionContext, memo: string, body: string, title = 'як робити'): string {
@@ -407,6 +414,10 @@ export function morningBody(ctx: SectionContext): string {
 
 /* ---- daytime warm-up (Figma chip/multi-select-group, accordion/paragraph zones) ---- */
 
+/**
+ * One «для чого» inside «як робити»: an outlined region (common region,
+ * Olesia, MY-FIXES); its exercises are paragraphs, 14 px, no boxes of their own.
+ */
 function zone(ctx: SectionContext, group: DaytimeGroup): string {
   const items = group.items.map((item) => {
     const reps = repsLabel(item);
@@ -420,7 +431,8 @@ export function daytimeBody(ctx: SectionContext): string {
   const { groups, hint: note } = ctx.settings.daytimeWarmup;
   const chips = groups.map((group) => `<button type="button" class="ctl chip" data-act="chip" data-group="${esc(group.id)}"
     aria-pressed="${ctx.day.dw.includes(group.id)}">${esc(group.name || 'без назви')}</button>`).join('');
-  const how = groups.length ? `<div class="how-acc">${accordion('paragraph', 'як робити', dayKey(ctx, 'how|dw'), remembered(ctx, 'how|dw', false),
+  // the fill covers the whole accordion, its title and its body (Olesia, MY-FIXES)
+  const how = groups.length ? `<div class="how-acc how-acc--filled">${accordion('paragraph', 'як робити', dayKey(ctx, 'how|dw'), remembered(ctx, 'how|dw', false),
     groups.map((group) => zone(ctx, group)).join(''))}</div>` : '';
   return `${muted(note)}${checkInSub(ctx, 'beforeDaytimeWarmup')}<div class="chips" role="group" aria-label="денна розминка: для чого">${chips}</div>${how}${
     checkInSub(ctx, 'afterDaytimeWarmup')}`;
@@ -467,43 +479,79 @@ function setRemove(ctx: SectionContext, target: string, timed: boolean, i: numbe
   return removeButton(ctx, target, 'скинути таймер до нуля', idleTimer(ctx, target, n, seconds));
 }
 
-function workoutExercise(ctx: SectionContext, item: WorkoutItem): string {
+/* Нитка's draft (wave 5): how to get rid of a set too many, until the person closes it. */
+export const SETS_TIP = 'sets';
+const SETS_TIP_TEXT = 'зайвий підхід прибирає × праворуч від нього: натисни ×, а потім ✓.';
+
+function tip(id: string, text: string): string {
+  return `<div class="tip" role="note"><p class="t-3rd-regular tip__text">${text}</p>
+    <button type="button" class="ctl btn btn--tertiary tip__close" data-act="tip-close" data-tip="${esc(id)}" aria-label="зрозуміло, сховати підказку">зрозуміло</button></div>`;
+}
+
+/**
+ * A workout exercise in its own filled box; its name folds it like a warm-up
+ * level, for an exercise skipped today or already done (Olesia, MY-FIXES).
+ */
+function workoutExercise(ctx: SectionContext, item: WorkoutItem, showTip: boolean): string {
   const exercise = exerciseById(ctx, item.exercise);
   const n = setRows(ctx.day, item.exercise, item.sets);
   const last = lastSets(ctx.days, ctx.day.date, item.exercise);
   const cue = exercise?.how.split('\n')[0] ?? '';
+  const memo = `wo|${item.exercise}`;
+  const open = remembered(ctx, memo, true);
+  const id = nextId();
+  const name = exerciseName(ctx, item.exercise);
   return `
     <li class="wo-ex">
-      <div class="wo-ex__head"><span class="t-1st-semibold">${esc(exerciseName(ctx, item.exercise))}</span><span class="t-3rd-semibold muted">${esc(prescription(item))}</span></div>
-      <div class="wo-ex__sub">${cue ? `<p class="t-2nd-regular">${esc(cue)}</p>` : ''}${last ? `<p class="t-2nd-regular"><b>минулого разу:</b> ${smallUnits(esc(formatSets(last)))}</p>` : ''}</div>
-      <div class="sets">${Array.from({ length: n }, (_, i) => setRow(ctx, item, i, n)).join('')}</div>
-      <div class="wo-ex__actions">${howAccordion(ctx, `how|${item.exercise}`, howTo(exercise)) || '<span></span>'}
-        <button type="button" class="ctl btn btn--tertiary" data-act="more-sets" data-ex="${esc(item.exercise)}">додати підхід</button></div>
+      <button type="button" class="ctl accordion accordion--exercise" aria-expanded="${open}" aria-controls="${id}" data-memo="${esc(dayKey(ctx, memo))}">
+        <span class="accordion__title t-1st-semibold">${esc(name)}</span><span class="accordion__meta t-3rd-semibold">${esc(prescription(item))}</span>
+      </button>
+      <div class="acc-body acc-body--exercise" id="${id}"${open ? '' : ' hidden'}>
+        <div class="wo-ex__sub">${cue ? `<p class="t-2nd-regular">${esc(cue)}</p>` : ''}${last ? `<p class="t-2nd-regular"><b>минулого разу:</b> ${smallUnits(esc(formatSets(last)))}</p>` : ''}</div>
+        <div class="sets">${Array.from({ length: n }, (_, i) => setRow(ctx, item, i, n)).join('')}</div>${showTip ? tip(SETS_TIP, SETS_TIP_TEXT) : ''}
+        <div class="wo-ex__actions">${howAccordion(ctx, `how|${item.exercise}`, howTo(exercise)) || '<span></span>'}
+          <button type="button" class="ctl btn btn--tertiary" data-act="more-sets" data-ex="${esc(item.exercise)}">додати підхід</button></div>
+      </div>
     </li>`;
 }
 
-function workoutEntry(ctx: SectionContext, entry: WorkoutEntry): string {
+/** The tip goes under the first exercise that has an × to explain (two sets or more). */
+function tipExercise(ctx: SectionContext, items: readonly WorkoutItem[]): string | null {
+  if (!(ctx.tipOpen?.(SETS_TIP) ?? false)) return null;
+  return items.find((item) => setRows(ctx.day, item.exercise, item.sets) > 1)?.exercise ?? null;
+}
+
+/** A group: an outline only; each exercise in it keeps its own fill (Olesia, MY-FIXES). */
+function workoutEntry(ctx: SectionContext, entry: WorkoutEntry, tipFor: string | null): string {
   if ('set' in entry) {
-    return `<li class="wo-group"><p class="t-3rd-regular muted">група вправ</p><ol class="ex-list">${entry.set.map((item) => workoutExercise(ctx, item)).join('')}</ol></li>`;
+    return `<li class="wo-group"><p class="t-3rd-regular muted">група вправ</p><ol class="ex-list">${
+      entry.set.map((item) => workoutExercise(ctx, item, item.exercise === tipFor)).join('')}</ol></li>`;
   }
-  return workoutExercise(ctx, entry);
+  return workoutExercise(ctx, entry, entry.exercise === tipFor);
 }
 
 function pickedWorkout(ctx: SectionContext, sessionId: string): string {
   const session = ctx.settings.workout.sessions.find((s) => s.id === sessionId);
   if (!session) return muted('цього тренування вже немає в налаштуваннях. записи збережено.');
   const how = session.how ? `<div class="how-acc">${accordion('paragraph', 'як проходить тренування', dayKey(ctx, 'how|session'),
-    remembered(ctx, 'how|session', false), `<p class="how t-2nd-regular">${esc(session.how)}</p>`)}</div>` : '';
+    remembered(ctx, 'how|session', false), howParagraphs(session.how))}</div>` : '';
   const rules = ctx.settings.workout.hint ? `<p class="wo-rules t-1st-regular">${esc(ctx.settings.workout.hint)}</p>` : '';
+  const tipFor = tipExercise(ctx, session.items.flatMap((entry) => ('set' in entry ? entry.set : [entry])));
   return `${how}<h3 class="t-h5 wo-title">${esc(sessionName(session.name))}</h3>${rules}
-    <ol class="ex-list">${session.items.map((entry) => workoutEntry(ctx, entry)).join('')}</ol>`;
+    <ol class="ex-list">${session.items.map((entry) => workoutEntry(ctx, entry, tipFor)).join('')}</ol>`;
 }
 
+/** «прибрати з цього дня»: at the very top, under the section's title (Olesia, MY-FIXES). */
 function dropButton(ctx: SectionContext): string {
   const armed = ctx.session.armed === dayKey(ctx, 'drop');
-  return armed
-    ? `<p class="t-2nd-regular">записи цього тренування видаляться.</p><button type="button" class="ctl btn btn--destructive" data-act="drop">так, прибрати з цього дня</button>`
-    : '<button type="button" class="ctl btn btn--destructive" data-act="drop">прибрати з цього дня</button>';
+  return `<div class="wo-drop">${armed
+    ? '<p class="t-2nd-regular">записи цього тренування видаляться.</p><button type="button" class="ctl btn btn--destructive" data-act="drop">так, прибрати з цього дня</button>'
+    : '<button type="button" class="ctl btn btn--destructive" data-act="drop">прибрати з цього дня</button>'}</div>`;
+}
+
+/** What a section shows above its description: «прибрати з цього дня» once a workout is picked. */
+export function sectionTop(id: string, ctx: SectionContext): string {
+  return id === 'wo' && ctx.day.wo ? dropButton(ctx) : '';
 }
 
 export function workoutBody(ctx: SectionContext): string {
@@ -513,7 +561,7 @@ export function workoutBody(ctx: SectionContext): string {
     const picks = sessions.map((s) => `<button type="button" class="ctl btn btn--secondary pick" data-act="pick" data-session="${esc(s.id)}">${esc(sessionName(s.name))}</button>`);
     return `${before}${picks.join('') || muted('тренувань ще немає. додай їх у налаштуваннях.')}`;
   }
-  return `${before}${pickedWorkout(ctx, ctx.day.wo.session)}${checkInSub(ctx, 'afterWorkout')}${dropButton(ctx)}`;
+  return `${before}${pickedWorkout(ctx, ctx.day.wo.session)}${checkInSub(ctx, 'afterWorkout')}`;
 }
 
 /* ---- movement (Figma activity/section movement): laps («додати коло», Olesia 2026-11-09) ---- */

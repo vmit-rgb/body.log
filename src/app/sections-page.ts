@@ -73,7 +73,7 @@ export class SectionsEditor {
   constructor(private readonly draft: DraftHost) {}
 
   view(): SectionsView {
-    return { inner: this.inner, menu: this.menu, picking: this.picking };
+    return { inner: this.inner, menu: this.menu, picking: this.picking, movable: (slot, family) => this.moves(slot, family).length > 0 };
   }
 
   toggle(id: string): void {
@@ -284,13 +284,19 @@ export class SectionsEditor {
     return items.flatMap((_, i) => (i === own ? [] : [{ key: `g:${i}`, label: this.nameOf({ list: top, index: i }) }]));
   }
 
-  openMenu(slot: Slot, family: string): void {
+  /** What the «дії» menu of an entry offers; nothing for the only entry of its list. */
+  private moves(slot: Slot, family: string): { key: string; label: string }[] {
     const items: { key: string; label: string }[] = [];
     if (this.partners(slot).length) items.push({ key: 'group', label: 'об’єднати в групу з…' });
     if (inGroup(slot.list)) items.push({ key: 'leave', label: 'вийти з групи' });
     if (this.containers(slot).length) items.push({ key: 'move', label: 'перемістити в…' });
     if (this.step(slot, family, -1)) items.push({ key: 'up', label: 'вище' });
     if (this.step(slot, family, 1)) items.push({ key: 'down', label: 'нижче' });
+    return items;
+  }
+
+  openMenu(slot: Slot, family: string): void {
+    const items = this.moves(slot, family);
     if (!items.length) return;
     items.push({ key: 'cancel', label: 'скасувати' });
     this.menu = { slot, items };

@@ -1,5 +1,6 @@
 import { formatShort, type DayKey } from '../domain/dates';
-import type { WeekGoal } from '../domain/progress';
+import type { Day } from '../domain/day';
+import { kindDone, type WeekGoal } from '../domain/progress';
 import type { Moment, Settings } from '../domain/settings';
 
 /*
@@ -32,6 +33,26 @@ export function homeSections(settings: Settings): SectionSpec[] {
     [true, { id: 'note', title: 'нотатка', description: 'усе, що хочеш запамʼятати про цей день.' }],
   ];
   return all.filter(([shown]) => shown).map(([, section]) => section);
+}
+
+const answered = (day: Day, moment: Moment) => Object.values(day.t[moment] ?? {}).some((value) => value !== null && value !== undefined && value !== '');
+
+/**
+ * Something is done in a section: then its line says «хороша робота <3»
+ * (Olesia, MY-FIXES: any doing counts, soft praise). A warm-up counts from
+ * its first ticked exercise or timed round, not only a whole level; a
+ * section's own wellbeing questions don't count as doing it; the note never does.
+ */
+export function sectionDone(id: SectionId, day: Day, settings: Settings): boolean {
+  switch (id) {
+    case 'ck-morning': return answered(day, 'morning');
+    case 'ck-evening': return answered(day, 'evening');
+    case 'mw': return day.mw.ticks.length > 0 || Object.values(day.mw.times).some((times) => times.some((t) => t !== null && t > 0));
+    case 'dw': return kindDone(day, 'daytimeWarmup', settings);
+    case 'wo': return kindDone(day, 'workout', settings);
+    case 'mv': return kindDone(day, 'movement', settings);
+    default: return false;
+  }
 }
 
 export type Hero =

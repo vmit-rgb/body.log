@@ -36,6 +36,8 @@ export interface SectionControls {
   /** The screen as drawn now: a change draws it anew, and the motion plays on the new one. */
   screen(): HTMLElement;
   toast(message: ToastMessage): void;
+  /** «зрозуміло» on a tip for newcomers: it doesn't show again on this phone. */
+  closeTip?(id: string): void;
 }
 
 export const AUTOSAVE_MS = 20_000;
@@ -302,6 +304,7 @@ const TAPS: Record<string, Tap> = {
   'slide-save': saveDraft,
   'slide-reset': resetSlider,
   'ai-tip': (c) => c.toast(AI_LINK),
+  'tip-close': (c, el) => c.closeTip?.(data(el, 'tip')),
   pulse: pulseButton,
   'pulse-done': finishPulse,
   'pulse-cancel': (c) => {
