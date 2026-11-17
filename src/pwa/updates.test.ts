@@ -38,8 +38,8 @@ function hooks() {
 describe('watchForUpdates', () => {
   it('registers the worker for the app’s own address', async () => {
     const container = new FakeContainer(null);
-    await watchForUpdates(container, '/phys-activity-tracking-app/', hooks().value);
-    expect(container.registered).toEqual(['/phys-activity-tracking-app/sw.js', { scope: '/phys-activity-tracking-app/' }]);
+    await watchForUpdates(container, '/body.log/', hooks().value);
+    expect(container.registered).toEqual(['/body.log/sw.js', { scope: '/body.log/' }]);
   });
 
   it('offers a version that is already waiting, and switches only when asked', async () => {

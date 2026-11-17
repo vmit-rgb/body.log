@@ -83,9 +83,9 @@ const FEEDBACK_SOON = soon('форму для фідбеку ще робимо, 
 
 /** «поділитися застосунком» (Figma caption, Нитка's draft): the landing page, not the app itself. */
 export const SHARE: ShareData = {
-  title: 'трекер',
+  title: 'body.log',
   text: 'щоденник руху й самопочуття: розминка, вправи й самопочуття в одному місці, без сповіщень, дані лишаються на телефоні',
-  url: 'https://vmit-rgb.github.io/phys-activity-tracking-app-landing-page/',
+  url: 'https://vmit-rgb.github.io/body.log-landing/',
 };
 
 /** «зберегти копію»; false when the phone refused the file. */

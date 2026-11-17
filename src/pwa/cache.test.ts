@@ -28,7 +28,7 @@ describe('caches by version', () => {
 });
 
 describe('servesFromCache', () => {
-  const scope = 'https://vmit-rgb.github.io/phys-activity-tracking-app/';
+  const scope = 'https://vmit-rgb.github.io/body.log/';
   it('answers the app’s own reads', () => {
     expect(servesFromCache({ method: 'GET', url: `${scope}assets/app-1.js` }, scope)).toBe(true);
   });

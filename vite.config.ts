@@ -42,9 +42,9 @@ function serviceWorkerManifest(): Plugin {
   };
 }
 
-// GitHub Pages serves the app from /<repo-name>/.
+// GitHub Pages serves the app from /<repo-name>/ (the repo is body.log since 2026-11-17).
 export default defineConfig({
-  base: '/phys-activity-tracking-app/',
+  base: '/body.log/',
   plugins: [serviceWorkerManifest()],
   build: {
     // older phones too: iOS 15.4+ (iPhone 6s and newer), Chrome 105+

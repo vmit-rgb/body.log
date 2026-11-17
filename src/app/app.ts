@@ -78,7 +78,7 @@ async function restoreFrom(file: File, keep: (diary: Diary, done: ToastMessage) 
 }
 
 /**
- * B-05: «трекер» on home, «початок · трекер» before there are settings
+ * B-05: «body.log» on home, «початок · body.log» before there are settings
  * (Olesia's list); the screen of an unreadable diary is home's (Нитка).
  */
 const START_TITLES: Record<StartScreen, string | undefined> = {

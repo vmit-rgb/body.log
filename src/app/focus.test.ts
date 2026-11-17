@@ -161,31 +161,31 @@ describe('B-04: the focus follows the screens', () => {
 describe('B-05: the page’s title', () => {
   it('names the screen shown', () => {
     start();
-    expect(document.title).toBe('трекер');
+    expect(document.title).toBe('body.log');
     button('меню').click();
-    expect(document.title).toBe('меню · трекер');
+    expect(document.title).toBe('меню · body.log');
     button('історія').click();
-    expect(document.title).toBe('історія · трекер');
+    expect(document.title).toBe('історія · body.log');
     device.pressBack();
     button('налаштування').click();
-    expect(document.title).toBe('налаштування · трекер');
+    expect(document.title).toBe('налаштування · body.log');
   });
 
   it('names the help pages', () => {
     start();
     button('меню').click();
     button('що нового в застосунку').click();
-    expect(document.title).toBe('що нового · трекер');
+    expect(document.title).toBe('що нового · body.log');
     button('меню').click();
     button('як користуватись').click();
-    expect(document.title).toBe('як користуватись · трекер');
+    expect(document.title).toBe('як користуватись · body.log');
     button('закрити').click();
-    expect(document.title).toBe('трекер');
+    expect(document.title).toBe('body.log');
   });
 
-  it('is «початок · трекер» before there are settings', () => {
+  it('is «початок · body.log» before there are settings', () => {
     start(null);
-    expect(document.title).toBe('початок · трекер');
+    expect(document.title).toBe('початок · body.log');
   });
 });
 
