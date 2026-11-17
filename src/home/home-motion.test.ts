@@ -133,10 +133,10 @@ describe('another day (arrows, swipe, calendar)', () => {
   it('re-forms the date in the bar out of glyphs, and a screen reader still hears the whole date', () => {
     byLabel('попередній день').click();
     const date = $('.date-nav__date span[aria-hidden="true"]');
-    expect(date.textContent).not.toBe('вт, 10.11.2026');
+    expect(date.textContent).not.toBe('вт 10.11');
     expect($('.date-nav__date .visually-hidden').textContent).toBe('вівторок, 10.11.2026');
     vi.advanceTimersByTime(240);
-    expect(date.textContent).toBe('вт, 10.11.2026');
+    expect(date.textContent).toBe('вт 10.11');
   });
 
   it('makes the chosen day jump in the calendar', () => {
@@ -161,7 +161,7 @@ describe('another day (arrows, swipe, calendar)', () => {
     document.documentElement.setAttribute('data-no-motion', '');
     byLabel('попередній день').click();
     expect(fake.played).toEqual([]);
-    expect($('.date-nav__date span[aria-hidden="true"]').textContent).toBe('вт, 10.11.2026');
+    expect($('.date-nav__date span[aria-hidden="true"]').textContent).toBe('вт 10.11');
   });
 });
 

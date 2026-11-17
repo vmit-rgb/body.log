@@ -1,4 +1,4 @@
-import { addDays, formatLong, formatShort, type DayKey } from '../domain/dates';
+import { addDays, formatBar, formatLong, type DayKey } from '../domain/dates';
 import { emptyDay, type Day } from '../domain/day';
 import type { Diary } from '../domain/diary';
 import { weekGoal } from '../domain/progress';
@@ -82,7 +82,7 @@ export function fillBar(host: HTMLElement, state: BarState): void {
   const date = part<HTMLElement>(host, '.date-nav__date');
   // without the goal line the date takes header 4 (Olesia, 2026-10-29)
   date.className = `ctl date-nav__date ${goal === null ? 't-h4' : 't-h5'}`;
-  date.firstElementChild!.textContent = formatShort(state.date);
+  date.firstElementChild!.textContent = formatBar(state.date, state.today);
   date.lastElementChild!.textContent = formatLong(state.date);
   part<HTMLButtonElement>(host, '.date-nav [data-step="1"]').disabled = state.date >= state.today;
 }

@@ -72,7 +72,7 @@ describe('the menu (Figma screen/menu 183:3210)', () => {
   it('keeps the bottom bar, with ✕ instead of ≡', () => {
     expect(button('закрити меню')).toBeTruthy();
     expect(button('меню')).toBeUndefined();
-    expect(host.querySelector('.date-nav__date [aria-hidden]')!.textContent).toBe('пн, 09.11.2026');
+    expect(host.querySelector('.date-nav__date [aria-hidden]')!.textContent).toBe('пн 09.11');
   });
 
   it('goes back home with ✕', () => {

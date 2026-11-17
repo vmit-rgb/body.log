@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addDays, dayKeyOf, daysBetween, formatLong, formatShort, isDayKey, mondayOf, type DayKey } from './dates';
+import { addDays, dayKeyOf, daysBetween, formatBar, formatLong, formatShort, isDayKey, mondayOf, type DayKey } from './dates';
 
 const key = (text: string) => text as DayKey;
 
@@ -49,6 +49,10 @@ describe('dates on screen', () => {
   it('short: weekday and the date with dots', () => {
     expect(formatShort(key('2026-10-28'))).toBe('ср, 28.10.2026');
     expect(formatShort(key('2026-11-01'))).toBe('нд, 01.11.2026');
+  });
+  it('in the bar: short, the year only for another year (Olesia, 2026-11-17)', () => {
+    expect(formatBar(key('2026-11-12'), key('2026-11-17'))).toBe('чт 12.11');
+    expect(formatBar(key('2025-12-31'), key('2026-01-02'))).toBe('ср 31.12.2025');
   });
   it('long: the weekday in full, for screen readers', () => {
     expect(formatLong(key('2026-10-30'))).toBe('пʼятниця, 30.10.2026');
