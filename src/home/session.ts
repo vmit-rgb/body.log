@@ -9,7 +9,7 @@ import type { MonthKey } from '../domain/stats';
  *
  * Glossary
  * - armed: a × tapped once; it turns into ✓, and the second tap removes (ACCESSIBILITY.md, deleting).
- * - draft: a slider value moved but not saved; «зберегти», 20 s or leaving saves it.
+ * - draft: a slider value moved but not saved; only «зберегти» saves it (wave 5c).
  * - retry: a saved stopwatch or pulse tapped once; the next tap starts it again from zero.
  */
 export interface HomeSession {
@@ -20,10 +20,6 @@ export interface HomeSession {
   readonly drafts: Map<string, Draft>;
   /** Number fields holding something that isn't a number, by field key; `shown`: its error line is on screen (D-01). */
   readonly typed: Map<string, { readonly text: string; readonly shown: boolean }>;
-  /** Saves every draft; set by the screen shown. */
-  flush: () => void;
-  /** The 20 s autosave of the drafts (ACCESSIBILITY.md, slider). */
-  timer: ReturnType<typeof setTimeout> | undefined;
   /** The month the calendar shows; null follows the day shown. */
   month: MonthKey | null;
   /** The pulse timer in use, if any (one at a time: both hands are busy). */
@@ -79,7 +75,7 @@ export function dropPulse(session: HomeSession): void {
 
 export function homeSession(): HomeSession {
   return {
-    open: new Map(), armed: null, running: new Map(), retry: new Set(), drafts: new Map(), typed: new Map(), flush: () => {}, timer: undefined,
+    open: new Map(), armed: null, running: new Map(), retry: new Set(), drafts: new Map(), typed: new Map(),
     month: null, pulse: null, pulseStep: () => {}, pulseTimer: undefined,
   };
 }

@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+import { readDay } from '../domain/day';
 import { parseDiary, serializeDiary } from '../domain/diary';
 import { EXAMPLE_DIARY } from '../domain/examples';
 import type { DayKey } from '../domain/dates';
-import { backupMemory, BEFORE_FORMAT_KEY, browserChoice, diaryStore, DIARY_KEY, finishMemory, sectionMemory, storageFor, themeMemory, tipMemory, type KeyValue } from './store';
+import { backupMemory, BEFORE_FORMAT_KEY, browserChoice, diaryStore, DIARY_KEY, FINISHED_KEY, sectionMemory, storageFor, themeMemory, tipMemory, type KeyValue } from './store';
 
 const now = () => new Date('2026-11-09T08:00:00.000Z');
 
@@ -229,20 +230,52 @@ describe('remembered on this phone only: theme and the last copy', () => {
   });
 });
 
-describe('finishMemory («закінчити тренування», wave 5b)', () => {
+describe('«закінчити тренування» from wave 5b moves into the day (wave 5c)', () => {
   beforeEach(() => localStorage.clear());
+  const A = '2026-11-16' as DayKey;
+  const B = '2026-11-17' as DayKey;
+  const C = '2026-11-18' as DayKey;
+  const stored = (store: ReturnType<typeof diaryStore>) => {
+    store.save({
+      profile: EXAMPLE_DIARY.profile,
+      days: {
+        [A]: readDay({ wo: { session: 's', ex: { w: [{ r: 5 }] } } }, A),
+        [B]: readDay({ wo: { session: 's' } }, B),
+        [C]: readDay({ note: 'без тренування' }, C),
+      },
+    });
+  };
 
-  it('remembers a finished workout per day on this phone, and forgets it when it is opened again', () => {
-    const memory = finishMemory(localStorage);
-    const day = '2026-11-17' as DayKey;
-    expect(memory.finished(day)).toBe(false);
-    memory.finish(day, true);
-    expect(finishMemory(localStorage).finished(day)).toBe(true);
-    expect(memory.finished('2026-11-18' as DayKey)).toBe(false);
-    memory.finish(day, false);
-    expect(memory.finished(day)).toBe(false);
-    const full: KeyValue = { getItem: () => null, setItem: () => { throw new Error('full'); }, removeItem: () => {} };
-    expect(() => finishMemory(full).finish(day, true)).not.toThrow();
+  it('a mark on the phone becomes `wo.done` in the stored diary once, and the mark goes', () => {
+    const store = diaryStore(localStorage, () => new Date('2026-11-18T08:00:00Z'));
+    stored(store);
+    localStorage.setItem(FINISHED_KEY + A, 'yes');
+    localStorage.setItem(FINISHED_KEY + C, 'yes');
+    const diary = store.load()!;
+    expect(diary.days[A]!.wo!.done).toBe(true);
+    expect(diary.days[B]!.wo!.done).toBeUndefined();
+    // a day with no workout picked: the mark means nothing
+    expect(diary.days[C]!.wo).toBeNull();
+    expect(localStorage.getItem(FINISHED_KEY + A)).toBeNull();
+    expect(localStorage.getItem(FINISHED_KEY + C)).toBeNull();
+    // in the stored copy, so a copy file carries it
+    expect(JSON.parse(localStorage.getItem(DIARY_KEY)!).days[A].wo.done).toBe(true);
+    expect(JSON.parse(localStorage.getItem(DIARY_KEY)!).days[B].wo.done).toBeUndefined();
+  });
+
+  it('a full phone keeps the marks and tries again next time', () => {
+    const store = diaryStore(localStorage, () => new Date());
+    stored(store);
+    localStorage.setItem(FINISHED_KEY + A, 'yes');
+    const before = localStorage.getItem(DIARY_KEY);
+    const full: KeyValue = {
+      getItem: (key) => localStorage.getItem(key),
+      setItem: () => { throw new Error('full'); },
+      removeItem: (key) => localStorage.removeItem(key),
+    };
+    expect(diaryStore(full, () => new Date()).load()!.days[A]!.wo!.done).toBe(true);
+    expect(localStorage.getItem(DIARY_KEY)).toBe(before);
+    expect(localStorage.getItem(FINISHED_KEY + A)).toBe('yes');
   });
 });
 

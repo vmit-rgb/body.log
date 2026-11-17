@@ -1,6 +1,6 @@
 import type { Answer, Day, SetLog } from '../domain/day';
 import {
-  addLap, answer, dropSession, markLevel, pickSession, removeLap, removeRound, removeSet, roundRows, setLap, setNote, setRound, setRows,
+  addLap, answer, dropSession, finishWorkout, markLevel, pickSession, removeLap, removeRound, removeSet, roundRows, setLap, setNote, setRound, setRows,
   setSet, showMoreRounds, showMoreSets, toggleChip, toggleTick, type Edit,
 } from '../domain/log';
 import { parseNumber } from '../domain/numbers';
@@ -43,11 +43,8 @@ export interface SectionControls {
   tipOpen?(id: string): boolean;
   /** The person did what a tip explains; after three times it stops showing (wave 5b). */
   tipDone?(id: string): void;
-  /** «закінчити тренування» / «продовжити тренування»; `render` draws the screen again (wave 5b). */
-  finish?(done: boolean, render: boolean): void;
 }
 
-export const AUTOSAVE_MS = 20_000;
 const AI_LINK: ToastMessage = { message: 'це посилання дав ШІ. перевір його, перш ніж повторювати.' };
 
 const data = (element: HTMLElement, name: string) => String(element.dataset[name]);
@@ -186,7 +183,11 @@ function dropWorkout(c: SectionControls): void {
   workoutAssembles(c.screen());
 }
 
-/* ---- the slider: a draft until «зберегти», 20 s or leaving (ACCESSIBILITY.md) ---- */
+/*
+ * ---- the slider: a draft until «зберегти», nothing else saves it (wave 5c; Olesia,
+ * 2026-11-17: no 20 s, no saving on leaving). The draft stays while the app is open,
+ * also across days; closing the app drops it. ----
+ */
 
 function sliderKey(c: SectionControls, element: HTMLElement): string {
   return dayKey(c, `slide|${moment(element)}|${data(element, 'tracker')}`);
@@ -195,8 +196,6 @@ function sliderKey(c: SectionControls, element: HTMLElement): string {
 function setDraft(c: SectionControls, element: HTMLElement, value: number): void {
   const id = data(element, 'tracker');
   c.session.drafts.set(sliderKey(c, element), { moment: moment(element), tracker: id, value });
-  clearTimeout(c.session.timer);
-  c.session.timer = setTimeout(() => c.session.flush(), AUTOSAVE_MS);
 }
 
 function step(c: SectionControls, element: HTMLElement): void {
@@ -205,16 +204,6 @@ function step(c: SectionControls, element: HTMLElement): void {
   const next = current === undefined ? min + Math.max(0, Number(data(element, 'delta'))) : current + Number(data(element, 'delta'));
   setDraft(c, element, Math.min(max, Math.max(min, next)));
   c.render();
-}
-
-/** Saves every slider draft of the day shown. */
-export function flushDrafts(c: SectionControls): void {
-  clearTimeout(c.session.timer);
-  const prefix = `${c.day().date}|`;
-  const drafts = [...c.session.drafts].filter(([key]) => key.startsWith(prefix));
-  if (drafts.length === 0) return;
-  for (const [key] of drafts) c.session.drafts.delete(key);
-  c.edit((day) => drafts.reduce((next, [, d]) => answer(d.moment, d.tracker, d.value)(next), day), true);
 }
 
 /** The slider of `key` on the screen drawn now. */
@@ -295,6 +284,19 @@ function adding(c: SectionControls, button: HTMLElement, name: string, edit: Edi
 
 type Tap = (c: SectionControls, element: HTMLElement) => void;
 
+/**
+ * «закінчити тренування» / «продовжити тренування» (waves 5b, 5c): an edit of
+ * the day, so the copy keeps it. The button changes its words in place and
+ * the focus stays on it.
+ */
+function finishTap(c: SectionControls, element: HTMLElement): void {
+  const done = data(element, 'done') === 'true';
+  c.edit(finishWorkout(done), true);
+  if (done) announce('тренування закінчено');
+  // a tap doesn't always focus the button (Safari): the focus goes to it on purpose
+  c.screen().querySelector<HTMLElement>('[data-act="finish"]')?.focus({ preventScroll: true });
+}
+
 const TAPS: Record<string, Tap> = {
   level: (c, el) => {
     const level = c.settings.morningWarmup.levels.find((l) => l.id === data(el, 'level'));
@@ -302,8 +304,7 @@ const TAPS: Record<string, Tap> = {
   },
   chip: (c, el) => c.edit(toggleChip(data(el, 'group')), true),
   pick: (c, el) => {
-    // a workout picked anew starts unfinished, also after «прибрати з цього дня»
-    c.finish?.(false, false);
+    // a workout picked anew starts unfinished (pickSession), also after «прибрати з цього дня»
     c.edit(pickSession(data(el, 'session')), true);
     workoutAssembles(c.screen());
   },
@@ -313,7 +314,7 @@ const TAPS: Record<string, Tap> = {
     c.tipDone?.(ROUNDS_TIP);
     adding(c, el, 'ex', showMoreRounds(data(el, 'ex')));
   },
-  finish: (c, el) => c.finish?.(data(el, 'done') === 'true', true),
+  finish: finishTap,
   'add-lap': (c, el) => adding(c, el, 'kind', addLap(data(el, 'kind'))),
   rm: (c, el) => remove(c, data(el, 'rm'), el),
   sw: (c, el) => stopwatch(c, data(el, 'sw'), el),
@@ -365,9 +366,9 @@ const TYPING: Record<string, Typing> = {
         `<button type="button" class="ctl btn btn--tertiary" data-act="slide-save" data-moment="${moment(el)}">зберегти</button>`);
       tracker.querySelector<HTMLElement>('[data-act="slide-save"]')!.dataset.tracker = data(el, 'tracker');
     }
-    // the tip under the first slider moved without a render (one at a time)
+    // the tip above «зберегти» of the first slider moved without a render (one at a time)
     if (c.tipOpen?.(SLIDER_TIP) && !c.screen().querySelector(`[data-tip-id="${SLIDER_TIP}"]`)) {
-      tracker.querySelector('.slider-row')!.insertAdjacentHTML('afterend', tip(SLIDER_TIP, SLIDER_TIP_TEXT));
+      tracker.querySelector('.tracker__head')!.insertAdjacentHTML('beforebegin', tip(SLIDER_TIP, SLIDER_TIP_TEXT, true));
     }
   },
 };

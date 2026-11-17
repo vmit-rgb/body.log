@@ -89,10 +89,10 @@ describe('sectionDone (waves 5 and 5b: the tick and «хороша робота 
     expect(sectionDone('mw', day({ mw: { ticks: ['exercise-1', 'exercise-2'] } }), settings)).toBe(true);
     expect(sectionDone('dw', day({ dw: ['back'] }), settings)).toBe(true);
     expect(sectionDone('wo', day({ wo: { session: 'a', ex: { 'exercise-6': [{ r: 8 }] } } }), settings)).toBe(false);
-    expect(sectionDone('wo', day({ wo: { session: 'a', ex: { 'exercise-6': [{ r: 8 }] } } }), settings, true)).toBe(true);
-    expect(sectionDone('wo', day({ wo: { session: 'a' } }), settings, true)).toBe(true);
-    // finished, then «прибрати з цього дня»: nothing to be done
-    expect(sectionDone('wo', day({}), settings, true)).toBe(false);
+    expect(sectionDone('wo', day({ wo: { session: 'a', ex: { 'exercise-6': [{ r: 8 }] }, done: true } }), settings)).toBe(true);
+    expect(sectionDone('wo', day({ wo: { session: 'a', done: true } }), settings)).toBe(true);
+    // only `true` counts (wave 5c: the key in the day)
+    expect(sectionDone('wo', day({ wo: { session: 'a', done: 'yes' } }), settings)).toBe(false);
     expect(sectionDone('mv', day({ mv: { 'movement-1': { min: 20 } } }), settings)).toBe(true);
     expect(sectionDone('ck-evening', day({ t: { evening: { tiredness: 4 } } }), settings)).toBe(true);
   });

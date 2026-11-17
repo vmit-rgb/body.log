@@ -435,6 +435,24 @@
 .tip__close {
   flex: none;
 }
+/*
+ * Wave 5c (Olesia, 2026-11-17): the slider's tip sits above «зберегти» and
+ * points down at it; «зберегти» is always at the end of the head.
+ */
+.tip--above {
+  position: relative;
+  margin-bottom: 6px;
+  padding: 0 var(--gap-items);
+  border: var(--stroke-1) solid var(--accent);
+}
+.tip--above::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  inset-inline-end: 22px;
+  border: 6px solid transparent;
+  border-top-color: var(--accent);
+}
 
 /* ---- set rows (exercise/input): number, the fields or a stopwatch, × ---- */
 .sets {

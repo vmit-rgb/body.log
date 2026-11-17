@@ -7,7 +7,6 @@ import type { Diary } from '../domain/diary';
 import { diaryStore, type DiaryStore } from '../storage/store';
 import { mountAnnouncer } from '../ui/announce';
 import { mountToast } from '../ui/toast';
-import { AUTOSAVE_MS } from './controls';
 
 /*
  * Logging on home, the way the person does it: tap, type, then check what
@@ -304,26 +303,29 @@ describe('wellbeing questions', () => {
     expect($('.tracker__value').textContent).toBe('10/10');
   });
 
-  it('a dragged slider saves itself 20 s after the last move', () => {
+  it('a dragged slider never saves itself: no 20 s any more (wave 5c, Olesia 2026-11-17)', () => {
     type(byLabel<HTMLInputElement>('енергія'), '6');
     type(byLabel<HTMLInputElement>('енергія'), '7');
     expect(host.querySelectorAll('[data-act="slide-save"]')).toHaveLength(1);
-    vi.advanceTimersByTime(AUTOSAVE_MS - 1);
+    vi.advanceTimersByTime(10 * 60_000);
     expect(saved().t).toEqual({});
-    vi.advanceTimersByTime(1);
+    byText('зберегти').click();
     expect(saved().t.morning).toEqual({ energy: 7 });
   });
 
-  it('a slider draft is saved when the day changes or the app is hidden', () => {
-    byLabel('менше: енергія').click();
+  it('a slider draft is not saved by changing the day, the menu or hiding the app; it waits for «зберегти» while the app is open', () => {
+    byLabel('більше: енергія').click();
+    byLabel('більше: енергія').click();
     byLabel('попередній день').click();
-    expect(saved().t.morning).toEqual({ energy: 0 });
+    expect(saved().t).toEqual({});
     byLabel('наступний день').click();
-    byText('скинути').click();
-    byLabel('більше: енергія').click();
-    byLabel('більше: енергія').click();
+    // the draft is still there, with its «зберегти»
+    expect($('.tracker__value').textContent).toBe('2/10');
+    expect(host.querySelectorAll('[data-act="slide-save"]')).toHaveLength(1);
     hide();
-    expect(store.load()!.days[TODAY]!.t.morning).toEqual({ energy: 2 });
+    expect(store.load()!.days[TODAY]).toBeUndefined();
+    byText('зберегти').click();
+    expect(saved().t.morning).toEqual({ energy: 2 });
   });
 
   it('keeps two numbers together and one number alone', () => {

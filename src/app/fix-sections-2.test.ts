@@ -3,7 +3,7 @@ import type { DayKey } from '../domain/dates';
 import { readDay } from '../domain/day';
 import type { Diary } from '../domain/diary';
 import { EXAMPLE_DIARY } from '../domain/examples';
-import { browserChoice, diaryStore, finishMemory, sectionMemory, tipMemory } from '../storage/store';
+import { browserChoice, diaryStore, sectionMemory, tipMemory } from '../storage/store';
 import { mountToast } from '../ui/toast';
 import { startApp } from './app';
 import { fakeDevice } from './test-env';
@@ -16,9 +16,11 @@ import { fakeDevice } from './test-env';
 
 const TODAY = '2026-11-09' as DayKey;
 let host: HTMLElement;
+let hide: () => void = () => {};
 
-function start(diary: Diary): void {
-  diaryStore(localStorage, () => new Date()).save(diary);
+/** Without a diary: the app opens what this phone already keeps. */
+function start(diary?: Diary): void {
+  if (diary) diaryStore(localStorage, () => new Date()).save(diary);
   document.body.innerHTML = '<main id="app"></main>';
   host = document.querySelector<HTMLElement>('#app')!;
   startApp({
@@ -32,8 +34,9 @@ function start(diary: Diary): void {
     today: () => TODAY,
     sections: sectionMemory(localStorage),
     tips: tipMemory(localStorage),
-    finished: finishMemory(localStorage),
-    whenHidden: () => {},
+    whenHidden: (save) => {
+      hide = save;
+    },
     ...fakeDevice().env,
   });
 }
@@ -51,6 +54,12 @@ const section = (id: string) => host.querySelector<HTMLElement>(`#sec-${id}-titl
 const done = (id: string) => section(id).classList.contains('home-section--done');
 const lead = (id: string) => section(id).querySelector('.home-section__hint')!.textContent;
 const tipsIn = (id: string, tip: string) => section(id).querySelectorAll(`[data-tip-id="${tip}"]`);
+
+/** The day as this phone keeps it, once the app has saved. */
+const stored = () => {
+  hide();
+  return diaryStore(localStorage, () => new Date()).load()!.days[TODAY]!;
+};
 
 const withSets = (): Diary =>
   ({ profile: EXAMPLE_DIARY.profile, days: { [TODAY]: readDay({ wo: { session: 'a', ex: { 'exercise-6': [{ w: 5, r: 10 }] } } }, TODAY) } }) as unknown as Diary;
@@ -104,7 +113,7 @@ describe('«закінчити тренування» (Olesia, 2026-11-17)', () 
     await tap('закінчити тренування');
     expect(done('wo')).toBe(true);
     expect(lead('wo')).toBe('хороша робота <3');
-    expect(finishMemory(localStorage).finished(TODAY)).toBe(true);
+    expect(stored().wo!.done).toBe(true);
     const again = buttons('продовжити тренування')[0]!;
     expect(again.classList.contains('btn--tertiary')).toBe(true);
     expect(document.activeElement).toBe(again);
@@ -118,17 +127,19 @@ describe('«закінчити тренування» (Olesia, 2026-11-17)', () 
     await tap('продовжити тренування');
     expect(done('wo')).toBe(false);
     expect(buttons('закінчити тренування')).toHaveLength(1);
-    expect(finishMemory(localStorage).finished(TODAY)).toBe(false);
+    expect(stored().wo!.done).toBeUndefined();
   });
 
-  it('is remembered for that day on this phone, and doesn\'t change the week goal', async () => {
+  it('is kept in the day (wave 5c: the copy has it too), and doesn\'t change the week goal', async () => {
     start(withSets());
     const goal = host.querySelector('.bar__goal')?.textContent;
     await tap('тренування');
     await tap('закінчити тренування');
     expect(host.querySelector('.bar__goal')?.textContent).toBe(goal);
-    start(withSets());
+    hide();
+    start();
     expect(done('wo')).toBe(true);
+    expect(localStorage.getItem(`phys-activity-tracking-app/workout-finished/${TODAY}`)).toBeNull();
   });
 
   it('a workout picked anew after «прибрати з цього дня» starts unfinished', async () => {

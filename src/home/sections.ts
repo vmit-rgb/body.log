@@ -31,8 +31,6 @@ export interface SectionContext {
   readonly session: HomeSession;
   /** Whether a tip for newcomers still shows (the person hasn't closed it on this phone). */
   readonly tipOpen?: ((id: string) => boolean) | undefined;
-  /** «закінчити тренування» was pressed for this day (on this phone; wave 5b). */
-  readonly finished?: boolean | undefined;
 }
 
 
@@ -95,14 +93,15 @@ function howAccordion(ctx: SectionContext, memo: string, body: string, title = '
 export const SETS_TIP = 'sets';
 const SETS_TIP_TEXT = 'зайвий підхід прибирає × праворуч від нього: натисни ×, а потім ✓.';
 export const SLIDER_TIP = 'slider';
-export const SLIDER_TIP_TEXT = 'значення запишеться, коли натиснеш «зберегти» (або саме, за 20 с).';
+export const SLIDER_TIP_TEXT = 'значення запишеться, коли натиснеш «зберегти».';
 export const REMOVE_TIP = 'remove';
 const REMOVE_TIP_TEXT = '× нічого не стирає одразу: натисни ✓, щоб видалити.';
 export const ROUNDS_TIP = 'rounds';
 const ROUNDS_TIP_TEXT = '«ще раз» додає ще один таймер, щоб записати вправу ще раз.';
 
-export function tip(id: string, text: string): string {
-  return `<div class="tip" role="note" data-tip-id="${esc(id)}"><p class="t-3rd-regular tip__text">${text}</p>
+/** `above`: over the button it explains, pointing down at it (the slider's «зберегти», wave 5c). */
+export function tip(id: string, text: string, above = false): string {
+  return `<div class="tip${above ? ' tip--above' : ''}" role="note" data-tip-id="${esc(id)}"><p class="t-3rd-regular tip__text">${text}</p>
     <button type="button" class="ctl btn btn--tertiary tip__close" data-act="tip-close" data-tip="${esc(id)}" aria-label="зрозуміло, сховати підказку">зрозуміло</button></div>`;
 }
 
@@ -113,7 +112,7 @@ function armedTip(ctx: SectionContext, target: string, quiet = false): string {
   return !quiet && ctx.session.armed === dayKey(ctx, target) && tipOpen(ctx, REMOVE_TIP) ? tip(REMOVE_TIP, REMOVE_TIP_TEXT) : '';
 }
 
-/** The first slider with a value not saved yet gets the tip (one at a time). */
+/** The first slider with a value not saved yet gets the tip above its «зберегти» (one at a time). */
 function firstDraft(ctx: SectionContext): string | undefined {
   const prefix = `${ctx.day.date}|`;
   return [...ctx.session.drafts.keys()].find((key) => key.startsWith(prefix));
@@ -161,13 +160,13 @@ function scaleTracker(ctx: SectionContext, moment: Moment, tracker: Tracker & { 
   const state = locked ? ' tracker--locked' : value === undefined ? ' tracker--unset' : '';
   return `
     <div class="tracker tracker--scale${state}">
-      <div class="tracker__head">
+      ${!locked && draft !== undefined && firstDraft(ctx) === key && tipOpen(ctx, SLIDER_TIP) ? tip(SLIDER_TIP, SLIDER_TIP_TEXT, true) : ''}<div class="tracker__head">
         <span class="t-1st-semibold tracker__name">${esc(tracker.name || 'без назви')}</span>
         <span class="tracker__value t-3rd-semibold" aria-live="polite">${value === undefined ? '' : `${formatNumber(value)}/${formatNumber(tracker.max)}`}</span>${
           sliderAction(locked, draft !== undefined, trackerData(moment, tracker))}
       </div>
       ${sliderRow({ tracker, key, value, locked, data: trackerData(moment, tracker) })}
-      ${!locked && draft !== undefined && firstDraft(ctx) === key && tipOpen(ctx, SLIDER_TIP) ? tip(SLIDER_TIP, SLIDER_TIP_TEXT) : ''}${hint(tracker)}
+      ${hint(tracker)}
     </div>`;
 }
 
@@ -577,7 +576,7 @@ function pickedWorkout(ctx: SectionContext, sessionId: string): string {
  */
 function finishButton(ctx: SectionContext): string {
   const key = keyed(dayKey(ctx, 'finish'));
-  return `<div class="wo-finish">${ctx.finished
+  return `<div class="wo-finish">${ctx.day.wo?.done
     ? `<button type="button" class="ctl btn btn--tertiary" data-act="finish" data-done="false" ${key}>продовжити тренування</button>`
     : `<button type="button" class="ctl btn btn--primary" data-act="finish" data-done="true" ${key}>закінчити тренування</button>`}</div>`;
 }
