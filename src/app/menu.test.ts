@@ -197,7 +197,7 @@ describe('«поділитися застосунком»', () => {
   it('opens the phone’s share sheet with the landing page', async () => {
     tap('поділитися застосунком');
     await vi.waitFor(() => expect(device.shared).toHaveLength(1));
-    expect(device.shared[0]!.url).toBe('https://vmit-rgb.github.io/phys-activity-tracking-app-landing-page/');
+    expect(device.shared[0]!.url).toBe('https://vmit-rgb.github.io/body.log-landing/');
     expect(device.shared[0]!.text).toContain('щоденник руху й самопочуття');
     expect(toastText()).toBeUndefined();
   });
@@ -206,7 +206,7 @@ describe('«поділитися застосунком»', () => {
     device.shareResult = 'unavailable';
     tap('поділитися застосунком');
     await vi.waitFor(() => expect(toastSays()).toBe('✓ посилання скопійовано — надішли, кому хочеш :)'));
-    expect(device.copied[0]).toContain('https://vmit-rgb.github.io/phys-activity-tracking-app-landing-page/');
+    expect(device.copied[0]).toContain('https://vmit-rgb.github.io/body.log-landing/');
   });
 
   it('says so when even copying fails', async () => {

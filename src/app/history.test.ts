@@ -150,7 +150,7 @@ describe('«історія» (Figma screen/log-history 165:2758)', () => {
     expect(host.querySelector('.hero__text')!.textContent).toContain('нд, 08.11.2026');
     // menu, history, the day
     expect(device.depth()).toBe(3);
-    expect(document.title).toBe('трекер');
+    expect(document.title).toBe('body.log');
   });
 
   it('«назад» from that day comes back to the same month, the same open cards and the button', () => {

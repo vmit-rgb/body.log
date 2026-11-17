@@ -1,6 +1,6 @@
 {
-  "name": "phys-activity-tracking-app",
-  "short_name": "трекер",
+  "name": "body.log",
+  "short_name": "body.log",
   "description": "щоденник руху й самопочуття. записи лишаються тільки на твоєму телефоні.",
   "lang": "uk",
   "start_url": "./",

@@ -31,5 +31,5 @@ export function focusBack(host: HTMLElement, selector: string | null): void {
 
 /** B-05: the page's title, as the phone says it when switching apps. */
 export function titleFor(screen?: string): string {
-  return screen ? `${screen} · трекер` : 'трекер';
+  return screen ? `${screen} · body.log` : 'body.log';
 }

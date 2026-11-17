@@ -8,6 +8,10 @@ export interface KeyValue {
   removeItem(key: string): void;
 }
 
+/**
+ * The keys keep the app's first name on purpose: the app is body.log since
+ * 2026-11-17, but renaming the keys would hide the diaries already on phones.
+ */
 export const DIARY_KEY = 'phys-activity-tracking-app/diary';
 const UNREADABLE_KEY = `${DIARY_KEY}/unreadable`;
 /** The diary as it was stored before its settings were converted to format 0.1. */

@@ -100,7 +100,7 @@ describe('exportFile', () => {
 });
 
 describe('pdfDocument', () => {
-  const FOOT = 'трекер · бета 0.9';
+  const FOOT = 'body.log · бета 0.9';
   const texts = (lines: readonly PdfLine[]) => lines.map((line) => line.text);
 
   it('lays out the records as «бета 0.81» did: title, days in bold, blocks indented, the app at the bottom', () => {
@@ -117,7 +117,7 @@ describe('pdfDocument', () => {
       'щоденник руху й самопочуття', 'експорт пн, 09.11.2026 · це щоденник, а не медичний документ', '',
       'нд, 08.11.2026', 'ранкова розминка: рівень 1 (вправа 1); рівень 2 (вправа 1)', 'нотатка: перший рядок / другий', '',
       'сб, 07.11.2026', 'самопочуття зранку: енергія 4', 'денна розминка: для спини', '',
-      '', 'трекер · бета 0.9',
+      '', 'body.log · бета 0.9',
     ]);
     expect(pdf.lines.at(-1)).toEqual({ text: FOOT, size: 8, bold: false, indent: 0 });
   });
