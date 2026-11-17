@@ -89,7 +89,7 @@ function sectionMarkup({ id, title, description }: SectionSpec, open: boolean, c
       <div class="home-section__body" id="sec-${id}"${open ? '' : ' hidden'}>
         ${sectionTop(id, ctx)}<p class="t-1st-regular" data-lead>${leadOf(description, done)}</p>
         ${BODIES[id](ctx)}
-        <div class="home-section__end"${done ? '' : ' hidden'}><button type="button" class="ctl btn btn--tertiary" data-collapse="${id}">згорнути секцію</button></div>
+        <div class="home-section__end"${done ? '' : ' hidden'}><button type="button" class="ctl btn btn--tertiary" data-collapse="${id}" aria-label="згорнути секцію: ${title}">згорнути секцію</button></div>
       </div>
     </section>`;
 }
