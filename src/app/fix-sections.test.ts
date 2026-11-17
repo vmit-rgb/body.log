@@ -155,19 +155,21 @@ describe('home: the workout (Olesia, MY-FIXES)', () => {
 });
 
 describe('home: the tip about extra sets (Olesia, MY-FIXES)', () => {
-  it('shows under the first exercise with more than one set, until «зрозуміло»; then never again', async () => {
+  it('shows under the first exercise with more than one set, until a tap anywhere (wave 5c: a bubble); back on the next launch', async () => {
     start(withWorkout());
     await tap('тренування');
     const tips = host.querySelectorAll('#sec-wo .tip');
     expect(tips).toHaveLength(1);
     expect(tips[0]!.closest('.wo-ex')!.querySelector('.accordion__title')!.textContent).toBe('вправа 6');
     expect(tips[0]!.textContent).toContain('зайвий підхід прибирає ×');
-    tips[0]!.querySelector<HTMLButtonElement>('.tip__close')!.click();
-    await settle();
+    expect(tips[0]!.querySelector('button')).toBeNull();
+    document.body.dispatchEvent(new Event('pointerdown', { bubbles: true }));
     expect(host.querySelector('#sec-wo .tip')).toBeNull();
-    expect(tipMemory(localStorage).open('sets')).toBe(false);
+    await tap('додати підхід');
+    expect(host.querySelector('#sec-wo .tip')).toBeNull();
+    expect(tipMemory(localStorage).open('sets')).toBe(true);
     start(withWorkout());
-    expect(host.querySelector('#sec-wo .tip')).toBeNull();
+    expect(host.querySelectorAll('#sec-wo .tip')).toHaveLength(1);
   });
 
   it('no tip while no exercise has a set to remove, nor without a place to remember it', async () => {

@@ -13,6 +13,8 @@ import type { DayKey } from './dates';
  * - `dw`: the daytime warm-up chips («для чого») marked today.
  * - `wo`: the workout picked today (`session`), sets per exercise (`ex`: weight `w`,
  *   reps `r`, seconds `s`) and opened set rows (`rows`); null when none was picked.
+ *   `done: true` once «закінчити тренування» was pressed (wave 5c, Olesia 2026-11-17);
+ *   left out otherwise, so a copy without it reads as not finished.
  * - `mv`: movement per kind, as laps («кола», Olesia 2026-11-09): `km`, `min`, `steps`.
  *   Stored as 0.81 stores one entry (the first lap) plus `more` for the next laps,
  *   so 0.81 still reads the first lap and a copy keeps moving both ways.
@@ -31,7 +33,7 @@ export interface Day {
   readonly note: string;
   readonly mw: { readonly ticks: readonly string[]; readonly times: Table<readonly (number | null)[]>; readonly rows: Table<number> };
   readonly dw: readonly string[];
-  readonly wo: { readonly session: string; readonly ex: Table<readonly SetLog[]>; readonly rows: Table<number> } | null;
+  readonly wo: { readonly session: string; readonly ex: Table<readonly SetLog[]>; readonly rows: Table<number>; readonly done?: true } | null;
   readonly mv: Table<readonly MovementLog[]>;
   readonly names: Table<string>;
 }
@@ -72,6 +74,7 @@ function readWorkout(value: unknown): Day['wo'] {
     session: workout.session,
     ex: table(workout.ex, (sets) => (Array.isArray(sets) ? sets.map(readSet) : null)),
     rows: table(workout.rows, num),
+    ...(workout.done === true ? { done: true as const } : {}),
   };
 }
 

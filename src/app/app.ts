@@ -13,7 +13,7 @@ import { showHome } from '../screens/home';
 import { showInstallFirst } from '../screens/install-first';
 import { showUnreadable } from '../screens/unreadable';
 import { unreadableFileName } from '../domain/backup';
-import type { DiaryStore, FinishMemory, sectionMemory, TipMemory } from '../storage/store';
+import type { DiaryStore, sectionMemory, TipMemory } from '../storage/store';
 import { announce } from '../ui/announce';
 import { useBackSteps } from '../ui/back';
 import { titleFor } from '../ui/screen-focus';
@@ -39,8 +39,6 @@ export interface AppEnv extends DeviceEnv {
   sections: ReturnType<typeof sectionMemory>;
   /** Tips for newcomers (storage/store.ts tipMemory); none without it. */
   tips?: TipMemory | undefined;
-  /** «закінчити тренування» per day (storage/store.ts finishMemory); without it a workout is never finished. */
-  finished?: FinishMemory | undefined;
   /** Called with every diary the app starts showing, e.g. to apply its accent. */
   onDiary(diary: Diary): void;
   /** Runs `save` when the app is hidden or closed, so nothing typed is lost. */
@@ -162,19 +160,14 @@ export function startApp(env: AppEnv): void {
     onHome = true;
     let shown = current;
     leave = showHome(host, { settings: readSettings(current.profile), days: current.days, date, today: env.today(), session, cameFrom, inTab: !env.installed }, {
-      goTo: (day) => {
-        session.flush();
-        showDay(shown, day);
-      },
+      goTo: (day) => showDay(shown, day),
       openMenu: () => {
-        session.flush();
         log.saveNow();
         pages.open('menu');
       },
       sectionOpen: env.sections.open,
       rememberSection: env.sections.remember,
       tips: env.tips,
-      finished: env.finished,
       edit(change, render) {
         // F-01: «скасувати» for an earlier change is no longer true
         toast.changed();
@@ -280,10 +273,7 @@ export function startApp(env: AppEnv): void {
     }
   }
 
-  env.whenHidden(() => {
-    session.flush();
-    log.saveNow();
-  });
+  env.whenHidden(() => log.saveNow());
   if (diary) {
     env.onDiary(diary);
     followToasts(diary.profile);

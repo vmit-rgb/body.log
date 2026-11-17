@@ -46,6 +46,13 @@ export const setNote = (note: string): Edit => (day) => ({ ...day, note });
 export const pickSession = (session: string): Edit => (day) => ({ ...day, wo: { session, ex: {}, rows: {} } });
 export const dropSession: Edit = (day) => ({ ...day, wo: null });
 
+/** «закінчити тренування» / «продовжити тренування» (waves 5b, 5c): kept in the day, so the copy has it too. */
+export const finishWorkout = (done: boolean): Edit => (day) => {
+  if (!day.wo) return day;
+  const { done: _was, ...wo } = day.wo;
+  return { ...day, wo: done ? { ...wo, done: true } : wo };
+};
+
 const EMPTY_SET: SetLog = { w: null, r: null, s: null };
 
 /** Edits the picked workout; without one there is nothing to change. */

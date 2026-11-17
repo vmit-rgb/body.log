@@ -419,21 +419,51 @@
   gap: var(--gap-items);
 }
 
-/* a tip for newcomers: until «зрозуміло» (Olesia, MY-FIXES: how extra sets go away) */
+/*
+ * A tip for newcomers is a bubble over the content (Olesia, 2026-11-17:
+ * «тултіпи це бульбашки які оверлеять весь контент, зникають від тапу будь
+ * де»): it moves nothing, so the tap that hides it lands where the person
+ * aimed. Under its row it hangs from a zero-height anchor; the slider's
+ * hangs above «зберегти». The pointer is at the end, where × / «зберегти» are.
+ */
+.tip-anchor {
+  position: relative;
+  height: 0;
+}
+.tracker__head {
+  position: relative;
+}
 .tip {
-  display: flex;
-  align-items: center;
-  gap: var(--gap-items);
-  padding-left: var(--gap-items);
-  border-left: var(--stroke-1) solid var(--accent);
+  position: absolute;
+  z-index: 30;
+  top: 10px;
+  inset-inline-end: 0;
+  width: min(34ch, calc(100vw - 48px));
+  padding: var(--gap-items) 12px;
+  background: var(--bg);
+  border: var(--stroke-1) solid var(--accent);
+  box-shadow: 0 6px 18px rgb(0 0 0 / 0.28);
 }
 .tip__text {
-  flex: 1;
-  min-width: 0;
   margin: 0;
 }
-.tip__close {
-  flex: none;
+.tip::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  inset-inline-end: 22px;
+  border: 6px solid transparent;
+  border-bottom-color: var(--accent);
+}
+.tip--above {
+  top: auto;
+  bottom: calc(100% + 10px);
+}
+.tip--above::before {
+  bottom: auto;
+  top: 100%;
+  border-bottom-color: transparent;
+  border-top-color: var(--accent);
 }
 
 /* ---- set rows (exercise/input): number, the fields or a stopwatch, × ---- */

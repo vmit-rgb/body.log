@@ -31,8 +31,6 @@ export interface SectionContext {
   readonly session: HomeSession;
   /** Whether a tip for newcomers still shows (the person hasn't closed it on this phone). */
   readonly tipOpen?: ((id: string) => boolean) | undefined;
-  /** «закінчити тренування» was pressed for this day (on this phone; wave 5b). */
-  readonly finished?: boolean | undefined;
 }
 
 
@@ -89,21 +87,29 @@ function howAccordion(ctx: SectionContext, memo: string, body: string, title = '
   return body ? `<div class="how-acc">${accordion('mini', title, dayKey(ctx, memo), remembered(ctx, memo, false), body)}</div>` : '';
 }
 
-/* ---- tips for newcomers (waves 5, 5b): until «зрозуміло» or three successes (Olesia, 2026-11-17) ---- */
+/*
+ * ---- tips for newcomers (waves 5, 5b, 5c): bubbles over the content that a tap anywhere
+ * hides until the app is opened again; after three successes never again (Olesia, 2026-11-17) ----
+ */
 
 /* Нитка's drafts. */
 export const SETS_TIP = 'sets';
 const SETS_TIP_TEXT = 'зайвий підхід прибирає × праворуч від нього: натисни ×, а потім ✓.';
 export const SLIDER_TIP = 'slider';
-export const SLIDER_TIP_TEXT = 'значення запишеться, коли натиснеш «зберегти» (або саме, за 20 с).';
+export const SLIDER_TIP_TEXT = 'значення запишеться, коли натиснеш «зберегти».';
 export const REMOVE_TIP = 'remove';
 const REMOVE_TIP_TEXT = '× нічого не стирає одразу: натисни ✓, щоб видалити.';
 export const ROUNDS_TIP = 'rounds';
 const ROUNDS_TIP_TEXT = '«ще раз» додає ще один таймер, щоб записати вправу ще раз.';
 
-export function tip(id: string, text: string): string {
-  return `<div class="tip" role="note" data-tip-id="${esc(id)}"><p class="t-3rd-regular tip__text">${text}</p>
-    <button type="button" class="ctl btn btn--tertiary tip__close" data-act="tip-close" data-tip="${esc(id)}" aria-label="зрозуміло, сховати підказку">зрозуміло</button></div>`;
+/**
+ * A bubble over the content (wave 5c): under its row it hangs from a
+ * zero-height anchor, so it moves nothing. `above`: inside the slider's head,
+ * over «зберегти», pointing down at it.
+ */
+export function tip(id: string, text: string, above = false): string {
+  const bubble = `<div class="tip${above ? ' tip--above' : ''}" role="note" data-tip-id="${esc(id)}"><p class="t-3rd-regular tip__text">${text}</p></div>`;
+  return above ? bubble : `<div class="tip-anchor">${bubble}</div>`;
 }
 
 const tipOpen = (ctx: SectionContext, id: string) => ctx.tipOpen?.(id) ?? false;
@@ -113,7 +119,7 @@ function armedTip(ctx: SectionContext, target: string, quiet = false): string {
   return !quiet && ctx.session.armed === dayKey(ctx, target) && tipOpen(ctx, REMOVE_TIP) ? tip(REMOVE_TIP, REMOVE_TIP_TEXT) : '';
 }
 
-/** The first slider with a value not saved yet gets the tip (one at a time). */
+/** The first slider with a value not saved yet gets the tip above its «зберегти» (one at a time). */
 function firstDraft(ctx: SectionContext): string | undefined {
   const prefix = `${ctx.day.date}|`;
   return [...ctx.session.drafts.keys()].find((key) => key.startsWith(prefix));
@@ -164,10 +170,11 @@ function scaleTracker(ctx: SectionContext, moment: Moment, tracker: Tracker & { 
       <div class="tracker__head">
         <span class="t-1st-semibold tracker__name">${esc(tracker.name || 'без назви')}</span>
         <span class="tracker__value t-3rd-semibold" aria-live="polite">${value === undefined ? '' : `${formatNumber(value)}/${formatNumber(tracker.max)}`}</span>${
-          sliderAction(locked, draft !== undefined, trackerData(moment, tracker))}
+          sliderAction(locked, draft !== undefined, trackerData(moment, tracker))}${
+          !locked && draft !== undefined && firstDraft(ctx) === key && tipOpen(ctx, SLIDER_TIP) ? tip(SLIDER_TIP, SLIDER_TIP_TEXT, true) : ''}
       </div>
       ${sliderRow({ tracker, key, value, locked, data: trackerData(moment, tracker) })}
-      ${!locked && draft !== undefined && firstDraft(ctx) === key && tipOpen(ctx, SLIDER_TIP) ? tip(SLIDER_TIP, SLIDER_TIP_TEXT) : ''}${hint(tracker)}
+      ${hint(tracker)}
     </div>`;
 }
 
@@ -577,7 +584,7 @@ function pickedWorkout(ctx: SectionContext, sessionId: string): string {
  */
 function finishButton(ctx: SectionContext): string {
   const key = keyed(dayKey(ctx, 'finish'));
-  return `<div class="wo-finish">${ctx.finished
+  return `<div class="wo-finish">${ctx.day.wo?.done
     ? `<button type="button" class="ctl btn btn--tertiary" data-act="finish" data-done="false" ${key}>продовжити тренування</button>`
     : `<button type="button" class="ctl btn btn--primary" data-act="finish" data-done="true" ${key}>закінчити тренування</button>`}</div>`;
 }

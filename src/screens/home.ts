@@ -3,7 +3,7 @@ import { emptyDay, type Day } from '../domain/day';
 import type { Diary } from '../domain/diary';
 import type { Edit } from '../domain/log';
 import type { Settings } from '../domain/settings';
-import { flushDrafts, wireSections, type SectionControls } from '../home/controls';
+import { wireSections, type SectionControls } from '../home/controls';
 import { HERO_STYLES, heroStyle, type HeroStyle } from '../home/hero-fit';
 import { dayArrives, popShownDay, reward, sheetIn, sheetOut, swapMonth } from '../home/home-motion';
 import { completed } from '../domain/progress';
@@ -60,8 +60,6 @@ export interface HomeActions {
   toast(message: ToastMessage): void;
   /** Tips for newcomers: shown until the person closes them or has done the thing three times, on this phone. */
   tips?: { open(id: string): boolean; close(id: string): void; succeed?(id: string): void } | undefined;
-  /** «закінчити тренування» per day, on this phone (wave 5b). */
-  finished?: { finished(date: DayKey): boolean; finish(date: DayKey, done: boolean): void } | undefined;
 }
 
 const BODIES: Record<SectionId, (ctx: SectionContext) => string> = {
@@ -84,7 +82,7 @@ const leadOf = (description: string, done: boolean) => (done ? GOOD_JOB : descri
 const TICK = `<span class="accordion__done">${iconSvg('check')}<span class="visually-hidden">зроблено: </span></span>`;
 
 function sectionMarkup({ id, title, description }: SectionSpec, open: boolean, ctx: SectionContext): string {
-  const done = sectionDone(id, ctx.day, ctx.settings, ctx.finished);
+  const done = sectionDone(id, ctx.day, ctx.settings);
   return `
     <section class="home-section${done ? ' home-section--done' : ''}" aria-labelledby="sec-${id}-title" data-description="${esc(description)}">
       <h2 class="home-section__heading">
@@ -101,11 +99,11 @@ function sectionMarkup({ id, title, description }: SectionSpec, open: boolean, c
 }
 
 /** After an edit that doesn't draw home anew (typing): the tick, the lines and «згорнути секцію» follow what is done now. */
-function refreshDone(host: HTMLElement, day: Day, settings: Settings, finished: boolean): void {
+function refreshDone(host: HTMLElement, day: Day, settings: Settings): void {
   for (const section of host.querySelectorAll<HTMLElement>('.home-section')) {
     const id = section.querySelector<HTMLElement>('[data-section]')?.dataset.section as SectionId | undefined;
     if (!id) continue;
-    const done = sectionDone(id, day, settings, finished);
+    const done = sectionDone(id, day, settings);
     section.classList.toggle('home-section--done', done);
     const lead = leadOf(String(section.dataset.description), done);
     for (const line of section.querySelectorAll<HTMLElement>('[data-lead]')) if (line.innerHTML !== lead) line.innerHTML = lead;
@@ -128,7 +126,7 @@ function wireCollapse(home: HTMLElement): void {
 
 function markup(state: HomeState, actions: HomeActions): string {
   const ctx: SectionContext = {
-    settings: state.settings, day: dayOf(state), days: state.days, session: state.session, tipOpen: actions.tips?.open, finished: finishedOn(state, actions),
+    settings: state.settings, day: dayOf(state), days: state.days, session: state.session, tipOpen: (id) => tipShows(state, actions, id),
   };
   const sections = homeSections(state.settings).map((section) => sectionMarkup(section, actions.sectionOpen(section.id), ctx));
   return `
@@ -176,7 +174,30 @@ function fillHero(host: HTMLElement, state: HomeState): () => void {
 }
 
 const dayOf = (state: HomeState): Day => state.days[state.date] ?? emptyDay(state.date);
-const finishedOn = (state: HomeState, actions: HomeActions) => actions.finished?.finished(state.date) ?? false;
+
+/** A tip shows until a tap hid it in this run of the app, or for good after three successes. */
+const tipShows = (state: HomeState, actions: HomeActions, id: string) => !state.session.quietTips.has(id) && (actions.tips?.open(id) ?? false);
+
+/**
+ * Tips are bubbles that a tap anywhere hides (Olesia, 2026-11-17); Escape
+ * too, for a keyboard. The tap still does what it was for: the bubble moved
+ * nothing, so it lands where the person aimed. Hidden until the app is
+ * opened again.
+ */
+function wireTips(host: HTMLElement, state: HomeState, signal: AbortSignal): void {
+  const hush = () => {
+    for (const tip of host.querySelectorAll<HTMLElement>('.tip')) {
+      // only a bubble the person sees: one in a closed section waits for its turn
+      if (tip.closest('[hidden]')) continue;
+      state.session.quietTips.add(String(tip.dataset.tipId));
+      tip.remove();
+    }
+  };
+  document.addEventListener('pointerdown', hush, { capture: true, signal });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') hush();
+  }, { signal });
+}
 
 function calendarView(state: HomeState, place: string): CalendarView {
   return {
@@ -328,7 +349,7 @@ function sectionControls(host: HTMLElement, state: HomeState, actions: HomeActio
         current = { ...current, days };
         fillBar(host, current);
         calendar.refresh(current);
-        refreshDone(host, dayOf(current), current.settings, finishedOn(current, actions));
+        refreshDone(host, dayOf(current), current.settings);
       }
       const after = days[state.date] ?? emptyDay(state.date);
       reward(host, state.date, completed(before, after, state.settings), state.settings.accessibility);
@@ -340,20 +361,8 @@ function sectionControls(host: HTMLElement, state: HomeState, actions: HomeActio
     render: () => keepingFocus(() => actions.refresh()),
     screen: () => host,
     toast: (message) => actions.toast(message),
-    closeTip(id) {
-      actions.tips?.close(id);
-      keepingFocus(() => actions.refresh());
-    },
-    tipOpen: (id) => actions.tips?.open(id) ?? false,
+    tipOpen: (id) => tipShows(state, actions, id),
     tipDone: (id) => actions.tips?.succeed?.(id),
-    finish(done, render) {
-      actions.finished?.finish(state.date, done);
-      if (!render) return;
-      if (done) announce('тренування закінчено');
-      actions.refresh();
-      // the button changed its words in place: the focus stays on it
-      host.querySelector<HTMLElement>('[data-act="finish"]')?.focus({ preventScroll: true });
-    },
   };
 }
 
@@ -430,10 +439,10 @@ export function showHome(host: HTMLElement, state: HomeState, actions: HomeActio
   const controls = sectionControls(host, state, actions, calendar);
   wireSections(home, controls);
   wireCollapse(home);
-  state.session.flush = () => flushDrafts(controls);
   state.session.pulseStep = pulseStep(host, state, controls);
   part(host, '.bar__menu').addEventListener('click', () => actions.openMenu());
 
+  wireTips(host, state, listeners.signal);
   tickStopwatches(host, state, listeners.signal);
   tickPulse(host, state, listeners.signal);
   wireDateNav(host, state, go, listeners.signal);

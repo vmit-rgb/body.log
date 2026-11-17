@@ -41,17 +41,17 @@ const answered = (day: Day, moment: Moment) => Object.values(day.t[moment] ?? {}
  * Something is done in a section: then its header gets a tick and its line
  * says «хороша робота <3» (Olesia, MY-FIXES; wave 5b, 2026-11-17). The
  * morning warm-up counts from a finished level; the workout from
- * «закінчити тренування» (`finished`, kept on the phone); daytime from the
+ * «закінчити тренування» (`wo.done`, in the day since wave 5c); daytime from the
  * first zone, movement from the first lap, a check-in from the first answer.
  * A section's own wellbeing questions don't count as doing it; the note never does.
  */
-export function sectionDone(id: SectionId, day: Day, settings: Settings, finished = false): boolean {
+export function sectionDone(id: SectionId, day: Day, settings: Settings): boolean {
   switch (id) {
     case 'ck-morning': return answered(day, 'morning');
     case 'ck-evening': return answered(day, 'evening');
     case 'mw': return kindDone(day, 'morningWarmup', settings);
     case 'dw': return kindDone(day, 'daytimeWarmup', settings);
-    case 'wo': return day.wo !== null && finished;
+    case 'wo': return day.wo?.done === true;
     case 'mv': return kindDone(day, 'movement', settings);
     default: return false;
   }
