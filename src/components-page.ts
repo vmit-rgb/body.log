@@ -129,6 +129,7 @@ const read = (): Appearance => ({
   largerText: sheet.querySelector<HTMLInputElement>('#text')!.checked,
   largerTargets: sheet.querySelector<HTMLInputElement>('#targets')!.checked,
   noMotion: false,
+  noBackgroundMotion: false,
   mirrored: false,
 });
 sheet.querySelector<HTMLSelectElement>('#accent')!.value = DEFAULT_APPEARANCE.accent;

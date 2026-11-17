@@ -78,8 +78,9 @@ describe('appearance', () => {
   it('applies a new choice and both accessibility options', () => {
     const phone = fakePhone(false);
     const apply = startAppearance(root, phone.media, DEFAULT_APPEARANCE);
-    apply({ ...DEFAULT_APPEARANCE, accent: 'cyan', largerText: true, largerTargets: true, noMotion: true, mirrored: true });
+    apply({ ...DEFAULT_APPEARANCE, accent: 'cyan', largerText: true, largerTargets: true, noMotion: true, noBackgroundMotion: true, mirrored: true });
     expect(root.hasAttribute('data-no-motion')).toBe(true);
+    expect(root.hasAttribute('data-no-background-motion')).toBe(true);
     expect(root.hasAttribute('data-mirrored')).toBe(true);
     expect(root.dataset.accent).toBe('cyan');
     expect(root.hasAttribute('data-larger-text')).toBe(true);
@@ -159,8 +160,8 @@ describe('accent tokens', () => {
 
 describe('lookOf', () => {
   it('takes the accent and the «доступність» switches from a profile', () => {
-    expect(lookOf({ theme: { accent: 'mint' }, accessibility: { largerText: true, mirrored: true } })).toEqual({
-      accent: 'mint', largerText: true, largerTargets: false, noMotion: false, mirrored: true,
+    expect(lookOf({ theme: { accent: 'mint' }, accessibility: { largerText: true, noBackgroundMotion: true, mirrored: true } })).toEqual({
+      accent: 'mint', largerText: true, largerTargets: false, noMotion: false, noBackgroundMotion: true, mirrored: true,
     });
     const { theme: _theme, ...defaults } = DEFAULT_APPEARANCE;
     expect(lookOf({})).toEqual(defaults);

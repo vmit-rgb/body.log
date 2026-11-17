@@ -36,6 +36,20 @@ h1[tabindex='-1']:focus {
 }
 
 /*
+ * «Політ символів» (ui/flight.ts): the ASCII background behind every screen.
+ * Under the content, over the page colour; a screen with its own fill covers it.
+ */
+.flight {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  display: block;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  pointer-events: none;
+}
+/*
  * Noise over everything (Figma overlay/noise 360:9070): light 1 px grain in
  * SCREEN and dark grain in MULTIPLY, each about 10 % of the pixels at 25 %
  * (Н11). Two elements, because a fixed layer blends with the page only as a
