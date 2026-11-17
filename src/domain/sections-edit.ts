@@ -259,6 +259,36 @@ function ownExercise(copy: Obj, entry: unknown): unknown {
   return { ...item, exercise: id };
 }
 
+/**
+ * F-07 once, where a diary comes in (Olesia, 2026-11-17: «один раз при
+ * запуску розділити спільні вправи»): settings from before wave 6 may name
+ * one exercise in several morning levels, or twice in one. Its first place
+ * keeps the id; every next one becomes a new exercise with the same name,
+ * «як робити» and link. Old days are not changed, so their ticks of a shared
+ * exercise count for the first level only from now on. Null when nothing is shared.
+ */
+export function withOwnLevelExercises(profile: JsonObject): JsonObject | null {
+  const named = (item: unknown) => {
+    const id = obj(item).exercise;
+    return typeof id === 'string' && id !== '' ? id : null;
+  };
+  const all = arr(obj(profile.morningWarmup).levels).flatMap((level) => arr(obj(level).items).map(named)).filter((id) => id !== null);
+  if (new Set(all).size === all.length) return null;
+  const copy = structuredClone(profile) as Obj;
+  if (!Array.isArray(copy.exercises)) copy.exercises = [];
+  const kept = new Set<string>();
+  for (const level of arr(obj(copy.morningWarmup).levels)) {
+    const items = arr(obj(level).items);
+    items.forEach((item, i) => {
+      const id = named(item);
+      if (id === null) return;
+      if (kept.has(id)) items[i] = ownExercise(copy, item);
+      kept.add(id);
+    });
+  }
+  return copy as JsonObject;
+}
+
 function moveIn(copy: Obj, from: Slot, to: Place): void {
   const source = listAt(copy, from.list);
   const moved = source[from.index];

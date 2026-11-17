@@ -1,14 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { DayKey } from '../domain/dates';
-import type { Diary, JsonObject } from '../domain/diary';
+import { parseDiary, serializeDiary, type Diary, type JsonObject } from '../domain/diary';
 import { EXAMPLE_DIARY } from '../domain/examples';
-import { withMoved } from '../domain/sections-edit';
+import { withMoved, withOwnLevelExercises } from '../domain/sections-edit';
 import { checkProfile } from '../format/profile-check';
 import example from '../format/example-profile.json';
 import { stopwatchTime } from '../home/session';
 import { readPaste } from '../paste/read';
 import { PROMPT } from '../prompt/prompt';
-import { diaryStore, type DiaryStore } from '../storage/store';
+import { BEFORE_SPLIT_KEY, DIARY_KEY, diaryStore, type DiaryStore } from '../storage/store';
 import { mountToast } from '../ui/toast';
 import { SAVE_DELAY_MS, startApp } from './app';
 import { fakeDevice, openSections } from './test-env';
@@ -230,5 +230,67 @@ describe('F-07: one exercise in one morning level only', () => {
       expect(moved.morningWarmup.levels[0]!.items.map((item) => item.exercise)).toEqual(['neck', 'squat']);
       expect(moved.exercises).toHaveLength(2);
     });
+  });
+});
+
+describe('F-07 once at launch: exercises shared by morning levels are split (Olesia, 2026-11-17)', () => {
+  const shared = {
+    morningWarmup: { enabled: true, levels: [
+      { id: 'l1', name: 'рівень 1', items: [{ exercise: 'squat', reps: '10' }, { exercise: 'neck', reps: '5' }] },
+      { id: 'l2', name: 'рівень 2', items: [{ exercise: 'squat', reps: '15' }, { exercise: 'plank', seconds: 30 }, { exercise: 'squat', reps: '5' }] },
+    ] },
+    daytimeWarmup: { enabled: true, groups: [{ id: 'g', name: 'зона', items: [{ exercise: 'squat', reps: '3' }] }] },
+    exercises: [
+      { id: 'squat', name: 'присід', how: 'спина рівна', source: { type: 'user' } },
+      { id: 'neck', name: 'шия', how: '', source: { type: 'user' } },
+      { id: 'plank', name: 'планка', how: '', source: { type: 'user' } },
+    ],
+  } as unknown as JsonObject;
+  type Split = { exercises: { id: string; name: string; how: string }[]; morningWarmup: { levels: { items: { exercise: string; reps?: string }[] }[] }; daytimeWarmup: { groups: { items: { exercise: string }[] }[] } };
+
+  it('keeps the first place of an exercise and gives every next one its own copy', () => {
+    const split = withOwnLevelExercises(shared) as unknown as Split;
+    const ids = split.morningWarmup.levels.map((level) => level.items.map((item) => item.exercise));
+    expect(ids[0]).toEqual(['squat', 'neck']);
+    expect(ids[1]![0]).not.toBe('squat');
+    expect(ids[1]![1]).toBe('plank');
+    expect(ids[1]![2]).not.toBe('squat');
+    expect(new Set(ids.flat()).size).toBe(5);
+    for (const id of [ids[1]![0]!, ids[1]![2]!]) {
+      expect(split.exercises.find((exercise) => exercise.id === id)).toMatchObject({ name: 'присід', how: 'спина рівна' });
+    }
+    expect(split.morningWarmup.levels[1]!.items[0]!.reps).toBe('15');
+    // only the morning levels: the daytime warm-up keeps its exercise
+    expect(split.daytimeWarmup.groups[0]!.items[0]!.exercise).toBe('squat');
+    expect(checkProfile(split).issues.filter((issue) => issue.kind === 'sharedExercise')).toEqual([]);
+  });
+
+  it('changes nothing when every level already has its own exercises', () => {
+    expect(withOwnLevelExercises(EXAMPLE_DIARY.profile)).toBeNull();
+    expect(withOwnLevelExercises({} as JsonObject)).toBeNull();
+  });
+
+  it('stores the split once, keeps the diary as it was aside, and leaves the old days as they are', () => {
+    const day = '2026-11-01' as DayKey;
+    const before = { profile: shared, days: { [day]: { mw: { ticks: ['squat'] } } } };
+    localStorage.clear();
+    localStorage.setItem(DIARY_KEY, JSON.stringify({ ...JSON.parse(serializeDiary({ profile: shared, days: {} }, new Date())), days: before.days }));
+    const original = localStorage.getItem(DIARY_KEY);
+    const phone = diaryStore(localStorage, () => new Date('2026-11-17T20:00:00Z'));
+    const loaded = phone.load()!;
+    const levels = (loaded.profile as unknown as Split).morningWarmup.levels;
+    expect(levels[1]!.items[0]!.exercise).not.toBe('squat');
+    expect(localStorage.getItem(BEFORE_SPLIT_KEY)).toBe(original);
+    const stored = localStorage.getItem(DIARY_KEY)!;
+    expect(stored).not.toBe(original);
+    expect(phone.load()!.days[day]!.mw.ticks).toEqual(['squat']);
+    // a second launch has nothing to split and writes nothing
+    expect(localStorage.getItem(DIARY_KEY)).toBe(stored);
+  });
+
+  it('a copy restored from before wave 6 comes in split as well', () => {
+    const copy = parseDiary(serializeDiary({ profile: shared, days: {} }, new Date()))!;
+    const ids = (copy.profile as unknown as Split).morningWarmup.levels.flatMap((level) => level.items.map((item) => item.exercise));
+    expect(new Set(ids).size).toBe(ids.length);
   });
 });

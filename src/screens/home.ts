@@ -442,10 +442,9 @@ export function showHome(host: HTMLElement, state: HomeState, actions: HomeActio
     else state.session.open.set(String(trigger.dataset.memo), open);
   });
   const listeners = new AbortController();
-  // another day: the calendar follows it, a pulse result is put away
+  // another day: the calendar follows it
   const go = (date: DayKey) => {
     state.session.month = null;
-    if (state.session.pulse?.phase === 'done') state.session.pulse = null;
     actions.goTo(date);
   };
   const calendar = wireCalendar(host, state, go, listeners.signal);

@@ -22,11 +22,12 @@ const profile = {
   goal: { enabled: true, days: 3, done: ['workout'] },
   morningWarmup: { enabled: true, weeklyTarget: 6, levels: [
     { id: 'l1', name: 'рівень 1', items: [{ exercise: 'a' }] },
-    { id: 'l2', name: 'рівень 2', items: [{ exercise: 'a' }, { exercise: 'b' }] },
+    // F-07: each level has its own exercises (a shared one would be split at launch)
+    { id: 'l2', name: 'рівень 2', items: [{ exercise: 'c' }, { exercise: 'b' }] },
   ] },
   workout: { enabled: true, weeklyTarget: 2, sessions: [{ id: 's', name: 'а', items: [{ exercise: 'w', fields: ['reps'] }] }] },
   movement: { enabled: true, weeklyTarget: 0, kinds: [{ id: 'walk', name: 'ходьба', fields: ['km'] }] },
-  exercises: [{ id: 'a', name: 'нахили' }, { id: 'b', name: 'оберти' }, { id: 'w', name: 'присідання' }],
+  exercises: [{ id: 'a', name: 'нахили' }, { id: 'b', name: 'оберти' }, { id: 'c', name: 'нахили' }, { id: 'w', name: 'присідання' }],
   trackers: [
     { id: 'pain', name: 'біль', kind: 'scale', ask: ['morning'] },
     { id: 'pulse', name: 'пульс', kind: 'number', units: ['уд/хв'], ask: ['morning'], timer: { enabled: true, seconds: 30 } },
@@ -34,7 +35,7 @@ const profile = {
 };
 
 const DAYS: Diary['days'] = {
-  [MONDAY]: readDay({ mw: { ticks: ['a', 'b'] }, t: { morning: { pain: 3 } } }, MONDAY),
+  [MONDAY]: readDay({ mw: { ticks: ['a', 'c', 'b'] }, t: { morning: { pain: 3 } } }, MONDAY),
   [TUESDAY]: readDay({ wo: { session: 's', ex: { w: [{ r: 10 }] } }, mv: { walk: { km: 2 } }, t: { morning: { pain: 4 } } }, TUESDAY),
 };
 
@@ -314,7 +315,9 @@ describe('pulse timer (wave 6: field on one row, timer on the next, «готов
     byText('готово', pulse()).click();
     expect(saved()!.t.morning!.pulse).toBe(84);
     expect(field().value).toBe('84');
-    expect(pulse().textContent).toContain('42 удари за 30 с × 2');
+    // no line about the count stays after «готово» (Olesia, 2026-11-17)
+    expect(pulse().textContent).not.toContain('удари за');
+    expect(pulse().querySelector('.pulse__note')).toBeNull();
     // back to its starting look: ▶ and the full time, no ✓, no beats field
     expect(state()).toBe('default');
     expect(time()).toBe('0:30');

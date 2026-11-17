@@ -276,7 +276,7 @@ function startPulse(c: SectionControls, element: HTMLElement, key: string): void
   const tracker = c.settings.trackers.find((t) => t.id === data(element, 'tracker'));
   if (tracker?.kind !== 'number' || tracker.timer === null) return;
   prepareSound();
-  c.session.pulse = { key, seconds: tracker.timer, phase: 'ready', ends: Date.now() + PULSE_READY_MS, beats: null, typed: '' };
+  c.session.pulse = { key, seconds: tracker.timer, phase: 'ready', ends: Date.now() + PULSE_READY_MS, typed: '' };
   announce(PULSE_SAYS.ready);
   schedulePulse(c.session, PULSE_READY_MS);
   c.render();
@@ -298,11 +298,11 @@ function finishPulse(c: SectionControls, element: HTMLElement): void {
     field?.focus();
     return;
   }
-  const counted = Math.round(beats);
-  c.session.pulse = { ...run, phase: 'done', beats: counted, typed: '' };
+  // the run ends here: the timer is back at ▶, no line about the count under it (Olesia, 2026-11-17)
+  dropPulse(c.session);
   // what was typed in the pulse field by hand gives way to the counted number
   c.session.typed.delete(`${c.day().date}|num|${moment(element)}|${data(element, 'tracker')}|0`);
-  c.edit(answer(moment(element), data(element, 'tracker'), bpm(counted, run.seconds)), true);
+  c.edit(answer(moment(element), data(element, 'tracker'), bpm(Math.round(beats), run.seconds)), true);
   timerBack(c, element);
 }
 
