@@ -47,6 +47,15 @@ export function formatShort(key: DayKey): string {
   return `${WEEKDAYS_SHORT[dateOf(key).getDay()]}, ${withDots(key)}`;
 }
 
+/**
+ * `ср 28.10` in the bottom bar, so the date with its arrows fits beside ≡
+ * (Olesia, 2026-11-17, wave 4); the year only when it isn't this year's.
+ */
+export function formatBar(key: DayKey, today: DayKey): string {
+  const date = key.slice(0, 4) === today.slice(0, 4) ? withDots(key).slice(0, 5) : withDots(key);
+  return `${WEEKDAYS_SHORT[dateOf(key).getDay()]} ${date}`;
+}
+
 /** `середа, 28.10.2026`, for screen readers and day cards. */
 export function formatLong(key: DayKey): string {
   return `${WEEKDAYS_LONG[dateOf(key).getDay()]}, ${withDots(key)}`;

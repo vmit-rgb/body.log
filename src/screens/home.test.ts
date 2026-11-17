@@ -116,7 +116,7 @@ describe('home', () => {
 
 describe('bottom bar', () => {
   it('shows the day and the weekly goal', () => {
-    expect(text('.date-nav__date [aria-hidden]')).toBe('ср, 11.11.2026');
+    expect(text('.date-nav__date [aria-hidden]')).toBe('ср 11.11');
     expect(text('.date-nav__date .visually-hidden')).toBe('середа, 11.11.2026');
     expect(text('.bar__goal')).toBe('цей тиждень: 1 з 5 днів');
     expect(host.querySelector('.date-nav__date')!.classList.contains('t-h5')).toBe(true);

@@ -446,7 +446,7 @@ describe('home', () => {
   });
 
   it('opens on today and goes to the previous day', () => {
-    expect(host.querySelector('.date-nav__date [aria-hidden]')!.textContent).toBe('пн, 09.11.2026');
+    expect(host.querySelector('.date-nav__date [aria-hidden]')!.textContent).toBe('пн 09.11');
     click('[aria-label="попередній день"]');
     // the short date re-forms out of glyphs (home-motion.test.ts); the spoken one is there at once
     expect(host.querySelector('.date-nav__date .visually-hidden')!.textContent).toBe('неділя, 08.11.2026');
