@@ -11,6 +11,14 @@ export type Accent = (typeof ACCENTS)[number];
 
 export const DEFAULT_ACCENT: Accent = 'pink';
 
+/**
+ * One of the 11, any with the same chance: the first settings without
+ * `theme` get it (Olesia, 2026-11-15: «хай ставиться рандомний колір акценту»).
+ */
+export function randomAccent(random: () => number = Math.random): Accent {
+  return ACCENTS[Math.min(ACCENTS.length - 1, Math.floor(random() * ACCENTS.length))]!;
+}
+
 function isAccent(value: unknown): value is Accent {
   return (ACCENTS as readonly unknown[]).includes(value);
 }

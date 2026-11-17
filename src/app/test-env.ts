@@ -11,8 +11,14 @@ import type { DeviceEnv, ShareData } from './pages';
  */
 export function fakeDevice() {
   let theme: ThemeChoice = 'dark';
-  let onBack: (depth: number) => void = () => {};
-  const depths: number[] = [0];
+  let arrived: (place: number) => void = () => {};
+  // the browser's entries, each marked with its place; moves arrive at once
+  const entries: number[] = [0];
+  let index = 0;
+  const move = (to: number) => {
+    index = Math.max(0, Math.min(entries.length - 1, to));
+    arrived(entries[index]!);
+  };
   const device = {
     saved: [] as { name: string; text: string }[],
     shared: [] as ShareData[],
@@ -29,10 +35,10 @@ export function fakeDevice() {
     motionReduced: false,
     /** The phone's own back button or gesture. */
     pressBack() {
-      if (depths.length > 1) depths.pop();
-      onBack(depths.at(-1)!);
+      move(index - 1);
     },
-    depth: () => depths.at(-1)!,
+    /** How many steps of «назад» the browser shows over home. */
+    depth: () => entries[index]!,
   };
   const env: DeviceEnv = {
     theme: {
@@ -62,13 +68,15 @@ export function fakeDevice() {
     }),
     now: () => new Date('2026-11-09T08:00:00Z'),
     history: {
-      push: (depth) => depths.push(depth),
-      back: (steps) => {
-        depths.splice(depths.length - steps, steps);
-        onBack(depths.at(-1)!);
+      at: () => entries[index]!,
+      push(place) {
+        entries.length = index + 1;
+        entries.push(place);
+        index++;
       },
-      listen: (back) => {
-        onBack = back;
+      go: (delta) => move(index + delta),
+      listen: (listener) => {
+        arrived = listener;
       },
     },
   };

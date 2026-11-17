@@ -153,12 +153,20 @@ describe('first launch in the installed app', () => {
     expect(stored()!.profile.accessibility).toEqual({ keepToasts: true });
   });
 
-  it('accepts first settings without `theme`: the colour is the usual one', () => {
+  it('accepts first settings without `theme` and keeps a random accent with them (Olesia, 2026-11-15)', () => {
     const { theme: _theme, ...noTheme } = PASTED;
+    // 0.95 of the 11 is the last one, «зелений»
+    const random = vi.spyOn(Math, 'random').mockReturnValue(0.95);
     pasteText(JSON.stringify(noTheme));
-    expect(result().textContent).toContain('акцентний колір: рожевий');
     resultButton('зберегти').click();
-    expect(stored()!.profile).toEqual(noTheme);
+    random.mockRestore();
+    expect(stored()!.profile).toEqual({ ...noTheme, theme: { accent: 'green' } });
+  });
+
+  it('keeps the accent the first settings name', () => {
+    pasteText(JSON.stringify({ ...PASTED, theme: { accent: 'sky' } }));
+    resultButton('зберегти').click();
+    expect((stored()!.profile.theme as { accent: string }).accent).toBe('sky');
   });
 
   it('«скасувати» on the toast brings the first screen back, with nothing stored', () => {

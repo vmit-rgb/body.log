@@ -28,6 +28,10 @@ p {
   clip-path: inset(50%);
   white-space: nowrap;
 }
+/* B-04: a screen's heading takes the focus when the screen opens; it is a place to start from, not a control, so no ring */
+h1[tabindex='-1']:focus {
+  outline: none;
+}
 
 /*
  * Noise over everything (Figma overlay/noise 360:9070): light 1 px grain in

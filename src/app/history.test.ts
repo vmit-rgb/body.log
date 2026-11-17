@@ -144,11 +144,28 @@ describe('«історія» (Figma screen/log-history 165:2758)', () => {
     expect(note.textContent).toBe('усе <b>добре</b>');
   });
 
-  it('leads home on that day from «редагувати цей день»', () => {
+  it('opens that day over the history from «редагувати цей день» (A-11)', () => {
     tap('редагувати цей день');
     expect(heading()).toBe('головна');
     expect(host.querySelector('.hero__text')!.textContent).toContain('нд, 08.11.2026');
-    expect(device.depth()).toBe(0);
+    // menu, history, the day
+    expect(device.depth()).toBe(3);
+    expect(document.title).toBe('трекер');
+  });
+
+  it('«назад» from that day comes back to the same month, the same open cards and the button', () => {
+    tap('попередній місяць');
+    tap('наступний місяць');
+    cards()[1]!.querySelector<HTMLButtonElement>('button.accordion')!.click();
+    const edit = cards()[1]!.querySelector<HTMLButtonElement>('.day-card__edit')!;
+    edit.focus();
+    edit.click();
+    expect(host.querySelector('.hero__text')!.textContent).toContain('чт, 05.11.2026');
+    device.pressBack();
+    expect(heading()).toBe('історія');
+    expect(cards().map(isOpen)).toEqual([true, true, false]);
+    expect(document.activeElement).toBe(cards()[1]!.querySelector('.day-card__edit'));
+    expect(device.depth()).toBe(2);
   });
 
   it('opens the card of a day tapped in the calendar', () => {
@@ -307,7 +324,10 @@ describe('search in notes (Figma search/panel 210:4110)', () => {
     host.querySelector<HTMLButtonElement>('.search__hit')!.click();
     expect(heading()).toBe('головна');
     expect(host.querySelector('.hero__text')!.textContent).toContain('вт, 20.10.2026');
-    expect(device.depth()).toBe(0);
+    // A-11: over the history, as «редагувати цей день»
+    expect(device.depth()).toBe(3);
+    device.pressBack();
+    expect(heading()).toBe('історія');
   });
 
   it('closes with 🔍 again or Escape, giving the focus back to 🔍', () => {

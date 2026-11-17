@@ -115,6 +115,8 @@ describe('settings: the page (Figma screen/edit-profile 186:3278)', () => {
     expect(heading()).toBe('головна');
     expect(dialog()).toBeNull();
     expect(device.depth()).toBe(0);
+    // B-04: back on ≡, which opened the menu the settings came from
+    expect(document.activeElement).toBe(button('меню'));
   });
 });
 
@@ -203,6 +205,49 @@ describe('settings: saving and leaving', () => {
     expect(heading()).toBe('меню');
   });
 
+  it('A-06: «назад» over «вийти без збереження?» closes the question, and asks no second time', async () => {
+    await tick('рахувати тижневу ціль');
+    device.pressBack();
+    await settle();
+    device.pressBack();
+    await settle();
+    expect(document.querySelectorAll('.dialog:not([inert])')).toHaveLength(0);
+    expect(heading()).toBe('налаштування');
+    expect(checkbox('рахувати тижневу ціль').checked).toBe(false);
+    // the settings are still one step over the menu
+    expect(device.depth()).toBe(2);
+    device.pressBack();
+    await settle();
+    expect(document.querySelectorAll('.dialog:not([inert])')).toHaveLength(1);
+    await tap('вийти');
+    expect(heading()).toBe('меню');
+    expect(document.querySelectorAll('.dialog:not([inert])')).toHaveLength(0);
+    expect(device.depth()).toBe(1);
+  });
+
+  it('B-03: the screen under a dialog takes no focus, and Escape anywhere closes it', async () => {
+    await tick('рахувати тижневу ціль');
+    const closeButton = button('закрити налаштування');
+    closeButton.focus();
+    closeButton.click();
+    await settle();
+    expect(host.hasAttribute('inert')).toBe(true);
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    await settle();
+    expect(host.hasAttribute('inert')).toBe(false);
+    expect(heading()).toBe('налаштування');
+    expect(document.activeElement).toBe(button('закрити налаштування'));
+  });
+
+  it('«назад» with nothing changed leaves straight for the menu', async () => {
+    device.pressBack();
+    await settle();
+    expect(dialog()).toBeNull();
+    expect(heading()).toBe('меню');
+    // the tap here focused nothing (as on an iPhone): the menu's heading takes the focus
+    expect(document.activeElement).toBe(host.querySelector('h1'));
+  });
+
   it('closes with Escape the same as «залишитися»', async () => {
     await tick('рахувати тижневу ціль');
     await tap('закрити налаштування');
@@ -276,6 +321,18 @@ describe('settings: the phrase', () => {
     typeIn('інше');
     await tap('скасувати');
     expect(button('ти можеш налаштувати все в налаштуваннях :)')).toBeTruthy();
+  });
+
+  it('«назад» closes the full-screen field as «скасувати», and the settings stay (Olesia, MY-FIXES)', async () => {
+    await tap('ти можеш налаштувати все в налаштуваннях :)');
+    expect(device.depth()).toBe(3);
+    typeIn('не збережеться');
+    device.pressBack();
+    await settle();
+    expect(editor()).toBeNull();
+    expect(heading()).toBe('налаштування');
+    expect(button('ти можеш налаштувати все в налаштуваннях :)')).toBeTruthy();
+    expect(device.depth()).toBe(2);
   });
 
   it('adds a phrase at the end and drops it when nothing was typed', async () => {

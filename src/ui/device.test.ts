@@ -67,18 +67,22 @@ describe('copyWith', () => {
 });
 
 describe('screenHistory', () => {
-  it('marks each screen with its depth and reports the depth on «назад»', () => {
-    const history = { pushState: vi.fn(), go: vi.fn() };
+  it('marks each step with its place and reports the place the browser arrived at', () => {
+    const history = { state: { step: 3 } as unknown, pushState: vi.fn(), go: vi.fn() };
     const target = new EventTarget();
-    const back = vi.fn();
+    const arrived = vi.fn();
     const steps = screenHistory(history, target);
-    steps.listen(back);
+    expect(steps.at()).toBe(3);
+    history.state = null;
+    expect(steps.at()).toBe(0);
+    steps.listen(arrived);
     steps.push(2);
-    expect(history.pushState).toHaveBeenCalledWith({ depth: 2 }, '');
-    steps.back(2);
+    expect(history.pushState).toHaveBeenCalledWith({ step: 2 }, '');
+    steps.go(-2);
     expect(history.go).toHaveBeenCalledWith(-2);
+    target.dispatchEvent(Object.assign(new Event('popstate'), { state: { step: 1 } }));
+    // an entry from before 0.9's steps, or someone else's
     target.dispatchEvent(Object.assign(new Event('popstate'), { state: { depth: 1 } }));
-    target.dispatchEvent(Object.assign(new Event('popstate'), { state: null }));
-    expect(back.mock.calls).toEqual([[1], [0]]);
+    expect(arrived.mock.calls).toEqual([[1], [0]]);
   });
 });
