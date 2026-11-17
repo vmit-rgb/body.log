@@ -242,9 +242,28 @@ function settle(group: { owner: Obj; parent: unknown[] } | null): void {
   group.parent.splice(where, 1, ...set);
 }
 
+const LEVEL_ITEMS = /^morningWarmup\.levels\.\d+\.items$/;
+
+/**
+ * F-07 (Olesia, 2026-11-15): one exercise id sits in one morning level only,
+ * so a tick in one level never ticks another. An exercise taken to another
+ * level becomes a new exercise there: the same name, «як робити» and link
+ * under a new id. The old id stays in the catalogue, so old days keep their
+ * ticks and their name.
+ */
+function ownExercise(copy: Obj, entry: unknown): unknown {
+  const item = obj(entry);
+  const old = (listAt(copy, 'exercises') as Obj[]).find((exercise) => exercise.id === item.exercise);
+  const id = freeId(copy as JsonObject, 'exercise');
+  listAt(copy, 'exercises').push(old ? structuredClone({ ...old, id }) : { id, name: '', how: '', source: { type: 'user' } });
+  return { ...item, exercise: id };
+}
+
 function moveIn(copy: Obj, from: Slot, to: Place): void {
   const source = listAt(copy, from.list);
-  const entry = source[from.index];
+  const moved = source[from.index];
+  const entry = from.list !== to.list && LEVEL_ITEMS.test(from.list) && LEVEL_ITEMS.test(to.list) ? ownExercise(copy, moved) : moved;
+  source[from.index] = entry;
   const target = listAt(copy, to.list);
   const anchor = to.before === null ? undefined : target[to.before];
   const group = groupOf(copy, from.list);

@@ -121,6 +121,27 @@ export function timeDissolves(time: HTMLElement | null | undefined, was: string)
   scrambleTo(time, target);
 }
 
+/* ---- the pulse timer (wave 6): it slides along its row; what takes its place comes in ---- */
+
+/** Where the pulse timer's stopwatch is now, to slide it from there after the row is drawn anew. */
+export function timerLeft(pulse: Element | null | undefined): number | undefined {
+  return pulse?.querySelector('.pulse__row .sw')?.getBoundingClientRect().left;
+}
+
+/** ▶ sends the timer to the right of its row, ■ brings it back (360 ms): from where it was to where it is now. */
+export function timerSlides(pulse: Element | null | undefined, wasLeft: number | undefined): void {
+  const sw = pulse?.querySelector('.pulse__row .sw');
+  if (!sw || wasLeft === undefined) return;
+  const dx = wasLeft - sw.getBoundingClientRect().left;
+  if (Math.abs(dx) < 1) return;
+  play(sw, [{ transform: `translateX(${dx}px)` }, { transform: 'none' }], { duration: MS.m, easing: EASE.out });
+}
+
+/** «готово» / «скасувати» in the timer's place, or the timer back after them: a short fade in (240 ms). */
+export function comesIn(el: Element | null | undefined): void {
+  play(el, [{ opacity: 0 }, { opacity: 1 }], { duration: MS.s, easing: EASE.out, fill: 'backwards' });
+}
+
 /* ---- the slider: saved → the thumb drops into a grey dot and the value re-forms; «скинути» → the thumb pops back ---- */
 
 function flag(el: Element | undefined, name: string): void {

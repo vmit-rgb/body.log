@@ -231,18 +231,21 @@ describe('calendar sheet from the date', () => {
 });
 
 
-describe('pulse timer', () => {
+describe('pulse timer (wave 6: field on one row, timer on the next, «готово» in its place)', () => {
   const pulse = () => $('[data-pulse]');
+  const timerRow = () => $('.pulse__row', pulse());
   const sw = () => $<HTMLButtonElement>('.sw__btn', pulse());
   const time = () => $('.sw__time', pulse()).textContent;
   const state = () => $('.sw', pulse()).dataset.state;
+  const field = () => $<HTMLInputElement>('.labeled input', pulse());
+  const beats = () => $<HTMLInputElement>('[data-input="beats"]', pulse());
   let vibrate: ReturnType<typeof vi.fn>;
 
-  /** ▶, 3 s to get ready, 30 s of counting, then the question. */
-  const countTo = (beats: string) => {
+  /** ▶, 3 s to get ready, 30 s of counting, then the beats and «готово». */
+  const countTo = (typed: string) => {
     sw().click();
     vi.advanceTimersByTime(33_000);
-    type($<HTMLInputElement>('[data-input="beats"]'), beats);
+    type(beats(), typed);
     byText('готово', pulse()).click();
   };
 
@@ -251,15 +254,32 @@ describe('pulse timer', () => {
     Object.defineProperty(navigator, 'vibrate', { configurable: true, value: vibrate });
   });
 
-  it('sits next to the field like a stopwatch: ▶ and the time it will count, nothing to reset yet', () => {
+  it('puts the field and «уд/хв» on one row and the timer, as a stopwatch, on the next', () => {
+    expect(field().getAttribute('aria-label')).toBe('пульс, уд/хв');
+    expect(field().closest('.labeled')!.textContent).toContain('уд/хв');
+    expect(timerRow().contains(field())).toBe(false);
+    expect(timerRow().querySelector('.sw')).not.toBeNull();
     expect(sw().getAttribute('aria-label')).toBe('запустити таймер, 30 с');
     expect(state()).toBe('default');
     expect(time()).toBe('0:30');
+    expect(pulse().querySelector('[data-input="beats"]')).toBeNull();
     expect(pulse().querySelector('[data-act="rm"]')).toBeNull();
-    expect(pulse().querySelector('input')!.getAttribute('aria-label')).toBe('пульс, уд/хв');
   });
 
-  it('gives 3 s to get ready, signals the start, counts down, signals the end and saves beats per minute', () => {
+  it('▶: the «скільки ударів» field comes on the left at once, the timer goes to the right', () => {
+    // a tap focuses the button (jsdom does not); the row rebuilds and the focus must stay on it
+    sw().focus();
+    sw().click();
+    const row = timerRow();
+    expect(row.classList.contains('pulse__row--busy')).toBe(true);
+    expect(row.firstElementChild!.contains(beats())).toBe(true);
+    expect(row.lastElementChild!.matches('.sw')).toBe(true);
+    expect(beats().getAttribute('aria-label')).toBe('скільки ударів за 30 с?');
+    // the focus stays on ■, so no keyboard pops up while counting
+    expect(document.activeElement).toBe(sw());
+  });
+
+  it('gives 3 s to get ready, signals the start and the end, then «готово» saves beats per minute', () => {
     sw().click();
     expect(state()).toBe('running');
     expect(sw().getAttribute('aria-label')).toBe('зупинити й скасувати');
@@ -273,7 +293,9 @@ describe('pulse timer', () => {
     expect(time()).toBe('2');
     expect(vibrate).not.toHaveBeenCalled();
     vi.advanceTimersByTime(2_000);
+    // F-06: the start comes with vibration, sound and the flash
     expect(vibrate).toHaveBeenCalledTimes(1);
+    expect(document.body.querySelector('.flash')).not.toBeNull();
     expect(time()).toBe('0:30');
     expect(pulse().textContent).toContain('рахуй удари');
     expect(heard()).toBe('рахуй удари');
@@ -281,25 +303,45 @@ describe('pulse timer', () => {
     expect(time()).toBe('0:18');
     vi.advanceTimersByTime(18_000);
     expect(vibrate).toHaveBeenCalledTimes(2);
-    expect(document.body.querySelector('.flash')).not.toBeNull();
+    // the timer goes; «готово» (first level) and «скасувати» (third) take its place
+    expect(pulse().querySelector('.sw')).toBeNull();
+    expect(byText('готово', pulse()).className).toContain('btn--primary');
+    expect(byText('скасувати', pulse()).className).toContain('btn--tertiary');
     expect(pulse().textContent).toContain('скільки ударів за 30 с?');
     expect(heard()).toBe('скільки ударів за 30 с?');
-    const beats = $<HTMLInputElement>('[data-input="beats"]');
-    expect(document.activeElement).toBe(beats);
-    type(beats, '42');
+    expect(document.activeElement).toBe(beats());
+    type(beats(), '42');
     byText('готово', pulse()).click();
     expect(saved()!.t.morning!.pulse).toBe(84);
-    expect(pulse().querySelector('input')!.value).toBe('84');
+    expect(field().value).toBe('84');
     expect(pulse().textContent).toContain('42 удари за 30 с × 2');
-    expect(state()).toBe('saved');
+    // back to its starting look: ▶ and the full time, no ✓, no beats field
+    expect(state()).toBe('default');
+    expect(time()).toBe('0:30');
+    expect(pulse().querySelector('[data-input="beats"]')).toBeNull();
+    expect(document.activeElement).toBe(sw());
   });
 
-  it('■ while getting ready cancels the timer: no start, no end, nothing saved', () => {
+  it('keeps the beats typed while counting through the end of the count', () => {
+    sw().click();
+    vi.advanceTimersByTime(10_000);
+    type(beats(), '38');
+    vi.advanceTimersByTime(23_000);
+    expect(beats().value).toBe('38');
+    byText('готово', pulse()).click();
+    expect(saved()!.t.morning!.pulse).toBe(76);
+  });
+
+  it('■ while getting ready cancels the timer and the row goes back: no start, no end, nothing saved', () => {
     sw().click();
     vi.advanceTimersByTime(1_000);
+    sw().focus();
     sw().click();
     expect(state()).toBe('default');
     expect(time()).toBe('0:30');
+    expect(pulse().querySelector('[data-input="beats"]')).toBeNull();
+    expect(timerRow().classList.contains('pulse__row--busy')).toBe(false);
+    expect(document.activeElement).toBe(sw());
     vi.advanceTimersByTime(40_000);
     expect(vibrate).not.toHaveBeenCalled();
     expect(pulse().textContent).not.toContain('скільки ударів');
@@ -311,6 +353,7 @@ describe('pulse timer', () => {
     vi.advanceTimersByTime(8_000);
     sw().click();
     expect(state()).toBe('default');
+    document.body.querySelectorAll('.flash').forEach((flash) => flash.remove());
     vi.advanceTimersByTime(40_000);
     expect(vibrate).toHaveBeenCalledTimes(1);
     expect(document.body.querySelector('.flash')).toBeNull();
@@ -324,18 +367,20 @@ describe('pulse timer', () => {
     sw().click();
     sw().click();
     vi.advanceTimersByTime(30_000);
-    expect(pulse().textContent).not.toContain('скільки ударів');
+    expect(pulse().querySelector('.sw')).not.toBeNull();
     expect(time()).toBe('0:03');
     vi.advanceTimersByTime(3_000);
-    expect(pulse().textContent).toContain('скільки ударів за 30 с?');
+    expect(byText('готово', pulse())).toBeDefined();
   });
 
-  it('«скасувати» at the question drops the count and saves nothing', () => {
+  it('«скасувати» after the count drops it, saves nothing and brings the timer back', () => {
     sw().click();
     vi.advanceTimersByTime(33_000);
-    type($<HTMLInputElement>('[data-input="beats"]'), '40');
+    type(beats(), '40');
     byText('скасувати', pulse()).click();
     expect(state()).toBe('default');
+    expect(pulse().querySelector('[data-input="beats"]')).toBeNull();
+    expect(document.activeElement).toBe(sw());
     expect(saved()).toBeUndefined();
   });
 
@@ -343,60 +388,52 @@ describe('pulse timer', () => {
     sw().click();
     vi.advanceTimersByTime(33_000);
     byText('готово', pulse()).click();
-    type($<HTMLInputElement>('[data-input="beats"]'), '0');
+    type(beats(), '0');
     byText('готово', pulse()).click();
     expect(saved()).toBeUndefined();
-    expect(document.activeElement).toBe($('[data-input="beats"]'));
-    expect(pulse().textContent).toContain('скільки ударів за 30 с?');
+    expect(document.activeElement).toBe(beats());
+    expect(byText('готово', pulse())).toBeDefined();
   });
 
-  it('a saved pulse asks first (↻ «знову»), then counts again', () => {
-    countTo('40');
+  it('a timer left after the count waits there, also across days, until the app is opened anew', () => {
     sw().click();
-    expect(state()).toBe('retry');
-    expect(pulse().textContent).toContain('знову');
+    vi.advanceTimersByTime(60_000);
+    expect(byText('готово', pulse())).toBeDefined();
+    byLabel('попередній день').click();
+    byLabel('наступний день').click();
+    expect(byText('готово', pulse())).toBeDefined();
+    // a new run of the app (start) has a fresh session: the timer is back to ▶
+    start();
+    expect(state()).toBe('default');
+  });
+
+  it('a saved pulse has no ✓ and no ×: ▶ counts again, and the number is corrected in the field', () => {
+    countTo('40');
     expect(saved()!.t.morning!.pulse).toBe(80);
+    expect(pulse().querySelector('[data-act="rm"]')).toBeNull();
+    expect(state()).toBe('default');
     sw().click();
     expect(state()).toBe('running');
-    vi.advanceTimersByTime(240);
     expect(time()).toBe('3');
-  });
-
-  it('× → ✓ clears the field and starts nothing; the timer waits for ▶', () => {
-    countTo('40');
-    byLabel('скинути пульс', pulse()).click();
-    byLabel('точно скинути пульс', pulse()).click();
+    sw().click();
+    type(field(), '78');
+    expect(saved()!.t.morning!.pulse).toBe(78);
+    type(field(), '');
     expect(saved()?.t.morning?.pulse).toBeUndefined();
-    expect(pulse().querySelector('input')!.value).toBe('');
-    expect(pulse().textContent).not.toContain('удари за');
-    expect(state()).toBe('default');
-    vi.advanceTimersByTime(40_000);
-    expect(pulse().textContent).not.toContain('скільки ударів');
   });
 
-  it('a number typed earlier by hand is cleared the same way, and «скасувати» brings it back', () => {
+  it('a number typed by hand shows the timer at ▶, without ✓', () => {
     start({ ...DAYS, [TODAY]: readDay({ t: { morning: { pulse: 70 } } }, TODAY) });
-    expect(state()).toBe('saved');
-    byLabel('скинути пульс', pulse()).click();
-    byLabel('точно скинути пульс', pulse()).click();
-    expect(saved()?.t.morning?.pulse).toBeUndefined();
-    byText('скасувати', document.body).click();
-    expect(saved()!.t.morning!.pulse).toBe(70);
-  });
-
-  it('names the question in the toast after ×', () => {
-    const trackers = [profile.trackers[0]!, { ...profile.trackers[1]!, name: 'серцебиття' }];
-    start({ ...DAYS, [TODAY]: readDay({ t: { morning: { pulse: 70 } } }, TODAY) }, { ...profile, trackers });
-    byLabel('скинути серцебиття', pulse()).click();
-    byLabel('точно скинути серцебиття', pulse()).click();
-    expect(document.body.textContent).toContain('серцебиття скинуто');
+    expect(field().value).toBe('70');
+    expect(state()).toBe('default');
+    expect(pulse().querySelector('[data-act="rm"]')).toBeNull();
   });
 
   it('shows the saved number in the field once the result is gone', () => {
     countTo('36');
     byLabel('попередній день').click();
     byLabel('наступний день').click();
-    expect(pulse().querySelector('input')!.value).toBe('72');
+    expect(field().value).toBe('72');
     expect(pulse().textContent).not.toContain('удари за');
   });
 });

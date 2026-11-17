@@ -308,8 +308,8 @@ describe('ранкова розминка', () => {
     await type('рівень 3');
     expect(button('згорнути: рівень 3')).toBeTruthy();
     await save();
-    expect(at('morningWarmup.levels.0.items.2')).toEqual({ exercise: 'exercise-9', reps: '' });
-    expect((storedProfile().exercises as JsonObject[]).at(-1)).toMatchObject({ id: 'exercise-9', name: 'нова вправа' });
+    expect(at('morningWarmup.levels.0.items.2')).toEqual({ exercise: 'exercise-11', reps: '' });
+    expect((storedProfile().exercises as JsonObject[]).at(-1)).toMatchObject({ id: 'exercise-11', name: 'нова вправа' });
     expect((at('morningWarmup.levels') as JsonObject[]).map((l) => l.name)).toEqual(['рівень 1', 'рівень 2', 'рівень 3']);
     expect((at('morningWarmup.levels') as JsonObject[])[2]).toEqual({ id: 'level-3', name: 'рівень 3', duration: '', items: [] });
   });
@@ -532,7 +532,7 @@ describe('тренування', () => {
     await type('тяга');
     await save();
     expect((at('workout.sessions') as JsonObject[])[1]).toMatchObject({ id: 'session-1', name: 'б', how: '' });
-    expect(at('workout.sessions.1.items.0')).toEqual({ exercise: 'exercise-9', reps: '', sets: 3, fields: ['weight', 'reps'] });
+    expect(at('workout.sessions.1.items.0')).toEqual({ exercise: 'exercise-11', reps: '', sets: 3, fields: ['weight', 'reps'] });
   });
 
   it('makes a group through «створити групу»', async () => {

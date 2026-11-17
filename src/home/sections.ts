@@ -14,7 +14,7 @@ import { smallUnits } from '../ui/units';
 import { withGrip } from '../ui/grip';
 import { beatsLine } from '../domain/stats';
 import {
-  formatCountdown, formatStopwatch, PULSE_SAYS, pulseQuestion, pulseRunning, pulseTime, stopwatchState, type HomeSession, type PulseRun, type StopwatchState,
+  formatCountdown, formatStopwatch, PULSE_SAYS, pulseQuestion, pulseRunning, pulseTime, stopwatchState, stopwatchTime, type HomeSession, type PulseRun,
 } from './session';
 
 /*
@@ -211,21 +211,23 @@ function yesNoTracker(ctx: SectionContext, moment: Moment, tracker: Tracker): st
 }
 
 /**
- * A one-number tracker with the pulse timer: «пульс» … «уд/хв», then the
- * field and the timer drawn as a stopwatch (Olesia, 2026-11-12); while it
- * counts, a small line under them. At «скільки ударів?» the question takes the row.
+ * A one-number tracker with the pulse timer (wave 6; Olesia, MY-FIXES and
+ * 2026-11-15): the field and «уд/хв» on one row, the timer on the next. ▶
+ * moves the timer to the right of its row and the «скільки ударів» field comes
+ * on the left; when the count ends «готово» and «скасувати» take the timer's
+ * place. The number itself is corrected in its field: no ✓, no ×.
  */
 function timedTracker(ctx: SectionContext, moment: Moment, tracker: Tracker & { kind: 'number' }): string {
   const own = ctx.session.pulse;
   const run = own?.key === pulseKey(ctx, moment, tracker) ? own : null;
   const data = trackerData(moment, tracker);
-  const head = `<div class="pulse__head"><span class="t-1st-bold">${esc(tracker.name || 'без назви')}</span><span class="t-3rd-regular muted">${esc(tracker.unit)}</span></div>`;
-  if (run?.phase === 'beats') return `<div class="tracker pulse" data-pulse ${data}>${head}${pulseBeats(run, data)}</div>`;
   const [field] = trackerFields(ctx, moment, tracker);
+  const busy = pulseRunning(run) || run?.phase === 'beats';
   return `
-    <div class="tracker pulse" data-pulse ${data}>${head}
-      <div class="pulse__row">${numberField({ ...field!, unit: '' })}${pulseTimer(ctx, moment, tracker, run)}</div>${
-        armedTip(ctx, `pulse|${moment}|${tracker.id}`)}${pulseNote(run)}${hint(tracker)}
+    <div class="tracker pulse" data-pulse ${data}>
+      <div class="labeled"><span class="t-1st-semibold labeled__name">${esc(tracker.name || 'без назви')}</span><div class="labeled__fields">${numberField(field!)}</div></div>
+      <div class="pulse__row${busy ? ' pulse__row--busy' : ''}">${busy ? beatsField(run!) : ''}${
+        run?.phase === 'beats' ? pulseEnd(data) : pulseTimer(ctx, moment, tracker, run)}</div>${pulseNote(run)}${hint(tracker)}
     </div>`;
 }
 
@@ -256,53 +258,48 @@ function numbersTracker(ctx: SectionContext, moment: Moment, tracker: Tracker & 
 
 export const pulseKey = (ctx: SectionContext, moment: Moment, tracker: Tracker) => dayKey(ctx, `pulse|${moment}|${tracker.id}`);
 
-const PULSE_LABELS: Record<StopwatchState, (seconds: number) => string> = {
+/** ▶ waits, ■ gets ready or counts (and cancels); no ✓ or ↻ any more (wave 6). */
+type PulseState = 'default' | 'running';
+
+const PULSE_LABELS: Record<PulseState, (seconds: number) => string> = {
   default: (seconds) => `запустити таймер, ${seconds} с`,
   running: () => 'зупинити й скасувати',
-  saved: () => 'збережено. натисни, щоб виміряти заново',
-  retry: () => 'натисни ще раз — і таймер запуститься',
 };
 
-/** ▶ nothing saved, ■ getting ready or counting, ✓ a number saved, ↻ asked to count again. */
-function pulseState(ctx: SectionContext, key: string, saved: unknown, run: PulseRun | null): StopwatchState {
-  if (pulseRunning(run)) return 'running';
-  if (saved == null) return 'default';
-  return ctx.session.retry.has(key) ? 'retry' : 'saved';
-}
-
-/** The button and the time, as the stopwatch; × clears a saved number (hidden while there is none, or while it counts). */
+/** The button and the time, as the stopwatch. Its key keeps the focus on it when the row rebuilds. */
 function pulseTimer(ctx: SectionContext, moment: Moment, tracker: Tracker & { kind: 'number' }, run: PulseRun | null): string {
   const target = `pulse|${moment}|${tracker.id}`;
   const key = dayKey(ctx, target);
-  const saved = ctx.day.t[moment]?.[tracker.id];
-  const state = pulseState(ctx, key, saved, run);
+  const state: PulseState = pulseRunning(run) ? 'running' : 'default';
   const seconds = tracker.timer ?? 0;
   const counting = run !== null && state === 'running';
   const time = counting ? pulseTime(run, Date.now()) : formatCountdown(seconds * 1000);
   return `
     <div class="sw" data-state="${state}">
       <button type="button" class="ctl icon-btn icon-btn--secondary sw__btn" data-act="pulse" data-pulse-sw="${esc(target)}" ${trackerData(moment, tracker)}
-        aria-label="${PULSE_LABELS[state](seconds)}">${iconSvg(SW_ICONS[state])}</button>
+        ${keyed(`${key}|timer`)} aria-label="${PULSE_LABELS[state](seconds)}">${iconSvg(SW_ICONS[state])}</button>
       <span class="sw__time t-1st-bold" data-sw-time="${esc(key)}"${counting ? ' data-pulse-left' : ''}>${time}</span>
-      ${state === 'retry' ? '<span class="sw__again t-3rd-regular muted">знову</span>' : ''}
-    </div>${removeButton(ctx, target, `скинути ${tracker.name || 'без назви'}`, saved == null || counting)}`;
+    </div>`;
 }
 
-/** «приготуйся» / «рахуй удари» while it runs; «42 удари за 30 с × 2» after «готово», until the day changes. */
-function pulseNote(run: PulseRun | null): string {
-  if (run?.phase === 'ready' || run?.phase === 'counting') return `<p class="pulse__note t-3rd-regular muted">${PULSE_SAYS[run.phase]}</p>`;
-  if (run?.phase === 'done') return `<p class="pulse__note t-3rd-regular muted">${beatsLine(run.beats ?? 0, run.seconds)}</p>`;
-  return '';
+/** «скільки ударів»: on the left from ▶ on, so the beats can be typed while counting or after. */
+function beatsField(run: PulseRun): string {
+  return numberField({ key: `${run.key}|beats`, label: pulseQuestion(run.seconds), value: run.typed, unit: 'ударів', data: 'data-input="beats"' });
 }
 
-/** «скільки ударів за 30 с?», the field, «готово» and «скасувати». */
-function pulseBeats(run: PulseRun, data: string): string {
-  const question = pulseQuestion(run.seconds);
-  return `
-    <p class="pulse__note t-1st-regular">${question}</p>
-    <div class="labeled__fields">${numberField({ key: `${run.key}|beats`, label: question, value: '', unit: 'ударів', data: 'data-input="beats"' })}
+/** In the timer's place when the count ends: «готово» (first level) and «скасувати» (third, a text button). */
+function pulseEnd(data: string): string {
+  return `<div class="pulse__end">
       <button type="button" class="ctl btn btn--primary" data-act="pulse-done" ${data}>готово</button>
       <button type="button" class="ctl btn btn--tertiary" data-act="pulse-cancel" ${data}>скасувати</button></div>`;
+}
+
+/** «приготуйся» / «рахуй удари» / «скільки ударів за 30 с?»; «42 удари за 30 с × 2» after «готово», until the day changes. */
+function pulseNote(run: PulseRun | null): string {
+  if (run?.phase === 'ready' || run?.phase === 'counting') return `<p class="pulse__note t-3rd-regular muted">${PULSE_SAYS[run.phase]}</p>`;
+  if (run?.phase === 'beats') return `<p class="pulse__note t-3rd-regular muted">${pulseQuestion(run.seconds)}</p>`;
+  if (run?.phase === 'done') return `<p class="pulse__note t-3rd-regular muted">${beatsLine(run.beats ?? 0, run.seconds)}</p>`;
+  return '';
 }
 
 /** «тиск, перше число, мм рт. ст.» */
@@ -361,23 +358,29 @@ function removeButton(ctx: SectionContext, target: string, label: string, idle =
 const idleTimer = (ctx: SectionContext, target: string, n: number, saved: number | null) =>
   n === 1 && saved === null && !ctx.session.running.has(dayKey(ctx, target));
 
+export const SW_RUNNING_LABEL = 'зупинити й зберегти';
 const SW_LABELS = {
   default: 'запустити секундомір',
-  running: 'зупинити й зберегти',
+  running: SW_RUNNING_LABEL,
   saved: 'збережено. натисни, щоб перезаписати',
   retry: 'натисни ще раз — і час запишеться заново',
 } as const;
 const SW_ICONS = { default: 'play', running: 'rectangle', saved: 'check', retry: 'restart' } as const;
 
+/** F-05: during «3 · 2 · 1» ■ only calls the start off; nothing is counted yet. */
+const SW_READY_LABEL = 'зупинити відлік і не запускати';
+
 function stopwatch(ctx: SectionContext, target: string, saved: number | null, n: number): string {
   const key = dayKey(ctx, target);
   const state = stopwatchState(ctx.session, key, saved);
   const started = ctx.session.running.get(key);
-  const time = started === undefined ? formatStopwatch((saved ?? 0) * 1000) : formatStopwatch(performance.now() - started);
+  const now = performance.now();
+  const time = started === undefined ? formatStopwatch((saved ?? 0) * 1000) : stopwatchTime(started, now);
+  const label = started !== undefined && now < started ? SW_READY_LABEL : SW_LABELS[state];
   return `
     <div class="sw" data-state="${state}">
       <button type="button" class="ctl icon-btn icon-btn--secondary sw__btn" data-act="sw" data-sw="${esc(target)}"
-        aria-label="${SW_LABELS[state]}, ${n}">${iconSvg(SW_ICONS[state])}</button>
+        aria-label="${label}, ${n}">${iconSvg(SW_ICONS[state])}</button>
       <span class="sw__time t-1st-bold" data-sw-time="${esc(key)}">${time}</span>
       ${state === 'retry' ? '<span class="sw__again t-3rd-regular muted">знову</span>' : ''}
     </div>`;

@@ -1,8 +1,9 @@
 import type { Accessibility } from '../domain/settings';
 
 /*
- * The pulse timer's start (after 3 s to get ready): a short buzz and the tone.
- * Its end: vibration, a short sound and a flash of the
+ * The start of the pulse timer and of a stopwatch (after 3 s to get ready):
+ * a short buzz, the tone and a flash (F-06). The pulse timer's end:
+ * vibration, a short sound and a flash of the
  * screen (ACCESSIBILITY.md: the person is counting with both hands busy).
  * «вимкнути вібровідгук» and «вимкнути звук» switch the first two off; the
  * flash always comes (with «вимкнути всі анімації» as a still layer, CSS), so
@@ -44,10 +45,15 @@ function flash(): void {
   setTimeout(() => layer.remove(), FLASH_MS);
 }
 
-/** The count starts: one short buzz and the tone; the digits change on screen too. */
+/**
+ * The count starts, of the pulse timer and of a stopwatch after «3 · 2 · 1»
+ * (F-06): one short buzz, the tone and the flash, so the start is seen with
+ * the sound and the vibration off too.
+ */
 export function startSignal(off: Pick<Accessibility, 'noVibration' | 'noSound'>): void {
   buzz(150, off);
   if (!off.noSound) beep();
+  flash();
 }
 
 export function endSignal(off: Pick<Accessibility, 'noVibration' | 'noSound'>): void {

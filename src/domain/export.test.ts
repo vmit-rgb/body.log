@@ -29,7 +29,7 @@ describe('recordsText', () => {
   it('lists days with records, newest first, one line per block', () => {
     const days = text.split('\n\n').slice(1);
     expect(days).toHaveLength(2);
-    expect(days[0]).toBe('нд, 08.11.2026\n  ранкова розминка: рівень 1 (вправа 1); рівень 2 (вправа 1)\n  нотатка: перший рядок / другий');
+    expect(days[0]).toBe('нд, 08.11.2026\n  ранкова розминка: рівень 1 (вправа 1)\n  нотатка: перший рядок / другий');
     expect(days[1]).toBe('сб, 07.11.2026\n  самопочуття зранку: енергія 4\n  денна розминка: для спини');
   });
 
@@ -37,7 +37,7 @@ describe('recordsText', () => {
     const timed = recordsText({
       [d('2026-11-08')]: readDay({ mw: { ticks: ['exercise-2'], times: { 'exercise-2': [30] } }, t: { morning: { pulse: 72 } } }, d('2026-11-08')),
     }, SETTINGS, TODAY);
-    expect(timed).toContain('ранкова розминка: рівень 1 (вправа 2 30 с); рівень 2 (вправа 2 30 с)');
+    expect(timed).toContain('ранкова розминка: рівень 1 (вправа 2 30 с)');
     expect(timed).toContain('самопочуття зранку: пульс 72 уд/хв');
   });
 });
@@ -112,10 +112,10 @@ describe('pdfDocument', () => {
       { text: '', size: 6, bold: false, indent: 0 },
       { text: 'нд, 08.11.2026', size: 12, bold: true, indent: 0 },
     ]);
-    expect(pdf.lines[4]).toEqual({ text: 'ранкова розминка: рівень 1 (вправа 1); рівень 2 (вправа 1)', size: 9.5, bold: false, indent: 12 });
+    expect(pdf.lines[4]).toEqual({ text: 'ранкова розминка: рівень 1 (вправа 1)', size: 9.5, bold: false, indent: 12 });
     expect(texts(pdf.lines)).toEqual([
       'щоденник руху й самопочуття', 'експорт пн, 09.11.2026 · це щоденник, а не медичний документ', '',
-      'нд, 08.11.2026', 'ранкова розминка: рівень 1 (вправа 1); рівень 2 (вправа 1)', 'нотатка: перший рядок / другий', '',
+      'нд, 08.11.2026', 'ранкова розминка: рівень 1 (вправа 1)', 'нотатка: перший рядок / другий', '',
       'сб, 07.11.2026', 'самопочуття зранку: енергія 4', 'денна розминка: для спини', '',
       '', 'body.log · бета 0.9',
     ]);

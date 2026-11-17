@@ -545,6 +545,13 @@
 .sw__time {
   font-variant-numeric: tabular-nums;
 }
+/* F-05: «3», «2», «1» before the count take the room of the time, so ■ doesn't jump when it starts */
+[data-act='sw'] + .sw__time {
+  min-width: 8ch;
+}
+[data-act='pulse'] + .sw__time {
+  min-width: 4ch;
+}
 .sw[data-state='running'] .sw__time {
   color: var(--accent);
 }

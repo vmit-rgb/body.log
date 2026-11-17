@@ -11,7 +11,7 @@ import { heroFor, homeSections, sectionDone, type SectionId, type SectionSpec } 
 import {
   checkInBody, daytimeBody, morningBody, movementBody, noteBody, sectionTop, workoutBody, type SectionContext,
 } from '../home/sections';
-import { formatStopwatch, PULSE_SAYS, pulseQuestion, pulseRunning, pulseTime, schedulePulse, type HomeSession } from '../home/session';
+import { PULSE_SAYS, pulseQuestion, pulseRunning, pulseTime, schedulePulse, stopwatchTime, type HomeSession } from '../home/session';
 import { calendarMarkup, type CalendarView } from '../home/calendar';
 import { endSignal, startSignal } from '../home/signal';
 import { monthOf, shiftMonth } from '../domain/stats';
@@ -375,7 +375,7 @@ function sectionControls(host: HTMLElement, state: HomeState, actions: HomeActio
   };
 }
 
-/** Running stopwatches of the day shown count on screen. */
+/** Running stopwatches of the day shown count on screen: «3 · 2 · 1» first (F-05), then up from zero. */
 function tickStopwatches(host: HTMLElement, state: HomeState, signal: AbortSignal): void {
   const prefix = `${state.date}|`;
   if (![...state.session.running.keys()].some((key) => key.startsWith(prefix))) return;
@@ -383,7 +383,7 @@ function tickStopwatches(host: HTMLElement, state: HomeState, signal: AbortSigna
     for (const time of host.querySelectorAll<HTMLElement>('[data-sw-time]')) {
       const started = state.session.running.get(String(time.dataset.swTime));
       // not while its old digits dissolve («знову»)
-      if (started !== undefined && time.dataset.busy === undefined) time.textContent = formatStopwatch(performance.now() - started);
+      if (started !== undefined && time.dataset.busy === undefined) time.textContent = stopwatchTime(started, performance.now());
     }
   }, 50);
   signal.addEventListener('abort', () => clearInterval(timer));

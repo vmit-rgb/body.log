@@ -472,7 +472,8 @@ describe('the stopwatch', () => {
   it('turns ■ into ✓ by frames and the saved time re-forms', () => {
     const now = vi.spyOn(performance, 'now').mockReturnValue(1000);
     button().click();
-    now.mockReturnValue(32_400);
+    // F-05: the count starts 3 s after ▶
+    now.mockReturnValue(35_400);
     vi.advanceTimersByTime(240);
     button().click();
     expect(button().dataset.g).toBe('#');
@@ -494,7 +495,8 @@ describe('the stopwatch', () => {
     vi.advanceTimersByTime(240);
     expect(time().dataset.busy).toBeUndefined();
     vi.advanceTimersByTime(50);
-    expect(time().textContent).toBe('00.00.00');
+    // F-05: «3 · 2 · 1» comes first, then the count from zero
+    expect(time().textContent).toBe('3');
     now.mockRestore();
   });
 

@@ -24,7 +24,9 @@ export type ProfileIssue =
   /** An item names an exercise the catalogue doesn't have. */
   | { readonly kind: 'missingExercise'; readonly path: Path; readonly id: string }
   /** A scale's `min` is not below its `max`. */
-  | { readonly kind: 'minNotBelowMax'; readonly path: Path };
+  | { readonly kind: 'minNotBelowMax'; readonly path: Path }
+  /** F-07: an exercise already named in a morning level (`level`: that level's number from 1). */
+  | { readonly kind: 'sharedExercise'; readonly path: Path; readonly id: string; readonly level: number };
 
 export interface ProfileChecked {
   readonly issues: readonly ProfileIssue[];
@@ -82,6 +84,26 @@ function missingExercises(profile: Obj): ProfileIssue[] {
     (typeof id === 'string' && id !== '' && !known.has(id) ? [{ kind: 'missingExercise', path, id }] : []));
 }
 
+/**
+ * F-07 (Olesia, 2026-11-15): one exercise in one morning level only, so a
+ * tick in one level never ticks another. The second time an id comes, in
+ * another level or in the same one, is an error.
+ */
+function sharedExercises(profile: Obj): ProfileIssue[] {
+  const first = new Map<string, number>();
+  return arr(at(profile, ['morningWarmup', 'levels'])).flatMap((level, i) =>
+    arr(obj(level).items).flatMap((item, j): ProfileIssue[] => {
+      const id = obj(item).exercise;
+      if (typeof id !== 'string' || id === '') return [];
+      const seen = first.get(id);
+      if (seen === undefined) {
+        first.set(id, i);
+        return [];
+      }
+      return [{ kind: 'sharedExercise', path: ['morningWarmup', 'levels', i, 'items', j, 'exercise'], id, level: seen + 1 }];
+    }));
+}
+
 function scales(profile: Obj): ProfileIssue[] {
   return arr(profile.trackers).flatMap((tracker, index): ProfileIssue[] => {
     const { kind, min = 0, max = 10 } = obj(tracker) as { kind?: unknown; min?: unknown; max?: unknown };
@@ -94,5 +116,5 @@ function scales(profile: Obj): ProfileIssue[] {
 export function checkProfile(value: unknown): ProfileChecked {
   const { issues, unknown } = checkSchema(PROFILE_SCHEMA, value);
   if (!isObj(value)) return { issues, unknown };
-  return { issues: [...issues, ...repeatedIds(value), ...missingExercises(value), ...scales(value)], unknown };
+  return { issues: [...issues, ...repeatedIds(value), ...missingExercises(value), ...sharedExercises(value), ...scales(value)], unknown };
 }
