@@ -2,12 +2,14 @@ import { VERSION_LABEL } from '../version';
 import { isDayKey, type DayKey } from './dates';
 import { readDay, writeDay, type Day } from './day';
 import { isLegacyProfile, upgradeProfile } from '../format/profile-upgrade';
+import { withOwnLevelExercises } from './sections-edit';
 
 /**
  * Glossary
  * - diary: everything the person keeps in the app: their settings and the days they logged.
  * - settings (profile): what the person set up; format in PROFILE-FORMAT.md.
- *   Settings older than format 0.1 are converted here, where a diary comes in.
+ *   Settings older than format 0.1 are converted here, where a diary comes in,
+ *   and an exercise shared by morning levels is split once (F-07, wave 6).
  * - day: what was logged on one calendar day, keyed by its date.
  * - copy (backup): the diary as a file, `phys-activity-backup` version 1,
  *   the same format «бета 0.81» saves («зберегти копію»).
@@ -60,13 +62,16 @@ function parseJson(text: string): unknown {
 /**
  * Reads a copy (a file or the app's own storage); null for anything that
  * isn't a copy with settings; days with a broken date are left out.
- * `converted` says the settings were older than format 0.1 and are now 0.1.
+ * `converted` says the settings were older than format 0.1 and are now 0.1;
+ * `split`, that morning levels shared exercises and now each has its own.
  */
-export function readDiary(text: string): { readonly diary: Diary; readonly converted: boolean } | null {
+export function readDiary(text: string): { readonly diary: Diary; readonly converted: boolean; readonly split: boolean } | null {
   const data = parseJson(text);
   if (!isObject(data) || data.format !== BACKUP_FORMAT || data.version !== BACKUP_VERSION) return null;
   if (!isObject(data.profile) || !isObject(data.days)) return null;
-  return { diary: { profile: upgradeProfile(data.profile), days: parseDays(data.days) }, converted: isLegacyProfile(data.profile) };
+  const upgraded = upgradeProfile(data.profile) as JsonObject;
+  const own = withOwnLevelExercises(upgraded);
+  return { diary: { profile: own ?? upgraded, days: parseDays(data.days) }, converted: isLegacyProfile(data.profile), split: own !== null };
 }
 
 /** The diary of `readDiary` alone. */

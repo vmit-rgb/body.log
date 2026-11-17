@@ -16,6 +16,8 @@ export const DIARY_KEY = 'phys-activity-tracking-app/diary';
 const UNREADABLE_KEY = `${DIARY_KEY}/unreadable`;
 /** The diary as it was stored before its settings were converted to format 0.1. */
 export const BEFORE_FORMAT_KEY = `${DIARY_KEY}/before-format-0.1`;
+/** The diary as it was stored before its morning levels got their own exercises (F-07, wave 6). */
+export const BEFORE_SPLIT_KEY = `${DIARY_KEY}/before-own-level-exercises`;
 const BROWSER_KEY = 'phys-activity-tracking-app/browser-chosen';
 const SECTION_KEY = 'phys-activity-tracking-app/section-closed/';
 const TIP_KEY = 'phys-activity-tracking-app/tip-closed/';
@@ -29,7 +31,8 @@ export interface DiaryStore {
   /**
    * The diary on this phone. Settings older than format 0.1 come back
    * converted and are stored that way once; the entry as it was is kept
-   * aside first. When the phone has no room for that, the conversion
+   * aside first; so are settings whose morning levels shared exercises
+   * (F-07, split once). When the phone has no room for that, the conversion
    * lives in memory only and is tried again on the next launch.
    */
   load(): Diary | null;
@@ -57,9 +60,10 @@ export function diaryStore(storage: KeyValue, now: () => Date): DiaryStore {
       const read = readDiary(stored ?? '');
       if (!read) return null;
       const moved = withFinished(storage, read.diary);
-      if (read.converted || moved.dates.length > 0) {
+      if (read.converted || read.split || moved.dates.length > 0) {
         try {
           if (read.converted) storage.setItem(BEFORE_FORMAT_KEY, stored!);
+          if (read.split && storage.getItem(BEFORE_SPLIT_KEY) === null) storage.setItem(BEFORE_SPLIT_KEY, stored!);
           storage.setItem(DIARY_KEY, serializeDiary(moved.diary, now()));
           for (const date of moved.dates) storage.removeItem(FINISHED_KEY + date);
         } catch {

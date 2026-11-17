@@ -38,17 +38,16 @@ export interface Draft { readonly moment: Moment; readonly tracker: string; read
 /**
  * The pulse timer (ACCESSIBILITY.md, wave 6): ready (3 s to find the pulse)
  * → counting → beats («готово» / «скасувати» in the timer's place, until
- * one of them or the app is closed) → done (the line «42 удари за 30 с × 2»,
- * until the day changes). ■ in ready or counting and «скасувати» at beats
- * drop the run (Olesia, 2026-11-12 and 2026-11-15).
+ * one of them or the app is closed); «готово» saves and ends the run, with
+ * no line left under it (Olesia, 2026-11-17). ■ in ready or counting and
+ * «скасувати» at beats drop the run (Olesia, 2026-11-12 and 2026-11-15).
  */
 export interface PulseRun {
   readonly key: string;
   readonly seconds: number;
-  readonly phase: 'ready' | 'counting' | 'beats' | 'done';
+  readonly phase: 'ready' | 'counting' | 'beats';
   /** When the phase shown ends (ready, counting), as Date.now(). */
   readonly ends: number;
-  readonly beats: number | null;
   /** What is typed in «скільки ударів» so far: the field comes at ▶, and a render must not lose it. */
   readonly typed: string;
 }
