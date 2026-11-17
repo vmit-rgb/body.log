@@ -35,13 +35,13 @@
   gap: var(--gap-section);
 }
 
-/* menu/links and menu/help-links: 16 px from the left, running off the right edge */
+/* menu/links and menu/help-links: 16 px from both edges. C-04: they used to run
+   off the right edge (Figma); Olesia's rule is that nothing goes past it */
 .menu__group {
   display: flex;
   flex-direction: column;
   gap: var(--gap-group);
-  padding-left: var(--pad-screen-x);
-  overflow-x: clip;
+  padding: 0 var(--pad-screen-x);
 }
 .menu__link,
 .menu__help {
@@ -54,10 +54,8 @@
 .menu__link {
   padding: 8px;
 }
-/* a pill cut by the screen edge: its right side and border sit past the edge */
 .menu__help {
-  width: calc(100% + 4px);
-  border-radius: var(--radius-pill) 0 0 var(--radius-pill);
+  border-radius: var(--radius-pill);
 }
 
 /* menu/backup, type status */

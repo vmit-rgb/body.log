@@ -116,6 +116,8 @@
 .value-row > * + * {
   margin-left: var(--gap-micro);
 }
+/* C-03: a name without spaces wraps too, not only the value */
+.value-row__label,
 .value-row__value {
   overflow-wrap: anywhere;
 }

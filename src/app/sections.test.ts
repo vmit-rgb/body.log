@@ -192,6 +192,19 @@ describe('ранкова розминка', () => {
     await tap('ранкова розминка');
   });
 
+  it('puts «додати вправу» and «додати рівень» on the right, and opens «як робити» as a long text (wave 4)', async () => {
+    await tap('розгорнути: рівень 1');
+    for (const name of ['додати вправу', 'додати рівень']) expect(button(name).parentElement!.classList.contains('st-end')).toBe(true);
+    host.querySelector<HTMLElement>('[data-edit="long"]')!.click();
+    await settle();
+    expect(document.querySelector('.text-edit')!.classList.contains('text-edit--long')).toBe(true);
+    await type('', false);
+    host.querySelector<HTMLElement>('[data-edit="text"]')!.click();
+    await settle();
+    expect(document.querySelector('.text-edit')!.classList.contains('text-edit--long')).toBe(false);
+    await type('', false);
+  });
+
   it('shows the levels closed with their count, a level opens', async () => {
     expect(host.textContent).toContain('2 вправи');
     expect(host.textContent).toContain('3 вправи');

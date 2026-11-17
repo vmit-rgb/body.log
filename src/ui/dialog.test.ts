@@ -75,6 +75,40 @@ describe('editText (overlay/text-edit 250:6286)', () => {
     click('скасувати');
     expect(await cancelled).toBeNull();
   });
+
+  it('marks a long text, so it is drawn at 14 px from the top (Olesia, MY-FIXES)', async () => {
+    const short = editText({ label: 'назва', value: 'а', maxLength: 120 });
+    expect(document.querySelector('.text-edit')!.classList.contains('text-edit--long')).toBe(false);
+    click('скасувати');
+    await short;
+    const long = editText({ label: 'як робити', value: 'а', maxLength: 500, long: true });
+    expect(document.querySelector('.text-edit')!.classList.contains('text-edit--long')).toBe(true);
+    click('скасувати');
+    await long;
+  });
+
+  it('covers only what is seen above the keyboard and follows it until closed', async () => {
+    const listeners = new Map<string, () => void>();
+    const view = {
+      offsetTop: 40, height: 300,
+      addEventListener: (type: string, fn: () => void) => listeners.set(type, fn),
+      removeEventListener: (type: string) => listeners.delete(type),
+    };
+    Object.defineProperty(window, 'visualViewport', { value: view, configurable: true });
+    try {
+      const typed = editText({ label: 'фраза', value: 'а', maxLength: 80 });
+      const overlay = document.querySelector<HTMLElement>('.text-edit')!;
+      expect([overlay.style.top, overlay.style.height]).toEqual(['40px', '300px']);
+      view.height = 200;
+      listeners.get('resize')!();
+      expect(overlay.style.height).toBe('200px');
+      click('готово');
+      await typed;
+      expect(listeners.size).toBe(0);
+    } finally {
+      Object.defineProperty(window, 'visualViewport', { value: undefined, configurable: true });
+    }
+  });
 });
 
 describe('confirmDialog in motion (MICROINTERACTIONS.md)', () => {

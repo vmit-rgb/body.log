@@ -52,7 +52,8 @@
   display: flex;
   flex-direction: column;
   gap: var(--gap-group);
-  padding: var(--gap-section) var(--pad-screen-x);
+  /* the bottom 1.5× the top, so the end of a section shows (Olesia, MY-FIXES): 24 → 36 */
+  padding: var(--gap-section) var(--pad-screen-x) calc(var(--gap-section) * 1.5);
   background: var(--panel);
 }
 .home-section__body[hidden] {
@@ -61,7 +62,7 @@
 /* closed: the hint in a strip under the title (activity/section collapsed 143:3998) */
 .home-section__hint {
   margin: 0;
-  padding: 8px var(--pad-screen-x);
+  padding: 8px var(--pad-screen-x) 12px;
   background: var(--panel);
 }
 .home-section:has(> .home-section__heading [aria-expanded='true']) > .home-section__hint {
@@ -78,6 +79,7 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
+  column-gap: var(--gap-items);
   padding: 8px max(var(--pad-screen-x), (100% - var(--content-max)) / 2 + var(--pad-screen-x)) max(8px, env(safe-area-inset-bottom));
   background: var(--bg);
   box-shadow: 0 1px 2px rgb(0 0 0 / 30%), 0 2px 6px 2px rgb(0 0 0 / 15%);
@@ -122,41 +124,62 @@
   margin: 0;
   white-space: nowrap;
 }
-/* larger text on a phone: the date doesn't fit beside ≡, so its row goes under it
-   and the bar grows (--bar-h in tokens.css; Olesia, 2026-11-11) */
-@media (max-width: 540px) {
-  :root[data-larger-text] .bar:has(> .bar__right) {
-    display: grid;
-    grid-template-areas: 'menu goal' 'nav nav';
-    grid-template-columns: auto 1fr;
-    align-items: end;
-  }
-  :root[data-larger-text] .bar__right {
-    display: contents;
-  }
-  :root[data-larger-text] .bar > .bar__menu {
-    grid-area: menu;
-  }
-  :root[data-larger-text] .bar__goal {
-    grid-area: goal;
-    padding: 0 0 8px 8px;
-    text-align: end;
-  }
-  :root[data-larger-text] .date-nav {
-    grid-area: nav;
-    justify-self: end;
-  }
-  :root[data-larger-text][data-mirrored] .bar:has(> .bar__right) {
-    grid-template-areas: 'goal menu' 'nav nav';
-    grid-template-columns: 1fr auto;
-  }
-  :root[data-larger-text][data-mirrored] .bar__goal {
-    padding: 0 8px 8px 0;
-    text-align: start;
-  }
-  :root[data-larger-text][data-mirrored] .date-nav {
-    justify-self: start;
-  }
+/* C-01 (Olesia, MY-FIXES): what doesn't fit goes to the next row and the bar grows.
+   ui/bar-fit.ts sets data-fit: 1 · the date with its arrows in a row under ≡
+   (as for larger text since 2026-11-11), 2 · the date on top, the arrows under it. */
+.bar[data-fit] {
+  display: grid;
+  grid-template-areas: 'menu goal' 'nav nav';
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: end;
+  row-gap: var(--gap-items);
+}
+.bar[data-fit] .bar__right {
+  display: contents;
+}
+.bar[data-fit] > .bar__menu {
+  grid-area: menu;
+}
+.bar[data-fit] .bar__goal {
+  grid-area: goal;
+  padding: 0 0 8px 8px;
+  text-align: end;
+}
+.bar[data-fit] .date-nav {
+  grid-area: nav;
+  justify-self: end;
+  max-width: 100%;
+}
+:root[data-mirrored] .bar[data-fit] {
+  grid-template-areas: 'goal menu' 'nav nav';
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+:root[data-mirrored] .bar[data-fit] .bar__goal {
+  padding: 0 8px 8px 0;
+  text-align: start;
+}
+:root[data-mirrored] .bar[data-fit] .date-nav {
+  justify-self: start;
+}
+/* 2: the date takes the whole row and may wrap; ‹ under its start, › under its end */
+.bar[data-fit='2'] .date-nav {
+  display: grid;
+  grid-template-areas: 'date date' 'prev next';
+  justify-self: stretch;
+  row-gap: var(--gap-items);
+}
+.bar[data-fit='2'] .date-nav__date {
+  grid-area: date;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.bar[data-fit='2'] .date-nav__step[data-step='-1'] {
+  grid-area: prev;
+  justify-self: start;
+}
+.bar[data-fit='2'] .date-nav__step[data-step='1'] {
+  grid-area: next;
+  justify-self: end;
 }
 
 /* «вгору»: floats bottom right, just above the bar */
