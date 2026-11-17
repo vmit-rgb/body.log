@@ -3,7 +3,7 @@ import type { DayKey } from '../domain/dates';
 import { serializeDiary, type Diary } from '../domain/diary';
 import { readSettings } from '../domain/settings';
 import { showHowToUse, showWhatsNew, type HelpActions } from '../screens/help';
-import { showHistory } from '../screens/history';
+import { showHistory, type HistoryMemory } from '../screens/history';
 import { showMenu, type MenuItem } from '../screens/menu';
 import { menuIn, menuOut } from '../screens/menu-motion';
 import type { PdfFonts } from '../pdf/pdf';
@@ -12,12 +12,15 @@ import { buzz } from '../home/signal';
 import { tvFlicker } from '../ui/flicker';
 import { enter, fillThrough } from '../ui/motion';
 import type { Toast, ToastMessage } from '../ui/toast';
+import { focusBack, focusHeading, selectorOf, titleFor } from '../ui/screen-focus';
+import type { BackSteps, BrowserSteps } from './back-steps';
 import { settingsPage, type SettingsEnv, type SettingsPage } from './settings-page';
 
 /*
  * The screens that open over home: the menu and its two pages (stage 6a),
- * the history with search in notes (stage 6b).
- * Each one is a step in the phone's history, so «назад» closes them one by one.
+ * the history with search in notes (stage 6b), a day opened from the history
+ * (A-11). Each one is a step of the phone's «назад» (back-steps.ts), so
+ * «назад» closes them one by one.
  */
 
 export interface ShareData {
@@ -41,12 +44,8 @@ export interface DeviceEnv extends Pick<SettingsEnv, 'look' | 'motionReduced'> {
   /** Puts text on the clipboard; false when the phone refuses. */
   copyText(text: string): Promise<boolean>;
   now(): Date;
-  /** The phone's back button; `depth` = how many screens are open over home. */
-  history: {
-    push(depth: number): void;
-    back(steps: number): void;
-    listen(onBack: (depth: number) => void): void;
-  };
+  /** The browser's history, which the phone's «назад» moves through (A-05). */
+  history: BrowserSteps;
 }
 
 /** How the app lets these screens take the screen and give it back to home. */
@@ -123,34 +122,78 @@ export function comeInFor(page: Page, from: Page | undefined): (host: HTMLElemen
 /** 'search' is the history with the search panel open. */
 export type Page = 'menu' | 'whats-new' | 'how-to-use' | 'history' | 'search' | 'settings';
 
-export function pagesOverHome(env: DeviceEnv, home: Home): { open(page: Page): void } {
-  let pages: Page[] = [];
+/** B-05: what the page is called while each screen shows. */
+const TITLES: Record<Page, string> = {
+  menu: 'меню',
+  'whats-new': 'що нового',
+  'how-to-use': 'як користуватись',
+  history: 'історія',
+  search: 'історія',
+  settings: 'налаштування',
+};
+
+/** A screen over home: a page, or home itself on a day opened from the history (A-11). */
+interface Entry {
+  readonly page: Page | 'day';
+  /** The day to open, for 'day', until it is shown. */
+  date: DayKey | undefined;
+  /** Its step of «назад»; closing it closes everything above. */
+  done: () => void;
+  /** B-04: the button that opened it, to get the focus back when it closes. */
+  readonly opener: string | null;
+  /** The history's open cards and scroll, kept while a day is open over it (A-11). */
+  readonly memory: HistoryMemory;
+}
+
+export function pagesOverHome(env: DeviceEnv, home: Home, steps: BackSteps): { open(page: Page): void } {
+  let pages: Entry[] = [];
   let settings: SettingsPage | null = null;
   const say = (message: ToastMessage) => () => home.toast.show(message);
 
-  function open(page: Page): void {
-    pages = [...pages, page];
-    env.history.push(pages.length);
+  function open(page: Page | 'day', date?: DayKey): void {
+    // home opens only the menu, from ≡, even where a tap focuses nothing (iPhone)
+    const opener = selectorOf(document.activeElement) ?? (pages.length ? null : '.bar__menu');
+    const entry: Entry = { page, date, done: () => {}, opener, memory: {} };
+    entry.done = steps.open(() => back(entry));
+    pages = [...pages, entry];
     draw();
   }
 
-  /**
-   * Back to `depth` screens over home (always fewer than are open); the
-   * phone's history brings us there (see `listen`).
-   */
-  function backTo(depth: number): void {
-    env.history.back(pages.length - depth);
+  /** The phone's «назад» took this screen's step. */
+  function back(entry: Entry): void | 'stay' {
+    // A-06: settings with changes ask first, and stay until the person decides
+    if (entry.page === 'settings' && settings?.hasChanges()) {
+      void leaveSettings(entry);
+      return 'stay';
+    }
+    if (entry.page === 'settings') leaveSettingsNow();
+    closeFrom(pages.indexOf(entry));
   }
+
+  /** The screens from `index` up close; the one under them shows again. */
+  function closeFrom(index: number): void {
+    if (index < 0 || index >= pages.length) return;
+    const closed = pages[index]!;
+    closed.done();
+    pages = pages.slice(0, index);
+    draw(closed.opener);
+  }
+
+  /** Back to `depth` screens over home. */
+  const backTo = (depth: number) => closeFrom(depth);
 
   /** Home on that day, every screen over it closed. */
   function goTo(date: DayKey): void {
+    pages[0]?.done();
+    pages = [];
+    drawn = undefined;
+    home.toast.screenChanged();
     home.showHome(date);
-    backTo(0);
   }
 
   const help: HelpActions = { menu: () => backTo(1), search: () => open('search'), close: () => backTo(0) };
 
-  function history(search: boolean): () => void {
+  function history(search: boolean, memory: HistoryMemory): () => void {
     const diary = home.diary();
     return showHistory(home.host, {
       settings: readSettings(diary.profile),
@@ -161,9 +204,10 @@ export function pagesOverHome(env: DeviceEnv, home: Home): { open(page: Page): v
     }, {
       menu: () => backTo(1),
       close: () => backTo(0),
-      goTo,
+      // A-11: the day opens over the history, and «назад» comes back to the same place
+      goTo: (date) => open('day', date),
       toast: (message) => home.toast.show(message),
-    });
+    }, memory);
   }
 
   const helpPage = (show: typeof showWhatsNew) => () => {
@@ -172,12 +216,12 @@ export function pagesOverHome(env: DeviceEnv, home: Home): { open(page: Page): v
   };
 
   /** Each page draws itself and returns what to undo. */
-  const SCREENS: Record<Page, () => () => void> = {
+  const SCREENS: Record<Page, (entry: Entry) => () => void> = {
     menu: () => menu(),
     'whats-new': helpPage(showWhatsNew),
     'how-to-use': helpPage(showHowToUse),
-    history: () => history(false),
-    search: () => history(true),
+    history: (entry) => history(false, entry.memory),
+    search: (entry) => history(true, entry.memory),
     // the menu creates the page before opening it
     settings: () => settings!.draw(),
   };
@@ -187,31 +231,60 @@ export function pagesOverHome(env: DeviceEnv, home: Home): { open(page: Page): v
       ...home,
       backupLine: () => backupLine(env.backups.last(), home.today()),
       saveCopy,
-      close: () => leaveAll(() => {}),
+      close: () => leaveAll(() => {
+        home.showHome(home.date());
+        // B-04: ✕ closes every screen opened from ≡, so the focus goes back to ≡
+        focusBack(home.host, '.bar__menu');
+      }),
       restart: (next, message) => leaveAll(() => home.restart(next, message)),
       erase: (message) => leaveAll(() => home.erase(message)),
     });
     open('settings');
   }
 
-  /** Settings let go of the screen: `then`, and every screen over home closes. */
+  /** Settings let go of the screen: every screen over home closes, and `then` shows the next one. */
   function leaveAll(then: () => void): void {
     settings = null;
+    pages[0]?.done();
+    pages = [];
+    drawn = undefined;
     then();
-    backTo(0);
   }
 
-  /** The page drawn now; undefined when home shows. */
-  let drawn: Page | undefined;
+  /** The entry drawn now; undefined when home shows. */
+  let drawn: Entry | undefined;
 
-  function draw(): void {
-    const page = pages.at(-1);
+  /**
+   * Draws the top screen. A screen new on top gets the focus on its heading;
+   * a screen shown again after the one over it closed gets it on `returnTo`.
+   */
+  function draw(returnTo?: string | null): void {
+    const entry = pages.at(-1);
     const from = drawn;
-    drawn = page;
+    drawn = entry;
+    if (entry === from) return redraw(entry);
     // A-02: a toast about the screen before does not follow to this one
-    if (page !== from) home.toast.screenChanged();
-    if (page) home.replace(SCREENS[page], comeInFor(page, from));
-    else home.showHome(home.date());
+    home.toast.screenChanged();
+    if (!entry) home.showHome(home.date());
+    else if (entry.page === 'day') {
+      // the day it opened on the first time; afterwards the one its arrows got to
+      home.showHome(entry.date ?? home.date());
+      entry.date = undefined;
+    } else {
+      document.title = titleFor(TITLES[entry.page]);
+      const memory = returnTo === undefined ? undefined : entry.memory;
+      home.replace(() => SCREENS[entry.page as Page](entry), comeInAgain(comeInFor(entry.page, pageOf(from)), memory));
+    }
+    if (returnTo !== undefined) focusBack(home.host, returnTo);
+    // unless the screen put the focus somewhere itself (the search field)
+    else if (!home.host.contains(document.activeElement)) focusHeading(home.host);
+  }
+
+  /** The same screen drawn anew in place (the menu after ☼ / ☾ or a copy): the focus stays where the caller puts it. */
+  function redraw(entry: Entry | undefined): void {
+    if (!entry) home.showHome(home.date());
+    else if (entry.page === 'day') home.showHome(home.date());
+    else home.replace(() => SCREENS[entry.page as Page](entry), still);
   }
 
   const saveCopy = () => saveCopyFile(env, home);
@@ -243,7 +316,7 @@ export function pagesOverHome(env: DeviceEnv, home: Home): { open(page: Page): v
 
   /** The menu anew with the focus back on ☼ / ☾; nothing when the menu has gone meanwhile. */
   function redrawMenu(): void {
-    if (drawn !== 'menu') return;
+    if (drawn?.page !== 'menu') return;
     draw();
     home.host.querySelector<HTMLElement>('.menu__theme')!.focus();
   }
@@ -268,21 +341,33 @@ export function pagesOverHome(env: DeviceEnv, home: Home): { open(page: Page): v
     });
   }
 
-  /** The phone's «назад» over settings with changes: back on the page until the person decides. */
-  async function leaveSettings(depth: number): Promise<void> {
-    env.history.push(pages.length);
-    const page = settings!;
-    if (!(await page.mayLeave())) return;
+  /** Settings are left without asking (no changes): the saved look comes back. */
+  function leaveSettingsNow(): void {
+    void settings?.mayLeave();
     settings = null;
-    backTo(depth);
   }
 
-  env.history.listen((depth) => {
-    if (depth >= pages.length) return;
-    if (settings && pages.indexOf('settings') >= depth) return void leaveSettings(depth);
-    pages = pages.slice(0, depth);
-    draw();
-  });
+  /** The phone's «назад» over settings with changes: the page stays until the person decides. */
+  async function leaveSettings(entry: Entry): Promise<void> {
+    const page = settings!;
+    if (!(await page.mayLeave()) || settings !== page) return;
+    settings = null;
+    closeFrom(pages.indexOf(entry));
+  }
 
-  return { open };
+  return { open: (page) => open(page) };
 }
+
+/** The page an entry draws; home (undefined) for home and a day over the history. */
+const pageOf = (entry: Entry | undefined): Page | undefined => (entry && entry.page !== 'day' ? entry.page : undefined);
+
+/** The history shown again comes back to where it was scrolled (A-11), then moves in as usual. */
+function comeInAgain(comeIn: (host: HTMLElement) => void, memory: HistoryMemory | undefined): (host: HTMLElement) => void {
+  if (memory?.y === undefined) return comeIn;
+  const y = memory.y;
+  return (host) => {
+    scrollTo(0, y);
+    comeIn(host);
+  };
+}
+

@@ -64,6 +64,8 @@ export interface SettingsHome {
 
 export interface SettingsPage {
   draw(): () => void;
+  /** The page holds changes that 💾 has not kept yet: leaving asks first. */
+  hasChanges(): boolean;
   /** Whether leaving now loses something; asks first, and puts the saved look back when it may go. */
   mayLeave(): Promise<boolean>;
 }
@@ -223,8 +225,10 @@ class Draft implements SettingsPage {
     });
   }
 
+  hasChanges = (): boolean => !same(this.draft, this.saved);
+
   mayLeave = async (): Promise<boolean> => {
-    if (!same(this.draft, this.saved)) {
+    if (this.hasChanges()) {
       const answer = await confirmDialog({
         title: 'вийти без збереження?', body: 'зміни на цій сторінці пропадуть.', confirm: 'вийти', cancel: 'залишитися',
       });

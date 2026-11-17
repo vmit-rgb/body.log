@@ -17,6 +17,7 @@ import { endSignal, startSignal } from '../home/signal';
 import { monthOf, shiftMonth } from '../domain/stats';
 import { wireAccordions } from '../ui/accordion';
 import { announce } from '../ui/announce';
+import { closesOnBack } from '../ui/back';
 import type { ToastMessage } from '../ui/toast';
 import { barMarkup, fillBar, goalText, TO_TOP, wireDateNav, wireScroll } from './bar';
 import { FOOTER, part, TAB_NOTE } from './parts';
@@ -150,15 +151,29 @@ interface Calendar {
   closeSheet(): void;
 }
 
+/** B-03: what lies under the open sheet and must not take the focus: all but the date, which closes it. */
+const UNDER_SHEET = '.home, .to-top, .bar__menu, .bar__goal, .date-nav__step';
+
 function wireCalendar(host: HTMLElement, state: HomeState, go: (date: DayKey) => void, signal: AbortSignal): Calendar {
   let current = state;
   const dateButton = part<HTMLButtonElement>(host, '.date-nav__date');
   // one closing back into the date doesn't count: the date opens a new one
   const sheet = () => host.querySelector<HTMLElement>('.cal-sheet:not(.cal-sheet--closing)');
+  /** While the sheet is open: its step of «назад» and Escape anywhere. */
+  let open: { done(): void; keys: AbortController } | null = null;
+
+  /** The screen under the sheet takes taps and the focus again. */
+  function letGo(): void {
+    for (const element of host.querySelectorAll<HTMLElement>(UNDER_SHEET)) element.removeAttribute('inert');
+    open?.keys.abort();
+    open?.done();
+    open = null;
+  }
 
   function closeSheet(): void {
     const closing = sheet();
     if (!closing) return;
+    letGo();
     closing.classList.add('cal-sheet--closing');
     dateButton.setAttribute('aria-expanded', 'false');
     dateButton.focus({ preventScroll: true });
@@ -170,8 +185,13 @@ function wireCalendar(host: HTMLElement, state: HomeState, go: (date: DayKey) =>
     const button = (event.target as Element).closest<HTMLElement>('[data-cal]');
     if (!button) return;
     if (button.dataset.cal === 'day') {
+      const fromSheet = button.closest('.cal-sheet') !== null;
+      const day = String(button.dataset.day) as DayKey;
       closeSheet();
-      go(String(button.dataset.day) as DayKey);
+      go(day);
+      // B-01: home is drawn anew for that day; the focus goes back where the day was chosen
+      (fromSheet ? host.querySelector<HTMLElement>('.date-nav__date') : host.querySelector<HTMLElement>(`.home .cal-block [data-cal="day"][data-day="${day}"]`))
+        ?.focus({ preventScroll: true });
       return;
     }
     const container = button.closest<HTMLElement>('.cal-block')!;
@@ -195,9 +215,13 @@ function wireCalendar(host: HTMLElement, state: HomeState, go: (date: DayKey) =>
     part(host, '.bar').classList.remove('bar--hidden');
     opened.addEventListener('click', onTap);
     part(opened, '.cal-sheet__scrim').addEventListener('click', closeSheet);
-    opened.addEventListener('keydown', (event) => {
+    for (const element of host.querySelectorAll<HTMLElement>(UNDER_SHEET)) element.setAttribute('inert', '');
+    const keys = new AbortController();
+    // B-03: Escape closes it wherever the focus is; A-05: so does «назад»
+    document.addEventListener('keydown', (event) => {
       if (event.key === 'Escape') closeSheet();
-    });
+    }, { signal: keys.signal });
+    open = { done: closesOnBack(closeSheet), keys };
     (opened.querySelector<HTMLElement>('[aria-current="date"]') ?? opened.querySelector<HTMLElement>('button'))!.focus({ preventScroll: true });
     sheetIn(opened, dateButton);
     popShownDay(opened);
@@ -205,6 +229,8 @@ function wireCalendar(host: HTMLElement, state: HomeState, go: (date: DayKey) =>
 
   part(host, '.home .cal-block').addEventListener('click', onTap);
   dateButton.addEventListener('click', () => (sheet() ? closeSheet() : openSheet()), { signal });
+  // home drawn anew under an open sheet takes the sheet away: its step goes too
+  signal.addEventListener('abort', letGo);
   return {
     refresh(next) {
       current = next;

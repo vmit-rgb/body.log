@@ -1,3 +1,4 @@
+import { closesOnBack } from './back';
 import { esc } from './html';
 import { EASE, MS, play, whenDone } from './motion';
 
@@ -24,28 +25,47 @@ export interface ConfirmSpec {
 export type ConfirmAnswer = 'confirm' | 'cancel' | 'extra';
 
 /**
- * Puts a layer on the page; `close` gives the focus back and removes it,
- * `dissolve` too, but the layer fades out first (and takes no taps meanwhile).
+ * Puts a layer on the page. While it is there (B-03) the screen under it is
+ * inert, so Tab and a screen reader stay in the layer; Escape anywhere and
+ * the phone's «назад» (A-05) call `cancel`. `close` gives the focus back to
+ * where it was and removes the layer, `dissolve` too, but the layer fades
+ * out first (and takes no taps meanwhile).
  */
-function layer(markup: string): { root: HTMLElement; close(): void; dissolve(): void } {
+function layer(markup: string, cancel: () => void): { root: HTMLElement; close(): void; dissolve(): void } {
   const before = document.activeElement as HTMLElement | null;
+  const screen = document.querySelector<HTMLElement>('#app');
+  const wasInert = screen?.hasAttribute('inert') ?? false;
   document.body.insertAdjacentHTML('beforeend', markup);
   const root = document.body.lastElementChild as HTMLElement;
+  screen?.setAttribute('inert', '');
+  const onKey = (event: KeyboardEvent) => {
+    if (event.key === 'Escape') cancel();
+  };
+  document.addEventListener('keydown', onKey);
+  const done = closesOnBack(cancel);
+  /** The screen takes the focus again: everything but the layer's own removal. */
+  const letGo = () => {
+    document.removeEventListener('keydown', onKey);
+    screen?.toggleAttribute('inert', wasInert);
+    done();
+    before?.focus({ preventScroll: true });
+  };
   return {
     root,
     close() {
       root.remove();
-      before?.focus({ preventScroll: true });
+      letGo();
     },
     dissolve() {
       root.inert = true;
-      before?.focus({ preventScroll: true });
+      letGo();
       whenDone(play(root, [{ opacity: 1 }, { opacity: 0 }], { duration: MS.s, easing: EASE.in, fill: 'forwards' }), () => root.remove());
     },
   };
 }
 
 export function confirmDialog(spec: ConfirmSpec): Promise<ConfirmAnswer> {
+  let answer: (value: ConfirmAnswer) => void = () => {};
   const { root, dissolve } = layer(`
     <div class="dialog" role="alertdialog" aria-modal="true" aria-labelledby="dialog-title"${spec.body ? ' aria-describedby="dialog-body"' : ''}>
       <div class="dialog__scrim" data-answer="cancel"></div>
@@ -58,22 +78,22 @@ export function confirmDialog(spec: ConfirmSpec): Promise<ConfirmAnswer> {
           <button type="button" class="ctl btn btn--destructive" data-answer="confirm">${esc(spec.confirm)}</button>
         </div>
       </div>
-    </div>`);
+    </div>`, () => answer('cancel'));
   root.querySelector<HTMLElement>('[data-answer="cancel"].btn')!.focus();
   // comes up from below, the scrim darkens with it
   play(root.querySelector('.dialog__panel'), [{ opacity: 0, transform: 'translateY(32px)' }, { opacity: 1, transform: 'none' }], { duration: MS.m, easing: EASE.out });
   play(root.querySelector('.dialog__scrim'), [{ opacity: 0 }, { opacity: 1 }], { duration: MS.m, easing: EASE.out });
   return new Promise((resolve) => {
-    const answer = (value: ConfirmAnswer) => {
+    let answered = false;
+    answer = (value: ConfirmAnswer) => {
+      if (answered) return;
+      answered = true;
       dissolve();
       resolve(value);
     };
     root.addEventListener('click', (event) => {
       const target = (event.target as Element).closest<HTMLElement>('[data-answer]');
       if (target) answer(target.dataset.answer as ConfirmAnswer);
-    });
-    root.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape') answer('cancel');
     });
   });
 }
@@ -87,6 +107,7 @@ export interface TextEditSpec {
 
 /** The new text, or null when cancelled. */
 export function editText(spec: TextEditSpec): Promise<string | null> {
+  let answer: (done: boolean) => void = () => {};
   const { root, close } = layer(`
     <div class="text-edit" role="dialog" aria-modal="true" aria-label="${esc(spec.label)}">
       <div class="text-edit__actions">
@@ -97,7 +118,7 @@ export function editText(spec: TextEditSpec): Promise<string | null> {
         <span class="t-3rd-regular muted">${esc(spec.label)}</span>
         <textarea class="text-edit__input" rows="4" autocomplete="off" enterkeyhint="done" maxlength="${spec.maxLength}">${esc(spec.value)}</textarea>
       </label>
-    </div>`);
+    </div>`, () => answer(false));
   // overlay/text-edit fills the screen gradually, gaining brightness (MICROINTERACTIONS.md)
   play(root, [
     { opacity: 0, filter: 'brightness(.3)', clipPath: 'inset(30% 0 30% 0)' },
@@ -108,7 +129,10 @@ export function editText(spec: TextEditSpec): Promise<string | null> {
   input.focus();
   input.setSelectionRange(input.value.length, input.value.length);
   return new Promise((resolve) => {
-    const answer = (done: boolean) => {
+    let answered = false;
+    answer = (done: boolean) => {
+      if (answered) return;
+      answered = true;
       close();
       resolve(done ? input.value.trim() : null);
     };
@@ -117,7 +141,6 @@ export function editText(spec: TextEditSpec): Promise<string | null> {
       if (target) answer(target.dataset.answer === 'done');
     });
     root.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape') answer(false);
       if (event.key === 'Enter') {
         event.preventDefault();
         answer(true);

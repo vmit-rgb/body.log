@@ -1,6 +1,7 @@
+import { randomAccent } from '../domain/accents';
 import { formatLong, type DayKey } from '../domain/dates';
 import type { Day } from '../domain/day';
-import { readCopy, type Diary } from '../domain/diary';
+import { readCopy, type Diary, type JsonObject } from '../domain/diary';
 import { EXAMPLE_DIARY } from '../domain/examples';
 import { readSettings } from '../domain/settings';
 import { russianReason } from '../paste/russian';
@@ -14,6 +15,9 @@ import { showUnreadable } from '../screens/unreadable';
 import { unreadableFileName } from '../domain/backup';
 import type { DiaryStore, sectionMemory } from '../storage/store';
 import { announce } from '../ui/announce';
+import { useBackSteps } from '../ui/back';
+import { titleFor } from '../ui/screen-focus';
+import { backSteps } from './back-steps';
 import { enter } from '../ui/motion';
 import type { Toast, ToastMessage } from '../ui/toast';
 import { copyPrompt as copyPromptText, PasteFlow, RUSSIAN_COPY } from './paste-flow';
@@ -69,6 +73,29 @@ async function restoreFrom(file: File, keep: (diary: Diary, done: ToastMessage) 
   else keep(restored, RESTORED);
 }
 
+/**
+ * B-05: «трекер» on home, «початок · трекер» before there are settings
+ * (Olesia's list); the screen of an unreadable diary is home's (Нитка).
+ */
+const START_TITLES: Record<StartScreen, string | undefined> = {
+  home: undefined,
+  unreadable: undefined,
+  'first-launch': 'початок',
+  'install-first': 'початок',
+};
+
+/**
+ * The first settings keep the accent they name; without one they get a
+ * random accent of the 11, kept with them (PROFILE-FORMAT.md, `theme.accent`).
+ * Light or dark follows the phone either way.
+ */
+function withSomeAccent(profile: Diary['profile']): Diary['profile'] {
+  const theme = profile.theme;
+  const named: JsonObject = typeof theme === 'object' && theme !== null && !Array.isArray(theme) ? theme as JsonObject : {};
+  if (named.accent !== undefined) return profile;
+  return { ...profile, theme: { ...named, accent: randomAccent() } };
+}
+
 /** install-first shows Android's steps unless the phone is an iPhone. */
 const phoneOf = (platform: Platform): Phone => (platform === 'iphone' ? 'iphone' : 'android');
 
@@ -83,6 +110,9 @@ export function startApp(env: AppEnv): void {
   const followToasts = (profile: Diary['profile']) => toast.keep(readSettings(profile).accessibility.keepToasts);
   const session = homeSession();
   const log = logKeeper(store, toast);
+  // A-05: screens and layers are steps of the phone's «назад»
+  const steps = backSteps(env.history);
+  useBackSteps(steps);
   // the menu opens only from home, so there is a diary whenever it asks
   const pages = pagesOverHome({
     ...env,
@@ -119,7 +149,7 @@ export function startApp(env: AppEnv): void {
       show('first-launch');
       toast.show(message);
     },
-  });
+  }, steps);
 
   function showDay(current: Diary, next: DayKey): void {
     const cameFrom = date;
@@ -171,6 +201,7 @@ export function startApp(env: AppEnv): void {
     // A-02: a toast about the screen before does not follow to this one
     toast.screenChanged();
     paste.reset();
+    document.title = titleFor(START_TITLES[screen]);
     // home is only chosen when there is a diary (startScreen)
     if (screen === 'home' && diary) showDay(diary, date);
     else {
@@ -210,7 +241,8 @@ export function startApp(env: AppEnv): void {
   const copyPrompt = () => void copyPromptText(env.copyText, (message) => toast.show(message));
 
   /** The first settings from the AI: home, and «скасувати» brings the first screen back while nothing is logged. */
-  function startWith(profile: Diary['profile']): void {
+  function startWith(pasted: Diary['profile']): void {
+    const profile = withSomeAccent(pasted);
     const back = (): ToastMessage => {
       if (diary && Object.keys(diary.days).length) return HAS_RECORDS;
       store.clear();

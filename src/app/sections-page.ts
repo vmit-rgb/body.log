@@ -10,6 +10,7 @@ import { MOMENTS, type ActivityKind, type Moment, type Settings, type Tracker } 
 import type { DropTarget } from '../screens/drag';
 import type { AddWhat } from '../screens/settings';
 import { THINGS, type ActionMenu, type EditKind, type Picking, type SectionsView, type Thing } from '../screens/settings-sections';
+import { closesOnBack } from '../ui/back';
 import { confirmDialog, editText } from '../ui/dialog';
 import { undo, type ToastMessage } from '../ui/toast';
 
@@ -66,6 +67,8 @@ export class SectionsEditor {
   private picking: Picking | null = null;
   /** The open menu's family (trackers step only among their kind). */
   private family = '';
+  /** The open menu's step of «назад»: call it when the menu closes by itself. */
+  private menuStep: (() => void) | null = null;
 
   constructor(private readonly draft: DraftHost) {}
 
@@ -292,6 +295,11 @@ export class SectionsEditor {
     items.push({ key: 'cancel', label: 'скасувати' });
     this.menu = { slot, items };
     this.family = family;
+    // A-05: «назад» closes the menu as «скасувати» does, not the settings under it
+    this.menuStep ??= closesOnBack(() => {
+      this.menuStep = null;
+      this.menuItem('cancel');
+    });
     this.draft.redraw();
   }
 
@@ -304,6 +312,8 @@ export class SectionsEditor {
       return this.draft.redraw();
     }
     this.menu = null;
+    this.menuStep?.();
+    this.menuStep = null;
     this.menuAction(slot, key);
   }
 

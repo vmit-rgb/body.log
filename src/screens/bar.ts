@@ -104,13 +104,25 @@ export function wireScroll(host: HTMLElement, signal: AbortSignal, pinned: () =>
     const y = scrollY;
     const shown = barShown({
       y, lastY, maxY: document.documentElement.scrollHeight - innerHeight,
-      barFocused: pinned() || bar.contains(document.activeElement), barShown: !bar.classList.contains('bar--hidden'),
+      barFocused: pinned() || keyboardFocusIn(bar), barShown: !bar.classList.contains('bar--hidden'),
     });
     bar.classList.toggle('bar--hidden', !shown);
     fadeShown(toTop, !pinned() && toTopShown(y, shown));
     if (Math.abs(y - lastY) > 6) lastY = y;
   }, { passive: true, signal });
   bar.addEventListener('focusin', () => bar.classList.remove('bar--hidden'), { signal });
+}
+
+/**
+ * The bar holds a focus someone moves with a keyboard or a switch. A focus
+ * given back after a tap (B-01, B-04) shows no ring and doesn't keep the bar out.
+ */
+function keyboardFocusIn(bar: HTMLElement): boolean {
+  try {
+    return bar.querySelector(':focus-visible') !== null;
+  } catch {
+    return bar.contains(document.activeElement);
+  }
 }
 
 /** Arrows and a swipe on the date go to the day before or after, never past today. */
@@ -120,7 +132,12 @@ export function wireDateNav(host: HTMLElement, state: BarState, go: (date: DayKe
     if (days !== 0 && next <= state.today) go(next);
   };
   for (const button of host.querySelectorAll<HTMLButtonElement>('.date-nav__step')) {
-    button.addEventListener('click', () => step(Number(button.dataset.step)));
+    button.addEventListener('click', () => {
+      step(Number(button.dataset.step));
+      // B-01: the screen is drawn anew for that day; the focus stays on the same arrow, or the date once it can't go further
+      const again = host.querySelector<HTMLButtonElement>(`.date-nav [data-step="${button.dataset.step}"]`);
+      (again && !again.disabled ? again : host.querySelector<HTMLElement>('.date-nav__date'))?.focus({ preventScroll: true });
+    });
   }
   const dateNav = part<HTMLElement>(host, '.date-nav');
   let start: Point | null = null;

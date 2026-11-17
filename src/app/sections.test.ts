@@ -11,12 +11,14 @@ import { fakeDevice } from './test-env';
 const TODAY = '2026-11-09' as DayKey;
 
 let host: HTMLElement;
+let device: ReturnType<typeof fakeDevice>['device'];
 
 function start(diary: Diary): void {
   diaryStore(localStorage, () => new Date()).save(diary);
   document.body.innerHTML = '<main id="app"></main>';
   host = document.querySelector<HTMLElement>('#app')!;
   const fake = fakeDevice();
+  device = fake.device;
   startApp({
     host,
     store: diaryStore(localStorage, () => new Date('2026-11-09T08:00:00Z')),
@@ -583,6 +585,22 @@ describe('тренування', () => {
     expect(toastSays()).toBe('✓ переміщено');
     await save();
     expect(at('workout.sessions.1.items.0.exercise')).toBe('exercise-7');
+  });
+
+  it('A-05: «назад» closes the menu, and the settings stay', async () => {
+    const depth = device.depth();
+    await tap('дії: вправа 8');
+    expect(device.depth()).toBe(depth + 1);
+    await tap('об’єднати в групу з…');
+    device.pressBack();
+    await settle();
+    expect(host.querySelector('.st-menu')).toBeNull();
+    expect(host.querySelector('h1')!.textContent).toBe('налаштування');
+    expect(device.depth()).toBe(depth);
+    // a choice made in the menu takes its step too
+    await tap('дії: вправа 8');
+    await tap('вище');
+    expect(device.depth()).toBe(depth);
   });
 
   it('refuses a fourth exercise in a group', async () => {

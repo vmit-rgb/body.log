@@ -95,6 +95,15 @@ interface View {
   open: Set<DayKey>;
 }
 
+/**
+ * A-11: where the history was when it gave the screen to a day opened from
+ * it, so «назад» brings back the same month, the same open cards and scroll.
+ */
+export interface HistoryMemory {
+  view?: View;
+  y?: number;
+}
+
 /** The first card of a month is open (0.81). */
 const firstOpen = (state: HistoryState, month: MonthKey) => new Set(monthDays(state.days, month, state.today).slice(0, 1));
 
@@ -127,8 +136,8 @@ function content(state: HistoryState, view: View): string {
 }
 
 /** Shows the history; returns what to undo when another screen takes its place. */
-export function showHistory(host: HTMLElement, state: HistoryState, actions: HistoryActions): () => void {
-  const view: View = { date: state.date, month: monthOf(state.date), open: firstOpen(state, monthOf(state.date)) };
+export function showHistory(host: HTMLElement, state: HistoryState, actions: HistoryActions, memory: HistoryMemory = {}): () => void {
+  const view: View = memory.view ?? { date: state.date, month: monthOf(state.date), open: firstOpen(state, monthOf(state.date)) };
   host.innerHTML = `
     <div class="screen page history">
       <section class="screen__section" aria-labelledby="page-title">
@@ -179,7 +188,11 @@ export function showHistory(host: HTMLElement, state: HistoryState, actions: His
   wireScroll(host, listeners.signal, search.isOpen);
   render();
   if (state.search) search.toggle();
-  return () => listeners.abort();
+  return () => {
+    listeners.abort();
+    memory.view = view;
+    memory.y = scrollY;
+  };
 }
 
 /** Days and arrows of the calendar, «редагувати цей день». */

@@ -96,7 +96,7 @@ describe('the menu (Figma screen/menu 183:3210)', () => {
   });
 
   it('ignores «вперед» and a «назад» that leaves the menu where it is', () => {
-    env.history.back(0);
+    env.history.go(0);
     expect(heading()).toBe('меню');
   });
 
