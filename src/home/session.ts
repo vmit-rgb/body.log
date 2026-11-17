@@ -20,6 +20,8 @@ export interface HomeSession {
   readonly drafts: Map<string, Draft>;
   /** Number fields holding something that isn't a number, by field key; `shown`: its error line is on screen (D-01). */
   readonly typed: Map<string, { readonly text: string; readonly shown: boolean }>;
+  /** Tips a tap hid in this run of the app (wave 5c: bubbles that go on any tap). */
+  readonly quietTips: Set<string>;
   /** The month the calendar shows; null follows the day shown. */
   month: MonthKey | null;
   /** The pulse timer in use, if any (one at a time: both hands are busy). */
@@ -75,7 +77,7 @@ export function dropPulse(session: HomeSession): void {
 
 export function homeSession(): HomeSession {
   return {
-    open: new Map(), armed: null, running: new Map(), retry: new Set(), drafts: new Map(), typed: new Map(),
+    open: new Map(), armed: null, running: new Map(), retry: new Set(), drafts: new Map(), typed: new Map(), quietTips: new Set(),
     month: null, pulse: null, pulseStep: () => {}, pulseTimer: undefined,
   };
 }

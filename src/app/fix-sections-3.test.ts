@@ -106,10 +106,12 @@ describe('the slider saves only with «зберегти» (Olesia, 2026-11-17)',
     await tap('більше: енергія');
     const tip = host.querySelector<HTMLElement>('[data-tip-id="slider"]')!;
     expect(tip.classList.contains('tip--above')).toBe(true);
-    expect(tip.nextElementSibling!.matches('.tracker__head')).toBe(true);
-    expect(tip.nextElementSibling!.querySelector('[data-act="slide-save"]')).not.toBeNull();
+    // a bubble inside the head, next to «зберегти» (the stylesheet hangs it above)
+    expect(tip.parentElement!.matches('.tracker__head')).toBe(true);
+    expect(tip.previousElementSibling!.matches('[data-act="slide-save"]')).toBe(true);
     expect(tip.textContent).toContain('«зберегти»');
     expect(tip.textContent).not.toContain('20');
+    expect(tip.querySelector('button')).toBeNull();
   });
 
   it('a dragged slider gets the tip above its «зберегти» too, without drawing home anew', async () => {
@@ -120,7 +122,23 @@ describe('the slider saves only with «зберегти» (Olesia, 2026-11-17)',
     slider.dispatchEvent(new Event('input', { bubbles: true }));
     const tip = host.querySelector<HTMLElement>('[data-tip-id="slider"]')!;
     expect(tip.classList.contains('tip--above')).toBe(true);
-    expect(tip.nextElementSibling!.matches('.tracker__head')).toBe(true);
+    expect(tip.parentElement!.matches('.tracker__head')).toBe(true);
     expect(tip.closest('.tracker')).toBe(slider.closest('.tracker'));
+  });
+
+  it('a tap anywhere hides the bubble and still does what it was for: one tap on «зберегти» saves', async () => {
+    start(EXAMPLE_DIARY);
+    await tap('самопочуття зранку');
+    await tap('більше: енергія');
+    const save = buttons('зберегти')[0]!;
+    save.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    expect(host.querySelector('[data-tip-id="slider"]')).toBeNull();
+    save.click();
+    await settle();
+    expect(buttons('скинути')).toHaveLength(1);
+    // hidden for this run of the app: another value doesn't bring it back
+    await tap('скинути');
+    await tap('більше: енергія');
+    expect(host.querySelector('[data-tip-id="slider"]')).toBeNull();
   });
 });

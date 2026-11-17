@@ -191,7 +191,7 @@ describe('tips that stop after three successes (Olesia, 2026-11-17)', () => {
       await tap('видалити коло 2');
       const shown = tipsIn('mv', 'remove');
       expect(shown).toHaveLength(1);
-      expect(shown[0]!.previousElementSibling!.querySelector('[data-act="rm"]')!.classList.contains('rm--armed')).toBe(true);
+      expect(shown[0]!.parentElement!.previousElementSibling!.querySelector('[data-act="rm"]')!.classList.contains('rm--armed')).toBe(true);
       await tap('точно видалити коло 2');
     }
     await tap('додати коло');
@@ -214,17 +214,29 @@ describe('tips that stop after three successes (Olesia, 2026-11-17)', () => {
     start(EXAMPLE_DIARY);
     await tap('ранкова розминка');
     expect(tipsIn('mw', 'rounds')).toHaveLength(1);
-    expect(tipsIn('mw', 'rounds')[0]!.previousElementSibling!.textContent).toBe('ще раз');
+    expect(tipsIn('mw', 'rounds')[0]!.parentElement!.previousElementSibling!.textContent).toBe('ще раз');
     for (let round = 0; round < 3; round += 1) await tap('ще раз');
     expect(tipsIn('mw', 'rounds')).toHaveLength(0);
   });
 
-  it('«зрозуміло» still hides a tip for good', async () => {
+  it('a tap hides only a bubble on screen: one in a closed section stays for later', async () => {
+    start(EXAMPLE_DIARY);
+    expect(section('mw').querySelector('.home-section__body')!.hasAttribute('hidden')).toBe(true);
+    document.body.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    await tap('ранкова розминка');
+    expect(tipsIn('mw', 'rounds')).toHaveLength(1);
+  });
+
+  it('Escape hides a tip too (wave 5c: no «зрозуміло» in a bubble); it comes back only on the next launch', async () => {
     start(EXAMPLE_DIARY);
     await tap('ранкова розминка');
-    tipsIn('mw', 'rounds')[0]!.querySelector<HTMLButtonElement>('.tip__close')!.click();
-    await settle();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     expect(tipsIn('mw', 'rounds')).toHaveLength(0);
-    expect(tipMemory(localStorage).open('rounds')).toBe(false);
+    await tap('ранкова розминка');
+    await tap('ранкова розминка');
+    expect(tipsIn('mw', 'rounds')).toHaveLength(0);
+    expect(tipMemory(localStorage).open('rounds')).toBe(true);
+    start(EXAMPLE_DIARY);
+    expect(tipsIn('mw', 'rounds')).toHaveLength(1);
   });
 });

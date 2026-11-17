@@ -87,7 +87,10 @@ function howAccordion(ctx: SectionContext, memo: string, body: string, title = '
   return body ? `<div class="how-acc">${accordion('mini', title, dayKey(ctx, memo), remembered(ctx, memo, false), body)}</div>` : '';
 }
 
-/* ---- tips for newcomers (waves 5, 5b): until «зрозуміло» or three successes (Olesia, 2026-11-17) ---- */
+/*
+ * ---- tips for newcomers (waves 5, 5b, 5c): bubbles over the content that a tap anywhere
+ * hides until the app is opened again; after three successes never again (Olesia, 2026-11-17) ----
+ */
 
 /* Нитка's drafts. */
 export const SETS_TIP = 'sets';
@@ -99,10 +102,14 @@ const REMOVE_TIP_TEXT = '× нічого не стирає одразу: нат�
 export const ROUNDS_TIP = 'rounds';
 const ROUNDS_TIP_TEXT = '«ще раз» додає ще один таймер, щоб записати вправу ще раз.';
 
-/** `above`: over the button it explains, pointing down at it (the slider's «зберегти», wave 5c). */
+/**
+ * A bubble over the content (wave 5c): under its row it hangs from a
+ * zero-height anchor, so it moves nothing. `above`: inside the slider's head,
+ * over «зберегти», pointing down at it.
+ */
 export function tip(id: string, text: string, above = false): string {
-  return `<div class="tip${above ? ' tip--above' : ''}" role="note" data-tip-id="${esc(id)}"><p class="t-3rd-regular tip__text">${text}</p>
-    <button type="button" class="ctl btn btn--tertiary tip__close" data-act="tip-close" data-tip="${esc(id)}" aria-label="зрозуміло, сховати підказку">зрозуміло</button></div>`;
+  const bubble = `<div class="tip${above ? ' tip--above' : ''}" role="note" data-tip-id="${esc(id)}"><p class="t-3rd-regular tip__text">${text}</p></div>`;
+  return above ? bubble : `<div class="tip-anchor">${bubble}</div>`;
 }
 
 const tipOpen = (ctx: SectionContext, id: string) => ctx.tipOpen?.(id) ?? false;
@@ -160,10 +167,11 @@ function scaleTracker(ctx: SectionContext, moment: Moment, tracker: Tracker & { 
   const state = locked ? ' tracker--locked' : value === undefined ? ' tracker--unset' : '';
   return `
     <div class="tracker tracker--scale${state}">
-      ${!locked && draft !== undefined && firstDraft(ctx) === key && tipOpen(ctx, SLIDER_TIP) ? tip(SLIDER_TIP, SLIDER_TIP_TEXT, true) : ''}<div class="tracker__head">
+      <div class="tracker__head">
         <span class="t-1st-semibold tracker__name">${esc(tracker.name || 'без назви')}</span>
         <span class="tracker__value t-3rd-semibold" aria-live="polite">${value === undefined ? '' : `${formatNumber(value)}/${formatNumber(tracker.max)}`}</span>${
-          sliderAction(locked, draft !== undefined, trackerData(moment, tracker))}
+          sliderAction(locked, draft !== undefined, trackerData(moment, tracker))}${
+          !locked && draft !== undefined && firstDraft(ctx) === key && tipOpen(ctx, SLIDER_TIP) ? tip(SLIDER_TIP, SLIDER_TIP_TEXT, true) : ''}
       </div>
       ${sliderRow({ tracker, key, value, locked, data: trackerData(moment, tracker) })}
       ${hint(tracker)}

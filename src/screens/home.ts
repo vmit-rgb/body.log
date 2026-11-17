@@ -126,7 +126,7 @@ function wireCollapse(home: HTMLElement): void {
 
 function markup(state: HomeState, actions: HomeActions): string {
   const ctx: SectionContext = {
-    settings: state.settings, day: dayOf(state), days: state.days, session: state.session, tipOpen: actions.tips?.open,
+    settings: state.settings, day: dayOf(state), days: state.days, session: state.session, tipOpen: (id) => tipShows(state, actions, id),
   };
   const sections = homeSections(state.settings).map((section) => sectionMarkup(section, actions.sectionOpen(section.id), ctx));
   return `
@@ -174,6 +174,30 @@ function fillHero(host: HTMLElement, state: HomeState): () => void {
 }
 
 const dayOf = (state: HomeState): Day => state.days[state.date] ?? emptyDay(state.date);
+
+/** A tip shows until a tap hid it in this run of the app, or for good after three successes. */
+const tipShows = (state: HomeState, actions: HomeActions, id: string) => !state.session.quietTips.has(id) && (actions.tips?.open(id) ?? false);
+
+/**
+ * Tips are bubbles that a tap anywhere hides (Olesia, 2026-11-17); Escape
+ * too, for a keyboard. The tap still does what it was for: the bubble moved
+ * nothing, so it lands where the person aimed. Hidden until the app is
+ * opened again.
+ */
+function wireTips(host: HTMLElement, state: HomeState, signal: AbortSignal): void {
+  const hush = () => {
+    for (const tip of host.querySelectorAll<HTMLElement>('.tip')) {
+      // only a bubble the person sees: one in a closed section waits for its turn
+      if (tip.closest('[hidden]')) continue;
+      state.session.quietTips.add(String(tip.dataset.tipId));
+      tip.remove();
+    }
+  };
+  document.addEventListener('pointerdown', hush, { capture: true, signal });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') hush();
+  }, { signal });
+}
 
 function calendarView(state: HomeState, place: string): CalendarView {
   return {
@@ -337,11 +361,7 @@ function sectionControls(host: HTMLElement, state: HomeState, actions: HomeActio
     render: () => keepingFocus(() => actions.refresh()),
     screen: () => host,
     toast: (message) => actions.toast(message),
-    closeTip(id) {
-      actions.tips?.close(id);
-      keepingFocus(() => actions.refresh());
-    },
-    tipOpen: (id) => actions.tips?.open(id) ?? false,
+    tipOpen: (id) => tipShows(state, actions, id),
     tipDone: (id) => actions.tips?.succeed?.(id),
   };
 }
@@ -422,6 +442,7 @@ export function showHome(host: HTMLElement, state: HomeState, actions: HomeActio
   state.session.pulseStep = pulseStep(host, state, controls);
   part(host, '.bar__menu').addEventListener('click', () => actions.openMenu());
 
+  wireTips(host, state, listeners.signal);
   tickStopwatches(host, state, listeners.signal);
   tickPulse(host, state, listeners.signal);
   wireDateNav(host, state, go, listeners.signal);

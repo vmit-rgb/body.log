@@ -37,8 +37,6 @@ export interface SectionControls {
   /** The screen as drawn now: a change draws it anew, and the motion plays on the new one. */
   screen(): HTMLElement;
   toast(message: ToastMessage): void;
-  /** «зрозуміло» on a tip for newcomers: it doesn't show again on this phone. */
-  closeTip?(id: string): void;
   /** Whether a tip for newcomers still shows. */
   tipOpen?(id: string): boolean;
   /** The person did what a tip explains; after three times it stops showing (wave 5b). */
@@ -322,7 +320,6 @@ const TAPS: Record<string, Tap> = {
   'slide-save': saveDraft,
   'slide-reset': resetSlider,
   'ai-tip': (c) => c.toast(AI_LINK),
-  'tip-close': (c, el) => c.closeTip?.(data(el, 'tip')),
   pulse: pulseButton,
   'pulse-done': finishPulse,
   'pulse-cancel': (c) => {
@@ -368,7 +365,7 @@ const TYPING: Record<string, Typing> = {
     }
     // the tip above «зберегти» of the first slider moved without a render (one at a time)
     if (c.tipOpen?.(SLIDER_TIP) && !c.screen().querySelector(`[data-tip-id="${SLIDER_TIP}"]`)) {
-      tracker.querySelector('.tracker__head')!.insertAdjacentHTML('beforebegin', tip(SLIDER_TIP, SLIDER_TIP_TEXT, true));
+      tracker.querySelector('.tracker__head')!.insertAdjacentHTML('beforeend', tip(SLIDER_TIP, SLIDER_TIP_TEXT, true));
     }
   },
 };
