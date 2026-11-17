@@ -45,18 +45,20 @@
   flex-direction: column;
   align-items: stretch;
   gap: var(--gap-group);
-  padding: 0 16px 8px;
+  /* the bottom 1.5× the top (Olesia, MY-FIXES) */
+  padding: 0 16px 12px;
 }
 .st-part__body[hidden] {
   display: none;
 }
 
 /* the goal: what to count, indented, and the days */
+/* one axis: what belongs to «рахувати тижневу ціль» starts where its label does, after «[ ]» */
 .st-indent {
   display: flex;
   flex-direction: column;
   gap: var(--gap-items);
-  padding-left: 16px;
+  padding-left: calc(17px * var(--text-scale) * 0.6 * 3 + var(--gap-items));
 }
 .st-days {
   display: flex;
@@ -88,6 +90,8 @@
   min-height: var(--tap);
   color: var(--ink);
   text-align: left;
+  /* a name without spaces wraps inside the button (C-03) */
+  overflow-wrap: anywhere;
 }
 .st-end {
   display: flex;
@@ -97,7 +101,8 @@
 /* the accent row scrolls sideways (Figma settings/accent-color) */
 .swatches {
   display: flex;
-  gap: var(--gap-micro);
+  /* C-12: 8 px between neighbouring targets (Olesia, MY-FIXES) */
+  gap: var(--gap-items);
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -144,7 +149,7 @@
 .st-backup {
   display: flex;
   flex-direction: column;
-  gap: var(--gap-micro);
+  gap: var(--gap-items);
 }
 .st-wide {
   justify-content: flex-start;
@@ -189,7 +194,7 @@
 .st-box {
   display: flex;
   flex-direction: column;
-  gap: var(--gap-micro);
+  gap: var(--gap-items);
   padding: 4px 8px 8px;
   border: var(--stroke-1) solid var(--accent-mid);
 }
@@ -216,7 +221,7 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: var(--gap-micro);
+  gap: var(--gap-items);
   padding: 4px 0;
   touch-action: pan-y;
   -webkit-user-select: none;
@@ -227,15 +232,13 @@
 .st-item.st-box {
   padding: 4px 8px 8px;
 }
-.st-box__body .st-list > .st-item:not(.st-box) {
-  padding-left: 16px;
-}
+/* C-12: the text buttons in an entry are targets too, 8 px apart */
 .st-pair,
 .st-asks,
 .st-fields {
   display: flex;
   flex-direction: column;
-  gap: var(--gap-nano);
+  gap: var(--gap-items);
 }
 .st-pair {
   flex-direction: row;
@@ -244,10 +247,7 @@
 .st-pair .st-text {
   flex: none;
 }
-.st-asks,
-.st-fields {
-  padding-left: 8px;
-}
+/* one axis: an entry's checkboxes and fields start under its name, not further in */
 .st-link {
   display: flex;
   align-items: baseline;
@@ -256,7 +256,7 @@
 /* a group of exercises (Figma settings/exercise-set): one block, label «група вправ» */
 /* a plate without a frame, «група вправ» on top, the exercises open inside (settings/exercise-group, п. 29) */
 .st-group {
-  padding: 8px;
+  padding: 8px 8px 12px;
   background: var(--sunk);
 }
 .st-group--off {
@@ -422,10 +422,14 @@
   /* opaque: nothing of the page shows through (VISUAL-AUDIT п. 6; Figma draws 85 % black) */
   background: var(--bg);
 }
+/* the buttons stay at the top edge; the overlay itself is as tall as what is
+   seen above the keyboard (ui/dialog.ts, Olesia, MY-FIXES) */
 .text-edit__actions {
   display: flex;
+  flex: none;
   align-items: center;
   justify-content: space-between;
+  gap: var(--gap-items);
   padding: max(8px, env(safe-area-inset-top)) 16px 0;
 }
 .text-edit__actions .btn--secondary {
@@ -434,6 +438,7 @@
 .text-edit__field {
   display: flex;
   flex: 1;
+  min-height: 0;
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -454,6 +459,23 @@
   text-align: center;
   outline: none;
   resize: none;
+}
+/* a description, «як робити»: the field fills the overlay under the buttons, 14 px,
+   from the top and the left; it still scrolls (Olesia, MY-FIXES) */
+.text-edit--long .text-edit__field {
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: var(--gap-items);
+  padding: var(--gap-group) var(--pad-screen-x) var(--gap-items);
+}
+.text-edit--long .text-edit__input {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  font-size: calc(14px * var(--text-scale));
+  font-weight: 420;
+  font-stretch: 98%;
+  text-align: start;
 }
 
 /* ---- «доступність», for the whole app ---- */

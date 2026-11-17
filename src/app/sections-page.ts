@@ -139,7 +139,7 @@ export class SectionsEditor {
   }
 
   async edit(path: string, kind: EditKind, label: string): Promise<void> {
-    const typed = await editText({ label, value: this.current(path, kind), maxLength: MAX[kind] });
+    const typed = await editText({ label, value: this.current(path, kind), maxLength: MAX[kind], long: kind === 'long' });
     if (typed === null) return;
     const edit = this.editFor(path, kind, typed);
     if (edit) this.draft.change(edit);

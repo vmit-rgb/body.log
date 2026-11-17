@@ -11,9 +11,11 @@ import sections from './sections.css?raw';
 import tokens from './tokens.css?raw';
 import typography from './typography.css?raw';
 import motion from './motion.css?raw';
+import menu from './menu.css?raw';
+import screens from './screens.css?raw';
 
 // The cascade can't be seen in jsdom, so these read the stylesheets as text (comments stripped).
-const FILES: Record<string, string> = { './base.css': base, '../main.ts': main, './calendar.css': calendar, './components.css': components, './history.css': history, './settings.css': settings, './home.css': home, './sections.css': sections, './tokens.css': tokens, './typography.css': typography, './motion.css': motion };
+const FILES: Record<string, string> = { './base.css': base, '../main.ts': main, './calendar.css': calendar, './components.css': components, './history.css': history, './settings.css': settings, './home.css': home, './sections.css': sections, './tokens.css': tokens, './typography.css': typography, './motion.css': motion, './menu.css': menu, './screens.css': screens };
 const read = (file: string) => FILES[file]!.replace(/\/\*[\s\S]*?\*\//g, '');
 const block = (css: string, selector: string) => {
   const at = css.indexOf(`${selector} {`);
@@ -39,10 +41,15 @@ describe('stylesheets', () => {
     expect(read('./typography.css')).toMatch(/:where\(\.t-h1, \.t-h2, \.t-h3, \.t-h4, \.t-h5, \.t-h6\) \{ margin: 0; \}/);
   });
 
-  it('let the bar grow with larger text when the date doesn’t fit beside ≡ (Olesia, 2026-11-11)', () => {
+  it('let the bar row up when the date doesn’t fit, whatever the reason (C-01; larger text since 2026-11-11)', () => {
     const home = read('./home.css');
-    expect(home).toMatch(/@media \(max-width: 540px\) \{\s*:root\[data-larger-text\] \.bar:has\(> \.bar__right\) \{[^}]*grid-template-areas: 'menu goal' 'nav nav';/);
-    expect(read('./tokens.css')).toMatch(/@media \(max-width: 540px\) \{\s*:root\[data-larger-text\] \{\s*--bar-h: calc\(83px \+ var\(--tap\)\);/);
+    expect(block(home, '.bar[data-fit]')).toMatch(/grid-template-areas: 'menu goal' 'nav nav';/);
+    expect(block(home, ".bar[data-fit='2'] .date-nav")).toMatch(/grid-template-areas: 'date date' 'prev next';/);
+    expect(block(home, ".bar[data-fit='2'] .date-nav__date")).toContain('white-space: normal;');
+    expect(block(home, '.bar')).toContain('column-gap: var(--gap-items);');
+    // no fixed guess for larger text: the bar's height is measured (ui/bar-fit.ts)
+    expect(read('./tokens.css')).not.toContain('calc(83px + var(--tap))');
+    expect(home).not.toContain('data-larger-text');
     // what sits above the bar follows its height
     expect(read('./components.css')).toContain('bottom: calc(var(--bar-h) + max(8px, env(safe-area-inset-bottom)));');
     expect(home).toContain('bottom: calc(var(--bar-h) + 16px + env(safe-area-inset-bottom));');
@@ -60,8 +67,8 @@ describe('stylesheets', () => {
 
   it('draw the number field as input/base: line after the digits, unit inside, hover and error as Figma (п. 5)', () => {
     const css = read('./components.css');
-    expect(block(css, '.number__input')).toMatch(/background-position: calc\(var\(--len, 0\) \* 1ch\) 100%;/);
-    expect(block(css, '.number__input')).toMatch(/width: calc\(max\(var\(--chars\), var\(--len, 0\) \+ 1\) \* 1ch\);/);
+    expect(block(css, '.number__input')).toMatch(/background-position: calc\(min\(var\(--len, 0\), var\(--chars\)\) \* 1ch\) 100%;/);
+    expect(block(css, '.number__input')).toMatch(/width: calc\(var\(--chars\) \* 1ch\);/);
     expect(block(css, '.number')).not.toMatch(/\bwidth: 180px/);
     expect(css).toMatch(/\.number:hover \{[^}]*--part: var\(--accent\);[^}]*--part-weight: 700;[^}]*--unit-weight: 700;/);
     expect(css).not.toMatch(/\.number:hover \{[^}]*--num-line: var\(--accent\)/);
@@ -190,5 +197,63 @@ describe('stylesheets', () => {
   it('load the motion styles before the text styles', () => {
     const imports = [...read('../main.ts').matchAll(/import '\.\/styles\/([\w-]+\.css)'/g)].map((m) => m[1]);
     expect(imports.at(-2)).toBe('motion.css');
+  });
+
+  describe('wave 4: overflow and fields (Olesia, MY-FIXES)', () => {
+    it('reserve 6 characters in a one-line field, 9 in the movement section, in ch so larger text widens them', () => {
+      const css = read('./components.css');
+      expect(block(css, '.number')).toContain('--chars: 6;');
+      expect(css).not.toContain('.number--pair {');
+      expect(block(css, '.number__input')).not.toContain('--len, 0) + 1');
+      expect(block(read('./sections.css'), '#sec-mv .number')).toContain('--chars: 9;');
+      expect(read('./sections.css')).not.toMatch(/\.set-row__fields \.number \{|\.lap \.number \{/);
+    });
+
+    it('break a word that is longer than its line (C-03)', () => {
+      expect(block(read('./base.css'), 'body')).toContain('overflow-wrap: break-word;');
+      expect(read('./history.css')).toMatch(/\.value-row__label,\s*\.value-row__value \{\s*overflow-wrap: anywhere;/);
+      expect(block(read('./settings.css'), '.st-text')).toContain('overflow-wrap: anywhere;');
+    });
+
+    it('keep the menu buttons inside the screen (C-04)', () => {
+      const css = read('./menu.css');
+      expect(block(css, '.menu__group')).toContain('padding: 0 var(--pad-screen-x);');
+      expect(block(css, '.menu__group')).not.toContain('overflow-x');
+      expect(block(css, '.menu__help')).not.toContain('100% + 4px');
+    });
+
+    it('put 8 px between neighbouring targets (C-12)', () => {
+      const css = read('./settings.css');
+      for (const selector of ['.swatches', '.st-backup', '.st-box', '.st-item']) expect(block(css, selector)).toContain('gap: var(--gap-items);');
+      expect(css).toMatch(/\.st-pair,\s*\.st-asks,\s*\.st-fields \{[^}]*gap: var\(--gap-items\);/);
+      expect(block(read('./screens.css'), '.segmented')).toContain('gap: var(--gap-items);');
+    });
+
+    it('make the bottom of a section 1.5× its top', () => {
+      expect(block(read('./home.css'), '.home-section__body')).toContain('padding: var(--gap-section) var(--pad-screen-x) calc(var(--gap-section) * 1.5);');
+      expect(block(read('./settings.css'), '.st-part__body')).toContain('padding: 0 16px 12px;');
+      expect(block(read('./sections.css'), '.zone')).toContain('padding: var(--gap-items) var(--gap-items) 12px;');
+    });
+
+    it('put every «додати …» on the right, at home too', () => {
+      expect(block(read('./sections.css'), '.wo-ex__actions > .btn')).toContain('align-self: flex-end;');
+    });
+
+    it('keep text on the axis of its title: no bare indents', () => {
+      const sections = read('./sections.css');
+      expect(block(sections, '.wo-ex__sub')).not.toContain('padding-left');
+      expect(sections).toMatch(/\.acc-body--paragraph,\s*\.acc-body--mini \{\s*padding: var\(--gap-items\) 0 0 4px;/);
+      expect(block(sections, '.sub > .accordion--group')).toContain('padding-left: var(--gap-items);');
+      const settings = read('./settings.css');
+      expect(settings).not.toContain('.st-box__body .st-list > .st-item:not(.st-box)');
+      expect(settings).not.toMatch(/\.st-asks,\s*\.st-fields \{\s*padding-left/);
+    });
+
+    it('size the text overlay to what is seen, buttons at the top, 14 px for long text', () => {
+      const css = read('./settings.css');
+      expect(block(css, '.text-edit__actions')).toContain('flex: none;');
+      expect(block(css, '.text-edit--long .text-edit__input')).toContain('font-size: calc(14px * var(--text-scale));');
+      expect(block(css, '.text-edit--long .text-edit__input')).toContain('overflow-y: auto;');
+    });
   });
 });

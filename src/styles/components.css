@@ -306,7 +306,9 @@
    (--len from ui/number-fill). The input fills the brackets, so the caret lands
    where the finger taps (ACCESSIBILITY.md, text fields). ---- */
 .number {
-  --chars: 8;
+  /* one-line fields keep a fixed width in ch, so larger text widens them too;
+     more than fits scrolls inside the field (Olesia, MY-FIXES; ACCESSIBILITY.md) */
+  --chars: 6;
   --part: var(--muted);
   --part-weight: 500;
   --unit: var(--muted);
@@ -320,9 +322,6 @@
   min-height: var(--tap);
   background: var(--surface);
   cursor: text;
-}
-.number--pair {
-  --chars: 3;
 }
 .number__half {
   display: inline-flex;
@@ -344,16 +343,16 @@
   font-weight: 460;
 }
 .number__input {
-  width: calc(max(var(--chars), var(--len, 0) + 1) * 1ch);
+  flex: none;
+  width: calc(var(--chars) * 1ch);
   min-width: 0;
-  max-width: 100%;
   height: 1.3em;
   margin: 0;
   padding: 0;
   border: 0;
   border-radius: 0;
   background: linear-gradient(var(--num-line), var(--num-line)) no-repeat;
-  background-position: calc(var(--len, 0) * 1ch) 100%;
+  background-position: calc(min(var(--len, 0), var(--chars)) * 1ch) 100%;
   background-size: 100% var(--num-line-w);
   color: var(--ink);
   font: inherit;

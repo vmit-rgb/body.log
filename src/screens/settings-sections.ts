@@ -209,7 +209,7 @@ function trackerKind(ctx: Ctx, [kind, title, hint, add, placeholder]: (typeof TR
   const end = mine.length ? String(mine.at(-1)! + 1) : '';
   const body = () => `${hint ? `<p class="t-3rd-regular muted">${hint}</p>` : ''}
         ${list(`tk-${kind}`, TRACKERS, mine.map((index) => trackerMarkup(ctx, ctx.settings.trackers[index]!, index, placeholder)), end)}
-        <div>${tertiary(add, act('add', `data-what="tracker" data-kind="${kind}"`))}</div>`;
+        <div class="st-end">${tertiary(add, act('add', `data-what="tracker" data-kind="${kind}"`))}</div>`;
   return `<div class="st-box">${box(`<h3 class="t-h6 st-grow">${title}</h3>`, open, toggle(id, title, open), count(mine.length, FIELDS), body)}</div>`;
 }
 
@@ -338,7 +338,7 @@ function container(ctx: Ctx, c: Container): string {
   return entry(ctx, c.family, c.slot, c.id, c.name, inner, ' st-box', ` data-items="${esc(items)}"${open ? '' : ' data-closed="1"'}`);
 }
 
-const addExercise = (items: string) => `<div>${tertiary('додати вправу', act('add', `data-what="exercise" data-list="${esc(items)}"`))}</div>`;
+const addExercise = (items: string) => `<div class="st-end">${tertiary('додати вправу', act('add', `data-what="exercise" data-list="${esc(items)}"`))}</div>`;
 
 export function morningBody(ctx: Ctx): string {
   const { morningWarmup } = ctx.settings;

@@ -24,6 +24,7 @@ import { mountToast } from './ui/toast';
 import { wireTapMotion } from './ui/taps';
 import { wireNotes } from './ui/notes';
 import { leaveLoading } from './ui/boot';
+import { wireBarFit } from './ui/bar-fit';
 import { within } from './ui/patience';
 import { copyWith, saveFile, screenHistory, shareWith } from './ui/device';
 import type { PdfFonts } from './pdf/pdf';
@@ -44,6 +45,8 @@ const toast = mountToast(document.body);
 wireTapMotion(document);
 wireNotes(document);
 const host = document.querySelector<HTMLElement>('#app')!;
+// C-01: the bottom bar rebuilds itself when the date doesn't fit, and what sits above it follows
+wireBarFit(root, host);
 startApp({
   host,
   store: diaryStore(storage, () => new Date()),

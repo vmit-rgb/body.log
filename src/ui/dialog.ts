@@ -103,13 +103,36 @@ export interface TextEditSpec {
   readonly label: string;
   readonly value: string;
   readonly maxLength: number;
+  /** A description or «як робити»: 14 px from the top, the field as big as the screen allows (Olesia, MY-FIXES). */
+  readonly long?: boolean;
+}
+
+/**
+ * The overlay covers what the person sees: above the phone's keyboard, so its
+ * buttons stay at the top edge (Olesia, MY-FIXES). Returns the way to stop.
+ */
+function fitToVisible(root: HTMLElement): () => void {
+  const view = window.visualViewport;
+  if (!view) return () => {};
+  const fit = () => {
+    root.style.top = `${view.offsetTop}px`;
+    root.style.bottom = 'auto';
+    root.style.height = `${view.height}px`;
+  };
+  fit();
+  view.addEventListener('resize', fit);
+  view.addEventListener('scroll', fit);
+  return () => {
+    view.removeEventListener('resize', fit);
+    view.removeEventListener('scroll', fit);
+  };
 }
 
 /** The new text, or null when cancelled. */
 export function editText(spec: TextEditSpec): Promise<string | null> {
   let answer: (done: boolean) => void = () => {};
   const { root, close } = layer(`
-    <div class="text-edit" role="dialog" aria-modal="true" aria-label="${esc(spec.label)}">
+    <div class="text-edit${spec.long ? ' text-edit--long' : ''}" role="dialog" aria-modal="true" aria-label="${esc(spec.label)}">
       <div class="text-edit__actions">
         <button type="button" class="ctl btn btn--tertiary" data-answer="cancel">скасувати</button>
         <button type="button" class="ctl btn btn--secondary" data-answer="done">готово</button>
@@ -126,6 +149,7 @@ export function editText(spec: TextEditSpec): Promise<string | null> {
   ], { duration: MS.l, easing: EASE.out });
   // a textarea, so a long phrase wraps instead of running off the screen; Enter still means «готово»
   const input = root.querySelector<HTMLTextAreaElement>('.text-edit__input')!;
+  const unfit = fitToVisible(root);
   input.focus();
   input.setSelectionRange(input.value.length, input.value.length);
   return new Promise((resolve) => {
@@ -133,6 +157,7 @@ export function editText(spec: TextEditSpec): Promise<string | null> {
     answer = (done: boolean) => {
       if (answered) return;
       answered = true;
+      unfit();
       close();
       resolve(done ? input.value.trim() : null);
     };

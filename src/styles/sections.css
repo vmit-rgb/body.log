@@ -10,10 +10,14 @@
   display: flex;
   flex-direction: column;
   gap: var(--gap-items);
+  /* the title's text sits ~8 px under the top; the last line 12 px over the bottom (1.5×) */
+  padding-bottom: var(--gap-micro);
   background: var(--surface);
 }
+/* one axis (Olesia, MY-FIXES): the title 8 px in, as everything in its body */
 .sub > .accordion--group {
   --ring-w-0: 0px;
+  padding-left: var(--gap-items);
 }
 .sub--done > .accordion--group .accordion__title {
   text-decoration: line-through;
@@ -21,7 +25,7 @@
 }
 .sub > .btn--tertiary {
   align-self: flex-start;
-  margin-left: 4px;
+  margin-left: var(--gap-items);
 }
 .acc-body {
   display: flex;
@@ -43,9 +47,10 @@
 .home-section__body > [data-act='drop'] + p {
   align-self: flex-start;
 }
+/* one axis: the text under «як робити» starts where that title's text does (its 4 px) */
 .acc-body--paragraph,
 .acc-body--mini {
-  padding: var(--gap-items) 0 0 var(--gap-section);
+  padding: var(--gap-items) 0 0 4px;
 }
 /* accordion/paragraph: the whole width, + at the right edge (п. 13) */
 .how-acc .accordion {
@@ -96,11 +101,12 @@
   min-width: var(--tap);
   padding: 0;
 }
+/* under the name, on its axis: «[ ]» (three characters of 17 px) and the row's 16 px gap */
 .ex-check__details {
   display: flex;
   flex-direction: column;
   gap: var(--gap-micro);
-  padding-left: 40px;
+  padding-left: calc(17px * var(--text-scale) * 0.6 * 3 + var(--gap-group));
 }
 .ex-check__details[hidden] {
   display: none;
@@ -276,7 +282,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--gap-items);
-  padding: var(--gap-items);
+  padding: var(--gap-items) var(--gap-items) 12px;
   background: var(--surface);
 }
 .zone__item {
@@ -317,11 +323,11 @@
   justify-content: space-between;
   gap: var(--gap-group);
 }
+/* the cue and «минулого разу» on the exercise name's axis (one axis, Olesia, MY-FIXES) */
 .wo-ex__sub {
   display: flex;
   flex-direction: column;
   gap: var(--gap-micro);
-  padding-left: var(--gap-section);
 }
 .wo-ex__sub b {
   font-weight: 600;
@@ -332,9 +338,10 @@
   flex-direction: column;
   gap: var(--gap-micro);
 }
+/* «додати підхід», «додати коло» on the right, as every «додати …» (Olesia, MY-FIXES) */
 .wo-ex__actions > .btn {
   order: -1;
-  align-self: flex-start;
+  align-self: flex-end;
 }
 .wo-ex__actions .acc-body {
   position: relative;
@@ -343,7 +350,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--gap-items);
-  padding: var(--gap-items);
+  padding: var(--gap-items) var(--gap-items) 12px;
   background: var(--surface);
 }
 
@@ -363,6 +370,13 @@
   color: var(--ink);
   text-align: end;
 }
+/* a single lap has no number: its fields start on the name's axis, not 2ch in */
+.set-row:has(> .set-row__n:empty) {
+  grid-template-columns: minmax(0, 1fr) var(--tap);
+}
+.set-row > .set-row__n:empty {
+  display: none;
+}
 .set-row__main {
   display: flex;
   flex-direction: column;
@@ -376,9 +390,6 @@
   align-items: center;
   gap: var(--gap-items);
 }
-.set-row__fields .number {
-  --chars: 3;
-}
 .set-row__x {
   color: var(--muted);
 }
@@ -386,8 +397,9 @@
   flex-direction: row;
   flex-wrap: wrap;
 }
-.lap .number {
-  --chars: 4;
+/* the whole movement section: 9 characters (Olesia, MY-FIXES) */
+#sec-mv .number {
+  --chars: 9;
 }
 .rm-space {
   width: var(--tap);
@@ -398,8 +410,8 @@
   color: var(--err);
 }
 /* under a set or a lap it starts where the fields do, after the row's number */
-.set-row + .number-error,
-.set-row + .number-error + .number-error {
+.set-row:not(:has(> .set-row__n:empty)) + .number-error,
+.set-row:not(:has(> .set-row__n:empty)) + .number-error + .number-error {
   padding-inline-start: calc(2ch + var(--gap-items));
 }
 /* × and its ✓ use the accent, as Figma binds them (VISUAL-AUDIT Н4); only text «видалити» is red */
@@ -412,6 +424,9 @@
 /* ---- stopwatch (157:2903): ▶ 00.00.00 · ■ running · ✓ saved · ↻ «знову» ---- */
 .sw {
   display: flex;
+  /* on a narrow screen with larger targets ▶ and the time take two rows rather than run off (C-01) */
+  flex-wrap: wrap;
+  justify-content: flex-end;
   align-items: center;
   gap: var(--gap-items);
 }
