@@ -15,6 +15,8 @@ export const BEFORE_FORMAT_KEY = `${DIARY_KEY}/before-format-0.1`;
 const BROWSER_KEY = 'phys-activity-tracking-app/browser-chosen';
 const SECTION_KEY = 'phys-activity-tracking-app/section-closed/';
 const TIP_KEY = 'phys-activity-tracking-app/tip-closed/';
+const TIP_DONE_KEY = 'phys-activity-tracking-app/tip-done/';
+const FINISHED_KEY = 'phys-activity-tracking-app/workout-finished/';
 const THEME_KEY = 'phys-activity-tracking-app/theme';
 const BACKUP_KEY = 'phys-activity-tracking-app/last-copy';
 
@@ -100,11 +102,49 @@ function setQuietly(storage: KeyValue, key: string, value: string): void {
   }
 }
 
-/** Tips for newcomers the person closed with «зрозуміло» (wave 5); on this phone only, not in the copy. */
-export function tipMemory(storage: KeyValue): { open(id: string): boolean; close(id: string): void } {
+/** Tips for newcomers: what a tip needs from the phone. */
+export interface TipMemory {
+  open(id: string): boolean;
+  close(id: string): void;
+  /** The person did what the tip explains, and it worked. */
+  succeed?(id: string): void;
+}
+
+/** After this many successes a tip doesn't show again (Olesia, 2026-11-17: «помічники в онбордингу»). */
+export const TIP_SUCCESSES = 3;
+
+/**
+ * Tips for newcomers (waves 5, 5b): a tip shows until the person closes it
+ * with «зрозуміло» or has done what it explains three times. On this phone
+ * only, not in the copy.
+ */
+export function tipMemory(storage: KeyValue): Required<TipMemory> {
+  const done = (id: string) => Number(storage.getItem(TIP_DONE_KEY + id)) || 0;
   return {
-    open: (id) => storage.getItem(TIP_KEY + id) !== 'closed',
+    open: (id) => storage.getItem(TIP_KEY + id) !== 'closed' && done(id) < TIP_SUCCESSES,
     close: (id) => setQuietly(storage, TIP_KEY + id, 'closed'),
+    succeed(id) {
+      if (done(id) < TIP_SUCCESSES) setQuietly(storage, TIP_DONE_KEY + id, String(done(id) + 1));
+    },
+  };
+}
+
+/**
+ * «закінчити тренування» (wave 5b, Olesia 2026-11-17): only how the section
+ * looks, so it lives on this phone, per day, not in the diary or the copy.
+ */
+export interface FinishMemory {
+  finished(date: DayKey): boolean;
+  finish(date: DayKey, done: boolean): void;
+}
+
+export function finishMemory(storage: KeyValue): FinishMemory {
+  return {
+    finished: (date) => storage.getItem(FINISHED_KEY + date) === 'yes',
+    finish(date, done) {
+      if (done) setQuietly(storage, FINISHED_KEY + date, 'yes');
+      else storage.removeItem(FINISHED_KEY + date);
+    },
   };
 }
 

@@ -31,6 +31,8 @@ export interface SectionContext {
   readonly session: HomeSession;
   /** Whether a tip for newcomers still shows (the person hasn't closed it on this phone). */
   readonly tipOpen?: ((id: string) => boolean) | undefined;
+  /** «закінчити тренування» was pressed for this day (on this phone; wave 5b). */
+  readonly finished?: boolean | undefined;
 }
 
 
@@ -87,6 +89,36 @@ function howAccordion(ctx: SectionContext, memo: string, body: string, title = '
   return body ? `<div class="how-acc">${accordion('mini', title, dayKey(ctx, memo), remembered(ctx, memo, false), body)}</div>` : '';
 }
 
+/* ---- tips for newcomers (waves 5, 5b): until «зрозуміло» or three successes (Olesia, 2026-11-17) ---- */
+
+/* Нитка's drafts. */
+export const SETS_TIP = 'sets';
+const SETS_TIP_TEXT = 'зайвий підхід прибирає × праворуч від нього: натисни ×, а потім ✓.';
+export const SLIDER_TIP = 'slider';
+export const SLIDER_TIP_TEXT = 'значення запишеться, коли натиснеш «зберегти» (або саме, за 20 с).';
+export const REMOVE_TIP = 'remove';
+const REMOVE_TIP_TEXT = '× нічого не стирає одразу: натисни ✓, щоб видалити.';
+export const ROUNDS_TIP = 'rounds';
+const ROUNDS_TIP_TEXT = '«ще раз» додає ще один таймер, щоб записати вправу ще раз.';
+
+export function tip(id: string, text: string): string {
+  return `<div class="tip" role="note" data-tip-id="${esc(id)}"><p class="t-3rd-regular tip__text">${text}</p>
+    <button type="button" class="ctl btn btn--tertiary tip__close" data-act="tip-close" data-tip="${esc(id)}" aria-label="зрозуміло, сховати підказку">зрозуміло</button></div>`;
+}
+
+const tipOpen = (ctx: SectionContext, id: string) => ctx.tipOpen?.(id) ?? false;
+
+/** Under a row whose × has turned into ✓: what the ✓ does. `quiet` where the sets tip already says it. */
+function armedTip(ctx: SectionContext, target: string, quiet = false): string {
+  return !quiet && ctx.session.armed === dayKey(ctx, target) && tipOpen(ctx, REMOVE_TIP) ? tip(REMOVE_TIP, REMOVE_TIP_TEXT) : '';
+}
+
+/** The first slider with a value not saved yet gets the tip (one at a time). */
+function firstDraft(ctx: SectionContext): string | undefined {
+  const prefix = `${ctx.day.date}|`;
+  return [...ctx.session.drafts.keys()].find((key) => key.startsWith(prefix));
+}
+
 /* ---- wellbeing questions (Figma tracker/field, tracker/yes-no, input/labeled) ---- */
 
 interface Field { readonly key: string; readonly label: string; readonly value: string; readonly unit: string; readonly data: string }
@@ -135,7 +167,7 @@ function scaleTracker(ctx: SectionContext, moment: Moment, tracker: Tracker & { 
           sliderAction(locked, draft !== undefined, trackerData(moment, tracker))}
       </div>
       ${sliderRow({ tracker, key, value, locked, data: trackerData(moment, tracker) })}
-      ${hint(tracker)}
+      ${!locked && draft !== undefined && firstDraft(ctx) === key && tipOpen(ctx, SLIDER_TIP) ? tip(SLIDER_TIP, SLIDER_TIP_TEXT) : ''}${hint(tracker)}
     </div>`;
 }
 
@@ -185,7 +217,8 @@ function timedTracker(ctx: SectionContext, moment: Moment, tracker: Tracker & { 
   const [field] = trackerFields(ctx, moment, tracker);
   return `
     <div class="tracker pulse" data-pulse ${data}>${head}
-      <div class="pulse__row">${numberField({ ...field!, unit: '' })}${pulseTimer(ctx, moment, tracker, run)}</div>${pulseNote(run)}${hint(tracker)}
+      <div class="pulse__row">${numberField({ ...field!, unit: '' })}${pulseTimer(ctx, moment, tracker, run)}</div>${
+        armedTip(ctx, `pulse|${moment}|${tracker.id}`)}${pulseNote(run)}${hint(tracker)}
     </div>`;
 }
 
@@ -356,12 +389,17 @@ function timerRounds(ctx: SectionContext, item: WarmupItem): string {
     const target = `round|${item.exercise}|${i}`;
     const label = n > 1 ? `видалити таймер ${i + 1}` : 'скинути таймер до нуля';
     // one round has no number (stopwatch 157:2903)
-    return `<div class="set-row"><span class="set-row__n t-2nd-regular">${n > 1 ? i + 1 : ''}</span>${stopwatch(ctx, target, times[i] ?? null, i + 1)}${removeButton(ctx, target, label, idleTimer(ctx, target, n, times[i] ?? null))}</div>`;
+    return `<div class="set-row"><span class="set-row__n t-2nd-regular">${n > 1 ? i + 1 : ''}</span>${stopwatch(ctx, target, times[i] ?? null, i + 1)}${removeButton(ctx, target, label, idleTimer(ctx, target, n, times[i] ?? null))}</div>${armedTip(ctx, target)}`;
   });
-  // checklist/exercise: the rows on the right, «ще раз» under them
+  // checklist/exercise: the rows on the right, «ще раз» under them; the tip under the first «ще раз» of the warm-up
+  const showTip = tipOpen(ctx, ROUNDS_TIP) && firstTimed(ctx) === item;
   return `<div class="sw-block"><div class="sets">${rows.join('')}</div>
-    <button type="button" class="ctl btn btn--tertiary" data-act="more-rounds" data-ex="${esc(item.exercise)}">ще раз</button></div>`;
+    <button type="button" class="ctl btn btn--tertiary" data-act="more-rounds" data-ex="${esc(item.exercise)}">ще раз</button>${showTip ? tip(ROUNDS_TIP, ROUNDS_TIP_TEXT) : ''}</div>`;
 }
+
+/** The first timed exercise of the morning warm-up (the item itself: one exercise can be in two levels) carries the «ще раз» tip. */
+const firstTimed = (ctx: SectionContext) =>
+  ctx.settings.morningWarmup.levels.flatMap((level) => level.items).find((item) => item.seconds !== null);
 
 /** + on the right of the row opens the stopwatch (open from the start), how-to and link (checklist/exercise expanded). */
 function exerciseDetails(ctx: SectionContext, item: WarmupItem, name: string): { readonly more: string; readonly details: string } {
@@ -463,13 +501,13 @@ function setFields(ctx: SectionContext, item: WorkoutItem, i: number): string {
   return cells.length ? `<div class="set-row__fields">${cells.join('<span class="set-row__x" aria-hidden="true">×</span>')}</div>` : '';
 }
 
-function setRow(ctx: SectionContext, item: WorkoutItem, i: number, n: number): string {
+function setRow(ctx: SectionContext, item: WorkoutItem, i: number, n: number, quiet: boolean): string {
   const target = `set|${item.exercise}|${i}`;
   const timed = item.fields.includes('seconds');
   const seconds = ctx.day.wo?.ex[item.exercise]?.[i]?.s ?? null;
   const remove = setRemove(ctx, target, timed, i, n, seconds);
   return `<div class="set-row${timed ? ' set-row--timed' : ''}"><span class="set-row__n t-2nd-regular">${n > 1 ? i + 1 : ''}</span>
-    <div class="set-row__main">${timed ? stopwatch(ctx, target, seconds, i + 1) : ''}${setFields(ctx, item, i)}</div>${remove}</div>`;
+    <div class="set-row__main">${timed ? stopwatch(ctx, target, seconds, i + 1) : ''}${setFields(ctx, item, i)}</div>${remove}</div>${armedTip(ctx, target, quiet)}`;
 }
 
 /** × from the second set; a timer has × always, and the only timer's × resets it. */
@@ -477,15 +515,6 @@ function setRemove(ctx: SectionContext, target: string, timed: boolean, i: numbe
   if (!timed && i === 0) return NO_REMOVE;
   if (!timed || n > 1) return removeButton(ctx, target, `видалити підхід ${i + 1}`);
   return removeButton(ctx, target, 'скинути таймер до нуля', idleTimer(ctx, target, n, seconds));
-}
-
-/* Нитка's draft (wave 5): how to get rid of a set too many, until the person closes it. */
-export const SETS_TIP = 'sets';
-const SETS_TIP_TEXT = 'зайвий підхід прибирає × праворуч від нього: натисни ×, а потім ✓.';
-
-function tip(id: string, text: string): string {
-  return `<div class="tip" role="note"><p class="t-3rd-regular tip__text">${text}</p>
-    <button type="button" class="ctl btn btn--tertiary tip__close" data-act="tip-close" data-tip="${esc(id)}" aria-label="зрозуміло, сховати підказку">зрозуміло</button></div>`;
 }
 
 /**
@@ -508,7 +537,7 @@ function workoutExercise(ctx: SectionContext, item: WorkoutItem, showTip: boolea
       </button>
       <div class="acc-body acc-body--exercise" id="${id}"${open ? '' : ' hidden'}>
         <div class="wo-ex__sub">${cue ? `<p class="t-2nd-regular">${esc(cue)}</p>` : ''}${last ? `<p class="t-2nd-regular"><b>минулого разу:</b> ${smallUnits(esc(formatSets(last)))}</p>` : ''}</div>
-        <div class="sets">${Array.from({ length: n }, (_, i) => setRow(ctx, item, i, n)).join('')}</div>${showTip ? tip(SETS_TIP, SETS_TIP_TEXT) : ''}
+        <div class="sets">${Array.from({ length: n }, (_, i) => setRow(ctx, item, i, n, showTip)).join('')}</div>${showTip ? tip(SETS_TIP, SETS_TIP_TEXT) : ''}
         <div class="wo-ex__actions">${howAccordion(ctx, `how|${item.exercise}`, howTo(exercise)) || '<span></span>'}
           <button type="button" class="ctl btn btn--tertiary" data-act="more-sets" data-ex="${esc(item.exercise)}">додати підхід</button></div>
       </div>
@@ -517,7 +546,7 @@ function workoutExercise(ctx: SectionContext, item: WorkoutItem, showTip: boolea
 
 /** The tip goes under the first exercise that has an × to explain (two sets or more). */
 function tipExercise(ctx: SectionContext, items: readonly WorkoutItem[]): string | null {
-  if (!(ctx.tipOpen?.(SETS_TIP) ?? false)) return null;
+  if (!tipOpen(ctx, SETS_TIP)) return null;
   return items.find((item) => setRows(ctx.day, item.exercise, item.sets) > 1)?.exercise ?? null;
 }
 
@@ -538,7 +567,19 @@ function pickedWorkout(ctx: SectionContext, sessionId: string): string {
   const rules = ctx.settings.workout.hint ? `<p class="wo-rules t-1st-regular">${esc(ctx.settings.workout.hint)}</p>` : '';
   const tipFor = tipExercise(ctx, session.items.flatMap((entry) => ('set' in entry ? entry.set : [entry])));
   return `${how}<h3 class="t-h5 wo-title">${esc(sessionName(session.name))}</h3>${rules}
-    <ol class="ex-list">${session.items.map((entry) => workoutEntry(ctx, entry, tipFor)).join('')}</ol>`;
+    <ol class="ex-list">${session.items.map((entry) => workoutEntry(ctx, entry, tipFor)).join('')}</ol>${finishButton(ctx)}`;
+}
+
+/**
+ * «закінчити тренування» (first level, at the bottom; Olesia, 2026-11-17):
+ * the workout is done from it. Finished, «продовжити тренування» (third
+ * level) opens it again; the fields stay open either way.
+ */
+function finishButton(ctx: SectionContext): string {
+  const key = keyed(dayKey(ctx, 'finish'));
+  return `<div class="wo-finish">${ctx.finished
+    ? `<button type="button" class="ctl btn btn--tertiary" data-act="finish" data-done="false" ${key}>продовжити тренування</button>`
+    : `<button type="button" class="ctl btn btn--primary" data-act="finish" data-done="true" ${key}>закінчити тренування</button>`}</div>`;
 }
 
 /** «прибрати з цього дня»: at the very top, under the section's title (Olesia, MY-FIXES). */
@@ -585,7 +626,7 @@ function lapRow(ctx: SectionContext, kind: MovementKind, i: number, n: number): 
     });
   });
   const remove = i > 0 ? removeButton(ctx, `lap|${kind.id}|${i}`, `видалити коло ${i + 1}`) : NO_REMOVE;
-  return `<div class="set-row"><span class="set-row__n t-2nd-regular">${n > 1 ? i + 1 : ''}</span><div class="set-row__main lap">${fields.join('')}</div>${remove}</div>`;
+  return `<div class="set-row"><span class="set-row__n t-2nd-regular">${n > 1 ? i + 1 : ''}</span><div class="set-row__main lap">${fields.join('')}</div>${remove}</div>${armedTip(ctx, `lap|${kind.id}|${i}`)}`;
 }
 
 function movementKind(ctx: SectionContext, kind: MovementKind): string {

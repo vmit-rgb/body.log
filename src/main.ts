@@ -15,7 +15,7 @@ import './styles/typography.css';
 import { startApp } from './app/app';
 import { detectPlatform, isInstalled } from './app/start';
 import { dayKeyOf } from './domain/dates';
-import { backupMemory, browserChoice, diaryStore, sectionMemory, storageFor, themeMemory, tipMemory } from './storage/store';
+import { backupMemory, browserChoice, diaryStore, finishMemory, sectionMemory, storageFor, themeMemory, tipMemory } from './storage/store';
 import { DEFAULT_APPEARANCE, lookOf, startAppearance, type Appearance } from './ui/appearance';
 import { trackNumberFill } from './ui/number-fill';
 import { watchForUpdates } from './pwa/updates';
@@ -57,6 +57,7 @@ startApp({
   today: () => dayKeyOf(new Date()),
   sections: sectionMemory(storage),
   tips: tipMemory(storage),
+  finished: finishMemory(storage),
   onDiary: (diary) => {
     look = lookOf(diary.profile);
     applyAppearance(appearance());

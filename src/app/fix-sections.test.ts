@@ -80,11 +80,13 @@ describe('home: «хороша робота <3» and «згорнути секц
     expect(collapse('mw').hidden).toBe(true);
   });
 
-  it('the first ticked exercise turns the line into «хороша робота <3», <3 in the accent, open and closed', async () => {
+  it('a finished level turns the line into «хороша робота <3», <3 in the accent, open and closed (5b: not the first tick)', async () => {
     start(EXAMPLE_DIARY);
     await tap('ранкова розминка');
     host.querySelector<HTMLInputElement>('[data-input="tick"]')!.click();
     await settle();
+    expect(collapse('mw').hidden).toBe(true);
+    await tap('позначити весь рівень');
     expect(leads('mw')).toEqual(['хороша робота <3', 'хороша робота <3']);
     expect(section('mw').querySelector('.good-job__heart')!.textContent).toBe('<3');
     expect(collapse('mw').hidden).toBe(false);
@@ -93,21 +95,23 @@ describe('home: «хороша робота <3» and «згорнути секц
     expect(leads('dw')[0]).toBe('слухай тіло. якщо щось не так — зупинись <3');
   });
 
-  it('typing a set changes the line at once, without drawing home anew', async () => {
-    start({ profile: EXAMPLE_DIARY.profile, days: { [TODAY]: readDay({ wo: { session: 'a' } }, TODAY) } } as unknown as Diary);
-    await tap('тренування');
-    expect(leads('wo')[0]).toBe('слухай тіло. якщо щось не так — зупинись <3');
-    const field = host.querySelector<HTMLInputElement>('[data-input="set"][data-f="r"]')!;
-    field.value = '10';
+  it('typing a lap changes the line and the tick at once, without drawing home anew', async () => {
+    start(EXAMPLE_DIARY);
+    await tap('рух');
+    expect(leads('mv')[0]).toBe('запиши, скільки вийшло.');
+    const field = host.querySelector<HTMLInputElement>('[data-input="lap"]')!;
+    field.value = '2';
     field.dispatchEvent(new Event('input', { bubbles: true }));
-    expect(host.querySelector('[data-input="set"][data-f="r"]')).toBe(field);
-    expect(leads('wo')[0]).toBe('хороша робота <3');
-    expect(collapse('wo').hidden).toBe(false);
+    expect(host.querySelector('[data-input="lap"]')).toBe(field);
+    expect(leads('mv')[0]).toBe('хороша робота <3');
+    expect(section('mv').classList.contains('home-section--done')).toBe(true);
+    expect(collapse('mv').hidden).toBe(false);
   });
 
   it('«згорнути секцію» closes it, remembers it and puts the focus on its title', async () => {
     start(withWorkout());
     await tap('тренування');
+    await tap('закінчити тренування');
     section('wo').querySelector<HTMLButtonElement>('[data-collapse]')!.click();
     await settle();
     const title = host.querySelector<HTMLButtonElement>('#sec-wo-title')!;
@@ -154,15 +158,16 @@ describe('home: the tip about extra sets (Olesia, MY-FIXES)', () => {
   it('shows under the first exercise with more than one set, until «зрозуміло»; then never again', async () => {
     start(withWorkout());
     await tap('тренування');
-    const tips = host.querySelectorAll('.tip');
+    const tips = host.querySelectorAll('#sec-wo .tip');
     expect(tips).toHaveLength(1);
     expect(tips[0]!.closest('.wo-ex')!.querySelector('.accordion__title')!.textContent).toBe('вправа 6');
     expect(tips[0]!.textContent).toContain('зайвий підхід прибирає ×');
-    await tap('зрозуміло, сховати підказку');
-    expect(host.querySelector('.tip')).toBeNull();
+    tips[0]!.querySelector<HTMLButtonElement>('.tip__close')!.click();
+    await settle();
+    expect(host.querySelector('#sec-wo .tip')).toBeNull();
     expect(tipMemory(localStorage).open('sets')).toBe(false);
     start(withWorkout());
-    expect(host.querySelector('.tip')).toBeNull();
+    expect(host.querySelector('#sec-wo .tip')).toBeNull();
   });
 
   it('no tip while no exercise has a set to remove, nor without a place to remember it', async () => {
@@ -170,7 +175,7 @@ describe('home: the tip about extra sets (Olesia, MY-FIXES)', () => {
     for (const item of profile.workout.sessions[0]!.items) delete item.sets;
     start({ profile, days: { [TODAY]: readDay({ wo: { session: 'a' } }, TODAY) } } as unknown as Diary);
     await tap('тренування');
-    expect(host.querySelector('.tip')).toBeNull();
+    expect(host.querySelector('#sec-wo .tip')).toBeNull();
     start(withWorkout(), false);
     await tap('тренування');
     expect(host.querySelector('.tip')).toBeNull();
