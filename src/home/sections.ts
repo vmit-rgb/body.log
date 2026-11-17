@@ -12,7 +12,6 @@ import { esc } from '../ui/html';
 import { iconSvg } from '../ui/icons';
 import { smallUnits } from '../ui/units';
 import { withGrip } from '../ui/grip';
-import { beatsLine } from '../domain/stats';
 import {
   formatCountdown, formatStopwatch, PULSE_SAYS, pulseQuestion, pulseRunning, pulseTime, stopwatchState, stopwatchTime, type HomeSession, type PulseRun,
 } from './session';
@@ -294,11 +293,10 @@ function pulseEnd(data: string): string {
       <button type="button" class="ctl btn btn--tertiary" data-act="pulse-cancel" ${data}>скасувати</button></div>`;
 }
 
-/** «приготуйся» / «рахуй удари» / «скільки ударів за 30 с?»; «42 удари за 30 с × 2» after «готово», until the day changes. */
+/** «приготуйся» / «рахуй удари» / «скільки ударів за 30 с?»; nothing after «готово» (Olesia, 2026-11-17). */
 function pulseNote(run: PulseRun | null): string {
   if (run?.phase === 'ready' || run?.phase === 'counting') return `<p class="pulse__note t-3rd-regular muted">${PULSE_SAYS[run.phase]}</p>`;
   if (run?.phase === 'beats') return `<p class="pulse__note t-3rd-regular muted">${pulseQuestion(run.seconds)}</p>`;
-  if (run?.phase === 'done') return `<p class="pulse__note t-3rd-regular muted">${beatsLine(run.beats ?? 0, run.seconds)}</p>`;
   return '';
 }
 
