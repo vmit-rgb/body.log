@@ -9,7 +9,7 @@ import { dropAt, LIFT_MS, wireDrag, type DragHooks } from './drag';
 const S = 'workout.sessions.0.items';
 const MARKUP = `
   <div class="st-list" data-family="wo-ex" data-list="${S}" data-end="">
-    <div class="st-item" id="e0" data-family="wo-ex" data-list="${S}" data-index="0"><span id="e0t">вправа</span><button class="st-actions">дії: вправа 0</button></div>
+    <div class="st-item" id="e0" data-family="wo-ex" data-name="вправа 0" data-list="${S}" data-index="0"><span id="e0t">вправа</span><button class="st-actions">дії: вправа 0</button></div>
     <div class="st-item st-group" id="g1" data-family="wo-ex" data-list="${S}" data-index="1" data-group="2">
       <p id="g1p">група</p>
       <div class="st-list" id="g1l" data-family="wo-ex" data-list="${S}.1.set" data-end="">
@@ -86,9 +86,10 @@ describe('dropAt', () => {
     expect(dropAt($('g2'), $('g1l'), 10)).toMatchObject({ target: { kind: 'move', list: S, before: 1 } });
   });
 
-  it('skips the dragged entry itself and finds the one around it', () => {
+  it('skips the dragged entry itself; inside its own group that is no target, so it stays there (Olesia, MY-FIXES)', () => {
     box($('g1'), 0);
-    expect(dropAt($('g1a'), $('g1at'), 90)).toMatchObject({ target: { kind: 'move', list: S, before: 2 } });
+    expect(dropAt($('g1a'), $('g1at'), 90)).toBeNull();
+    expect(dropAt($('g1a'), $('g1p'), 10)).toBeNull();
     expect(dropAt($('e0'), $('e0t'), 0)).toMatchObject({ target: { kind: 'move', list: S, before: null }, line: 'end' });
   });
 

@@ -37,6 +37,8 @@ export interface AppEnv extends DeviceEnv {
   /** Today on the phone. */
   today(): DayKey;
   sections: ReturnType<typeof sectionMemory>;
+  /** Tips for newcomers (storage/store.ts tipMemory); none without it. */
+  tips?: { open(id: string): boolean; close(id: string): void } | undefined;
   /** Called with every diary the app starts showing, e.g. to apply its accent. */
   onDiary(diary: Diary): void;
   /** Runs `save` when the app is hidden or closed, so nothing typed is lost. */
@@ -169,6 +171,7 @@ export function startApp(env: AppEnv): void {
       },
       sectionOpen: env.sections.open,
       rememberSection: env.sections.remember,
+      tips: env.tips,
       edit(change, render) {
         // F-01: «скасувати» for an earlier change is no longer true
         toast.changed();

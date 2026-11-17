@@ -278,7 +278,8 @@ function markup(state: SettingsState): string {
       <h1 class="visually-hidden">налаштування</h1>
       <div class="settings__intro">
         <p class="t-2nd-regular">тапни на будь-який текст, щоб змінити його. коли закінчиш — збережи внизу.</p>
-        <p class="t-3rd-regular muted">усе всередині розділів можна перетягувати: вправи, рівні, трекери. так міняється порядок, а вправа може переїхати в інший рівень чи тренування.</p>
+        <p class="t-3rd-regular muted">усе всередині розділів можна перетягувати: вправи, рівні, трекери. затримай палець на записі й веди: так міняється порядок, а вправа може переїхати в інший рівень чи тренування.</p>
+        <p class="t-3rd-regular muted">без перетягування: натисни ⋯ біля запису або затримай на ньому палець і відпусти.</p>
       </div>
       <div class="settings__parts">${parts.map(([id, title, body]) => partMarkup(id, title, meta[id], state.open.has(id), body)).join('')}</div>
       ${FOOTER}

@@ -102,7 +102,7 @@ describe('stylesheets', () => {
     expect(block(calendar, '.cal-sheet__panel')).not.toContain('border-top');
     const sections = read('./sections.css');
     expect(sections).toMatch(/\.slider:disabled::-webkit-slider-thumb \{[^}]*width: 8px;[^}]*background: var\(--disabled\);/);
-    expect(sections).toMatch(/\[data-act='drop'\][^{]*\{[^}]*align-self: flex-start;/);
+    expect(block(sections, '.wo-drop')).toContain('align-items: flex-start;');
     expect(sections).toMatch(/\.acc-body--group > \.btn--tertiary \{[^}]*align-self: flex-start;/);
     expect(read('./home.css')).toMatch(/\.hero__text--past b \{[^}]*font-weight: 700;/);
     expect(block(read('./components.css'), '.unit')).toMatch(/color: var\(--muted\);[^}]*font-size: calc\(12px \* var\(--text-scale\)\);/);
@@ -255,5 +255,34 @@ describe('stylesheets', () => {
       expect(block(css, '.text-edit--long .text-edit__input')).toContain('font-size: calc(14px * var(--text-scale));');
       expect(block(css, '.text-edit--long .text-edit__input')).toContain('overflow-y: auto;');
     });
+  });
+});
+
+describe('wave 5: sections (Olesia, MY-FIXES)', () => {
+  it('fills every exercise box and only outlines a group, at home and in the settings', () => {
+    const home = read('./sections.css');
+    expect(block(home, '.wo-ex')).toBeDefined();
+    expect(home).toMatch(/\.wo-ex \{[^}]*background: var\(--surface\);/);
+    expect(block(home, '.wo-group')).toContain('border: var(--stroke-1) solid var(--accent-mid);');
+    expect(block(home, '.wo-group')).not.toContain('background');
+    const settings = read('./settings.css');
+    expect(block(settings, '.st-item.st-ex')).toContain('background: var(--surface);');
+    expect(block(settings, '.st-item.st-group')).toContain('border: var(--stroke-1) solid var(--accent-mid);');
+    expect(block(settings, '.st-item.st-group')).not.toContain('background');
+  });
+
+  it('frames an open settings part round its trigger and its body; the daytime «як робити» is filled as a whole', () => {
+    const settings = read('./settings.css');
+    expect(block(settings, ".st-part:has(> .st-part__heading [aria-expanded='true'])")).toContain('outline: var(--stroke-1) solid var(--accent-mid);');
+    expect(block(read('./sections.css'), '.how-acc--filled')).toContain('background: var(--surface);');
+    expect(block(read('./sections.css'), '.zone')).not.toContain('background');
+  });
+
+  it('shows ⋯ as a visible target, the <3 in the accent, «згорнути секцію» on the right', () => {
+    const settings = read('./settings.css');
+    expect(block(settings, '.st-actions')).toContain('position: absolute;');
+    expect(block(settings, '.st-actions')).not.toContain('clip-path');
+    expect(block(read('./sections.css'), '.good-job__heart')).toContain('color: var(--accent);');
+    expect(block(read('./sections.css'), '.home-section__end')).toContain('justify-content: flex-end;');
   });
 });

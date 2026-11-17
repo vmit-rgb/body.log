@@ -42,10 +42,16 @@
 .acc-body--group > .btn--tertiary {
   align-self: flex-start;
 }
-/* «прибрати з цього дня» on the left (workout-active, п. 19) */
-.home-section__body > [data-act='drop'],
-.home-section__body > [data-act='drop'] + p {
-  align-self: flex-start;
+/* «хороша робота <3»: the <3 in the accent; «згорнути секцію» on the right (Olesia, MY-FIXES) */
+.good-job__heart {
+  color: var(--accent);
+}
+.home-section__end {
+  display: flex;
+  justify-content: flex-end;
+}
+.home-section__end[hidden] {
+  display: none;
 }
 /* one axis: the text under «як робити» starts where that title's text does (its 4 px) */
 .acc-body--paragraph,
@@ -57,7 +63,22 @@
   min-width: 0;
 }
 .how {
+  margin: 0;
   white-space: pre-line;
+}
+/* an empty line in «як робити» starts a paragraph (Olesia, MY-FIXES) */
+.how-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-items);
+}
+/* daytime «як робити»: the fill covers the whole accordion, title and body (Olesia, MY-FIXES) */
+.how-acc--filled {
+  padding: var(--gap-micro) var(--gap-items) 12px;
+  background: var(--surface);
+}
+.how-acc--filled > .acc-body {
+  padding-left: 0;
 }
 
 /* ---- warm-up exercises (checklist/exercise) ---- */
@@ -278,13 +299,18 @@
   --fill-pressed: var(--muted);
   --fg-pressed: var(--on-accent);
 }
+/* a «для чого» inside the filled «як робити»: an outlined region of its own (common region), no fill */
 .zone {
   display: flex;
   flex-direction: column;
-  gap: var(--gap-items);
+  gap: 12px;
   padding: var(--gap-items) var(--gap-items) 12px;
-  background: var(--surface);
+  border: var(--stroke-1) solid var(--accent-mid);
 }
+.zone p {
+  margin: 0;
+}
+/* an exercise in it: its name and its paragraphs, 14 px */
 .zone__item {
   display: flex;
   flex-direction: column;
@@ -317,11 +343,41 @@
   flex-direction: column;
   gap: var(--gap-items);
 }
-.wo-ex__head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--gap-group);
+/* every workout exercise in a filled box, as «самопочуття …» (Olesia, MY-FIXES); bottom 1.5× the top */
+.wo-ex {
+  gap: 0;
+  padding: var(--gap-micro) var(--gap-items) 12px;
+  background: var(--surface);
+}
+/* its name folds it, like a warm-up level: name … 3 × 10 … +/− */
+.accordion--exercise {
+  --ring-w-hover: 0px;
+  --weight-0: 600;
+  --weight-hover: 720;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  min-width: 0;
+  min-height: var(--tap);
+  padding: 0;
+  text-align: start;
+}
+.accordion--exercise > * {
+  grid-area: auto;
+}
+.accordion--exercise .accordion__title {
+  overflow-wrap: anywhere;
+}
+.accordion--exercise .accordion__meta {
+  color: var(--muted);
+  font-size: calc(12px * var(--text-scale));
+  font-weight: 600;
+}
+.accordion--exercise .accordion__icon {
+  min-height: 0;
+}
+.acc-body--exercise {
+  padding-top: var(--gap-micro);
 }
 /* the cue and «минулого разу» on the exercise name's axis (one axis, Olesia, MY-FIXES) */
 .wo-ex__sub {
@@ -346,12 +402,38 @@
 .wo-ex__actions .acc-body {
   position: relative;
 }
+/* a group of exercises: an outline only; each exercise in it keeps its fill (Olesia, MY-FIXES) */
 .wo-group {
   display: flex;
   flex-direction: column;
   gap: var(--gap-items);
   padding: var(--gap-items) var(--gap-items) 12px;
-  background: var(--surface);
+  border: var(--stroke-1) solid var(--accent-mid);
+}
+
+/* «прибрати з цього дня» at the top, under the section's title */
+.wo-drop {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--gap-items);
+}
+
+/* a tip for newcomers: until «зрозуміло» (Olesia, MY-FIXES: how extra sets go away) */
+.tip {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-items);
+  padding-left: var(--gap-items);
+  border-left: var(--stroke-1) solid var(--accent);
+}
+.tip__text {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+}
+.tip__close {
+  flex: none;
 }
 
 /* ---- set rows (exercise/input): number, the fields or a stopwatch, × ---- */

@@ -39,7 +39,7 @@ describe('names and hints that are missing', () => {
     expect(texts(render(daytimeBody(ctx({ daytimeWarmup: { enabled: true, groups: [{ id: 'g' }] } }))), '.chip')).toEqual(['без назви']);
     const day = readDay({ wo: { session: 's' } }, DATE);
     const box = render(workoutBody(ctx({ workout: { enabled: true, sessions: [{ id: 's', name: 'а', items: [{ exercise: 'gone' }] }] } }, day)));
-    expect(texts(box, '.wo-ex__head .t-1st-semibold')).toEqual(['вправа, якої вже немає']);
+    expect(texts(box, '.accordion--exercise .accordion__title')).toEqual(['вправа, якої вже немає']);
   });
 
   it('says where to add levels and workouts when there are none', () => {
@@ -113,7 +113,7 @@ describe('exercises, links and how-to', () => {
     ];
     const day = readDay({ wo: { session: 's' } }, DATE);
     const box = render(workoutBody(ctx({ workout: { enabled: true, sessions: [{ id: 's', name: 'тренування на спину', items }] }, exercises }, day)));
-    expect(texts(box, '.wo-ex__head .muted')).toEqual(['3 × 10 на кожну ногу', '30 с', '20']);
+    expect(texts(box, '.accordion--exercise .accordion__meta')).toEqual(['3 × 10 на кожну ногу', '30 с', '20']);
     expect(texts(box, '.wo-title')).toEqual(['тренування на спину']);
     expect(box.querySelector('.how-acc .accordion--paragraph')).toBeNull();
     expect(box.querySelectorAll('.wo-ex__sub p')).toHaveLength(0);

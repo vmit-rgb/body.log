@@ -38,6 +38,8 @@ export interface SectionsView {
   readonly inner: ReadonlySet<string>;
   readonly menu: ActionMenu | null;
   readonly picking: Picking | null;
+  /** Whether an entry's «дії» menu has anything in it (then its ⋯ shows). Without it: always. */
+  readonly movable?: ((slot: Slot, family: string) => boolean) | undefined;
 }
 
 /** How a value is typed in the full-screen field. */
@@ -75,13 +77,15 @@ export const THINGS: Record<Thing, readonly [word: string, it: 'його' | 'ї�
 };
 
 /**
- * «видалити рівень»: red text at the end of what it deletes, so it doesn't
- * compete with the +/− by the name (Olesia, 2026-11-12). The voice name
- * starts with the seen text and adds which one.
+ * «видалити …»: red text. An exercise, a kind of movement, a level, a zone
+ * and a workout have it right under their name or title; an exercise says
+ * just «видалити» (Olesia, MY-FIXES; until then at the end of the entry,
+ * 2026-11-12). The voice name starts with the seen text and adds which one.
  */
 function removeButton(slot: Slot, name: string, thing: Thing): string {
   const label = `видалити ${THINGS[thing][0]}`;
-  return `<div><button type="button" class="ctl btn btn--destructive st-rm" ${act('rm', slotData(slot))} aria-label="${label}: ${esc(shown(name))}">${label}</button></div>`;
+  const seen = thing === 'exercise' ? 'видалити' : label;
+  return `<div class="st-rm-row"><button type="button" class="ctl btn btn--destructive st-rm" ${act('rm', slotData(slot))} aria-label="${label}: ${esc(shown(name))}">${seen}</button></div>`;
 }
 
 function toggle(id: string, name: string, open: boolean): string {
@@ -99,12 +103,20 @@ function menuMarkup(ctx: Ctx, slot: Slot, name: string): string {
 /** What finds an entry again after a redraw moved it: its family and the id of what it is. */
 export const entryKey = (family: string, id: string) => `${family}:${id}`;
 
-/** An entry that can be dragged, with its «дії» button (seen when focused) and its menu. */
+/**
+ * An entry that can be dragged, with its menu. B-06 (Olesia, MY-FIXES): the
+ * menu opens two ways, a long press without moving and a visible ⋯ at the
+ * top right (drawn by CSS; its name stays «дії: …»). No ⋯ when the menu
+ * would be empty.
+ */
 function entry(ctx: Ctx, family: string, slot: Slot, id: string, name: string, inner: string, cls = '', attrs = ''): string {
+  const movable = ctx.view.movable?.(slot, family) ?? true;
+  const dots = movable
+    ? `<button type="button" class="ctl icon-btn icon-btn--secondary st-actions" ${act('menu', `data-family="${family}" ${slotData(slot)}`)}><span class="st-actions__name">дії: ${esc(shown(name))}</span></button>`
+    : '';
   return `
-      <div class="st-item${cls}" data-family="${family}" data-key="${esc(entryKey(family, id))}" ${slotData(slot)}${attrs}>
-        <button type="button" class="ctl st-actions t-3rd-regular" ${act('menu', `data-family="${family}" ${slotData(slot)}`)}>дії: ${esc(shown(name))}</button>
-        ${inner}${menuMarkup(ctx, slot, name)}
+      <div class="st-item${cls}${movable ? ' st-item--movable' : ''}" data-family="${family}" data-key="${esc(entryKey(family, id))}" data-name="${esc(shown(name))}" ${slotData(slot)}${attrs}>
+        ${dots}${inner}${menuMarkup(ctx, slot, name)}
       </div>`;
 }
 
@@ -249,11 +261,11 @@ function warmupItem(ctx: Ctx, family: string, slot: Slot, item: WarmupItem): str
     : ed(`${path}.seconds`, `${formatNumber(item.seconds)} с`, 'n с', 'скільки секунд', 'number', 't-3rd-regular st-value');
   const inner = `
         <div class="st-row">${ed(`ex:${item.exercise}.name`, exercise.name, 'вправа', 'назва вправи', 'text')}${value}</div>
+        ${removeButton(slot, exercise.name, 'exercise')}
         ${ed(`ex:${item.exercise}.how`, exercise.how, 'як робити: короткий опис вправи', 'як робити', 'long', 't-3rd-regular')}
         ${checkbox('n с', item.seconds !== null, `${act('timed')} data-path="${path}"`)}
-        ${linkField(`ex:${item.exercise}.source`, exercise.source)}
-        ${removeButton(slot, exercise.name, 'exercise')}`;
-  return entry(ctx, family, slot, item.exercise, exercise.name, inner);
+        ${linkField(`ex:${item.exercise}.source`, exercise.source)}`;
+  return entry(ctx, family, slot, item.exercise, exercise.name, inner, ' st-ex');
 }
 
 export function prescription(item: WorkoutItem): string {
@@ -279,11 +291,11 @@ function workoutItem(ctx: Ctx, slot: Slot, item: WorkoutItem): string {
   const inner = `
         <div class="st-row">${ed(`ex:${item.exercise}.name`, exercise.name, 'вправа', 'назва вправи', 'text')}${
   ed(`${path}.@rx`, prescription(item), 'n разів', 'підходи × повторення (наприклад, 3 × 10–12)', 'rx', 't-3rd-regular st-value')}</div>
+        ${removeButton(slot, exercise.name, 'exercise')}
         ${ed(`ex:${item.exercise}.how`, exercise.how, 'як робити: короткий опис вправи', 'як робити', 'long', 't-3rd-regular')}
         ${linkField(`ex:${item.exercise}.source`, exercise.source)}
-        ${workoutFields(item, path)}
-        ${removeButton(slot, exercise.name, 'exercise')}`;
-  return entry(ctx, 'wo-ex', slot, item.exercise, exercise.name, inner);
+        ${workoutFields(item, path)}`;
+  return entry(ctx, 'wo-ex', slot, item.exercise, exercise.name, inner, ' st-ex');
 }
 
 /**
@@ -329,11 +341,11 @@ interface Container {
   readonly forceOpen?: boolean;
 }
 
-/** «видалити …» is the last line of the open box; while picking a group there is nothing to delete. */
+/** «видалити …» is the first line of the open box, under its title; while picking a group there is nothing to delete. */
 function container(ctx: Ctx, c: Container): string {
   const open = c.forceOpen === true || ctx.view.inner.has(c.id);
   const items = `${c.slot.list}.${c.slot.index}.items`;
-  const body = () => `${c.body()}${ctx.view.picking ? '' : removeButton(c.slot, c.name, c.thing)}`;
+  const body = () => `${ctx.view.picking ? '' : removeButton(c.slot, c.name, c.thing)}${c.body()}`;
   const inner = box(c.head, open, toggle(c.id, c.name, open), c.meta, body);
   return entry(ctx, c.family, c.slot, c.id, c.name, inner, ' st-box', ` data-items="${esc(items)}"${open ? '' : ' data-closed="1"'}`);
 }
@@ -416,9 +428,9 @@ function movementKind(ctx: Ctx, kind: MovementKind, index: number): string {
   const fields = MOVEMENT_FIELDS.map(([field, label]) => checkbox(label, kind.fields.includes(field), `${act('mfield')} data-path="${path}.fields" data-field="${field}"`));
   const inner = `
         <div class="st-row">${ed(`${path}.name`, kind.name, 'що саме (наприклад, прогулянка)', 'що саме', 'text', 't-1st-semibold')}</div>
+        ${removeButton(slot, kind.name, 'movement')}
         ${linkField(`${path}.source`, kind.source)}
-        <div class="st-fields">${fields.join('')}</div>
-        ${removeButton(slot, kind.name, 'movement')}`;
+        <div class="st-fields">${fields.join('')}</div>`;
   return entry(ctx, 'mv', slot, kind.id, kind.name, inner);
 }
 

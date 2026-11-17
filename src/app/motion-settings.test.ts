@@ -268,8 +268,9 @@ describe('where exactly things move', () => {
     await tap('самопочуття');
     // «пульс» is the only «одне число»: no neighbour to step to, nowhere to move
     await tap('розгорнути: одне число');
-    const actions = host.querySelector<HTMLButtonElement>('.st-item[data-family="tk-number"] .st-actions')!;
-    expect(() => actions.click()).not.toThrow();
+    // B-06: no ⋯ that would open an empty menu
+    expect(host.querySelector('.st-item[data-family="tk-number"] .st-actions')).toBeNull();
+    expect(host.querySelector('.st-item[data-family="tk-number"]')!.classList.contains('st-item--movable')).toBe(false);
     expect(host.querySelector('.st-menu')).toBeNull();
   });
 });

@@ -126,32 +126,45 @@ describe('deleting in the settings: one look everywhere (Olesia, 2026-11-12)', (
     for (const b of removes()) {
       expect(b.classList.contains('btn--destructive')).toBe(true);
       expect(b.querySelector('svg')).toBeNull();
-      expect(b.textContent!.trim()).toMatch(/^видалити (рівень|зону|тренування|вправу|рух|повзунок|питання|поле|нотатку)$/);
-      expect(b.getAttribute('aria-label')!.startsWith(`${b.textContent!.trim()}: `)).toBe(true);
+      // an exercise says just «видалити» (Olesia, MY-FIXES); its voice name still says what
+      expect(b.textContent!.trim()).toMatch(/^видалити( (рівень|зону|тренування|рух|повзунок|питання|поле|нотатку))?$/);
+      const said = b.textContent!.trim() === 'видалити' ? 'видалити вправу' : b.textContent!.trim();
+      expect(b.getAttribute('aria-label')!.startsWith(`${said}: `)).toBe(true);
     }
     expect(new Set(removes().map((b) => b.textContent!.trim()))).toEqual(new Set([
-      'видалити повзунок', 'видалити питання', 'видалити поле', 'видалити рівень', 'видалити зону', 'видалити тренування', 'видалити вправу', 'видалити рух',
+      'видалити повзунок', 'видалити питання', 'видалити поле', 'видалити рівень', 'видалити зону', 'видалити тренування', 'видалити', 'видалити рух',
     ]));
   });
 
-  it('sits at the end of what it deletes, not next to its name or the +/−', async () => {
+  it('sits under the name or title of what it deletes (Olesia, MY-FIXES); the questions keep it at their end; never next to the name', async () => {
     await openEverything();
     for (const b of removes()) {
       expect(b.closest('.st-row')).toBeNull();
       const item = b.closest('.st-item')!;
       const own = [...item.querySelectorAll('[data-act="rm"]')].filter((x) => x.closest('.st-item') === item);
       expect(own).toEqual([b]);
-      // nothing of this item comes after it except its own menu
-      const after = [...item.querySelectorAll('*')].filter((x) => b.compareDocumentPosition(x) & Node.DOCUMENT_POSITION_FOLLOWING
-        && !b.contains(x) && x.closest('.st-item') === item && !x.closest('.st-menu'));
-      expect(after.filter((x) => x.matches('button, input, p, label'))).toEqual([]);
+      const row = b.parentElement!;
+      if (item.matches('.st-box')) {
+        // a level, a zone, a workout: the first line of its open body, right under the title
+        expect(row.parentElement!.matches('.st-box__body')).toBe(true);
+        expect(row.previousElementSibling).toBeNull();
+      } else if (item.matches('.st-ex, [data-family="mv"]')) {
+        // an exercise, a kind of movement: right under its name
+        expect(row.previousElementSibling!.matches('.st-row')).toBe(true);
+        expect(row.previousElementSibling!.querySelector('[data-path$=".name"]')).not.toBeNull();
+      } else {
+        // the questions keep it at their end
+        const after = [...item.querySelectorAll('*')].filter((x) => b.compareDocumentPosition(x) & Node.DOCUMENT_POSITION_FOLLOWING
+          && !b.contains(x) && x.closest('.st-item') === item && !x.closest('.st-menu'));
+        expect(after.filter((x) => x.matches('button, input, p, label'))).toEqual([]);
+      }
     }
   });
 
   it('asks with the right word for it or her', async () => {
     await openEverything();
     const said = async (label: string) => {
-      const b = removes().find((x) => x.textContent!.trim() === label)!;
+      const b = removes().find((x) => x.getAttribute('aria-label')!.startsWith(`${label}: `))!;
       b.click();
       await settle();
       const text = document.querySelector('.dialog')!.textContent!;
@@ -740,10 +753,10 @@ describe('less common paths', () => {
     expect(host.textContent).toContain('2 × 12');
   });
 
-  it('has no menu for an entry with nowhere to go', async () => {
+  it('has no menu, and no ⋯, for an entry with nowhere to go (B-06)', async () => {
     await openSettings();
     await tap('рух');
-    await tap('дії: рух 1');
+    expect(buttons('дії: рух 1')).toHaveLength(0);
     expect(host.querySelector('.st-menu')).toBeNull();
   });
 
