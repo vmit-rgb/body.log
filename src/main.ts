@@ -25,6 +25,7 @@ import { wireTapMotion } from './ui/taps';
 import { wireNotes } from './ui/notes';
 import { leaveLoading } from './ui/boot';
 import { wireBarFit } from './ui/bar-fit';
+import { startFlight } from './ui/flight';
 import { within } from './ui/patience';
 import { copyWith, saveFile, screenHistory, shareWith } from './ui/device';
 import type { PdfFonts } from './pdf/pdf';
@@ -38,6 +39,9 @@ let look: Omit<Appearance, 'theme'> = DEFAULT_APPEARANCE;
 const appearance = (): Appearance => ({ ...look, theme: themes.chosen() ?? 'system' });
 const applyAppearance = startAppearance(root, matchMedia('(prefers-color-scheme: light)'), appearance());
 trackNumberFill(root);
+// «Політ символів», the ASCII background; it follows the theme, the accent and both «вимкнути … анімації»
+const flight = document.querySelector<HTMLCanvasElement>('canvas.flight');
+if (flight) startFlight({ root, canvas: flight, reducedMotion: matchMedia('(prefers-reduced-motion: reduce)') });
 
 // B-02: the one live region is in the page from the start, before there is anything to say
 mountAnnouncer();

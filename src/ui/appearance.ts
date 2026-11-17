@@ -15,6 +15,8 @@ export interface Appearance {
   readonly largerTargets: boolean;
   /** «вимкнути всі анімації»: motion is instant, as with the phone's «reduce motion» */
   readonly noMotion: boolean;
+  /** «вимкнути фонові анімації (ASCII)»: the background stands still */
+  readonly noBackgroundMotion: boolean;
   /** «віддзеркалити нижню панель»: ≡ on the right, the date on the left */
   readonly mirrored: boolean;
 }
@@ -25,13 +27,14 @@ export const DEFAULT_APPEARANCE: Appearance = {
   largerText: false,
   largerTargets: false,
   noMotion: false,
+  noBackgroundMotion: false,
   mirrored: false,
 };
 
 /** What a profile says about the look; the theme belongs to the phone, not the profile. */
 export function lookOf(profile: JsonObject): Omit<Appearance, 'theme'> {
   const { accent, accessibility: a } = readSettings(profile);
-  return { accent, largerText: a.largerText, largerTargets: a.largerTargets, noMotion: a.noMotion, mirrored: a.mirrored };
+  return { accent, largerText: a.largerText, largerTargets: a.largerTargets, noMotion: a.noMotion, noBackgroundMotion: a.noBackgroundMotion, mirrored: a.mirrored };
 }
 
 /** The phone's light/dark setting: `matchMedia('(prefers-color-scheme: light)')`. */
@@ -47,6 +50,7 @@ function apply(root: HTMLElement, appearance: Appearance, systemLight: boolean):
   root.toggleAttribute('data-larger-text', appearance.largerText);
   root.toggleAttribute('data-larger-targets', appearance.largerTargets);
   root.toggleAttribute('data-no-motion', appearance.noMotion);
+  root.toggleAttribute('data-no-background-motion', appearance.noBackgroundMotion);
   root.toggleAttribute('data-mirrored', appearance.mirrored);
 }
 
