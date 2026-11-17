@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { parseDiary, serializeDiary } from '../domain/diary';
 import { EXAMPLE_DIARY } from '../domain/examples';
 import type { DayKey } from '../domain/dates';
-import { backupMemory, BEFORE_FORMAT_KEY, browserChoice, diaryStore, DIARY_KEY, sectionMemory, storageFor, themeMemory, tipMemory, type KeyValue } from './store';
+import { backupMemory, BEFORE_FORMAT_KEY, browserChoice, diaryStore, DIARY_KEY, finishMemory, sectionMemory, storageFor, themeMemory, tipMemory, type KeyValue } from './store';
 
 const now = () => new Date('2026-11-09T08:00:00.000Z');
 
@@ -229,7 +229,37 @@ describe('remembered on this phone only: theme and the last copy', () => {
   });
 });
 
-describe('tipMemory (tips for newcomers, wave 5)', () => {
+describe('finishMemory («закінчити тренування», wave 5b)', () => {
+  beforeEach(() => localStorage.clear());
+
+  it('remembers a finished workout per day on this phone, and forgets it when it is opened again', () => {
+    const memory = finishMemory(localStorage);
+    const day = '2026-11-17' as DayKey;
+    expect(memory.finished(day)).toBe(false);
+    memory.finish(day, true);
+    expect(finishMemory(localStorage).finished(day)).toBe(true);
+    expect(memory.finished('2026-11-18' as DayKey)).toBe(false);
+    memory.finish(day, false);
+    expect(memory.finished(day)).toBe(false);
+    const full: KeyValue = { getItem: () => null, setItem: () => { throw new Error('full'); }, removeItem: () => {} };
+    expect(() => finishMemory(full).finish(day, true)).not.toThrow();
+  });
+});
+
+describe('tipMemory (tips for newcomers, waves 5 and 5b)', () => {
+  it('stops showing a tip after three successes (Olesia, 2026-11-17); each tip counts on its own', () => {
+    localStorage.clear();
+    const tips = tipMemory(localStorage);
+    tips.succeed('slider');
+    tips.succeed('slider');
+    expect(tips.open('slider')).toBe(true);
+    tips.succeed('slider');
+    expect(tipMemory(localStorage).open('slider')).toBe(false);
+    expect(tips.open('remove')).toBe(true);
+    tips.succeed('slider');
+    expect(localStorage.getItem('phys-activity-tracking-app/tip-done/slider')).toBe('3');
+  });
+
   beforeEach(() => localStorage.clear());
 
   it('shows a tip until «зрозуміло», then remembers it on this phone; a full phone only forgets', () => {

@@ -18,6 +18,7 @@ import { monthOf, shiftMonth } from '../domain/stats';
 import { wireAccordions } from '../ui/accordion';
 import { esc } from '../ui/html';
 import { announce } from '../ui/announce';
+import { iconSvg } from '../ui/icons';
 import { closesOnBack } from '../ui/back';
 import type { ToastMessage } from '../ui/toast';
 import { barMarkup, fillBar, goalText, TO_TOP, wireDateNav, wireScroll } from './bar';
@@ -57,8 +58,10 @@ export interface HomeActions {
   /** Shows home again without changing anything. */
   refresh(): void;
   toast(message: ToastMessage): void;
-  /** Tips for newcomers: shown until the person closes them, on this phone. */
-  tips?: { open(id: string): boolean; close(id: string): void } | undefined;
+  /** Tips for newcomers: shown until the person closes them or has done the thing three times, on this phone. */
+  tips?: { open(id: string): boolean; close(id: string): void; succeed?(id: string): void } | undefined;
+  /** «закінчити тренування» per day, on this phone (wave 5b). */
+  finished?: { finished(date: DayKey): boolean; finish(date: DayKey, done: boolean): void } | undefined;
 }
 
 const BODIES: Record<SectionId, (ctx: SectionContext) => string> = {
@@ -77,13 +80,16 @@ const GOOD_JOB = 'хороша робота <span class="good-job__heart">&lt;3<
 /** The section's line: its description, or «хороша робота <3» once something in it is done. */
 const leadOf = (description: string, done: boolean) => (done ? GOOD_JOB : description);
 
+/* Olesia, 2026-11-17: a done section has a tick at the start of its header; said as «зроблено» before the title. */
+const TICK = `<span class="accordion__done">${iconSvg('check')}<span class="visually-hidden">зроблено: </span></span>`;
+
 function sectionMarkup({ id, title, description }: SectionSpec, open: boolean, ctx: SectionContext): string {
-  const done = sectionDone(id, ctx.day, ctx.settings);
+  const done = sectionDone(id, ctx.day, ctx.settings, ctx.finished);
   return `
-    <section class="home-section" aria-labelledby="sec-${id}-title" data-description="${esc(description)}">
+    <section class="home-section${done ? ' home-section--done' : ''}" aria-labelledby="sec-${id}-title" data-description="${esc(description)}">
       <h2 class="home-section__heading">
         <button type="button" class="ctl accordion accordion--section" id="sec-${id}-title" data-section="${id}"
-          aria-expanded="${open}" aria-controls="sec-${id}"><span class="accordion__title">${title}</span></button>
+          aria-expanded="${open}" aria-controls="sec-${id}">${TICK}<span class="accordion__title">${title}</span></button>
       </h2>
       <p class="home-section__hint t-3rd-regular" aria-hidden="true" data-lead>${leadOf(description, done)}</p>
       <div class="home-section__body" id="sec-${id}"${open ? '' : ' hidden'}>
@@ -94,12 +100,13 @@ function sectionMarkup({ id, title, description }: SectionSpec, open: boolean, c
     </section>`;
 }
 
-/** After an edit that doesn't draw home anew (typing): the lines and «згорнути секцію» follow what is done now. */
-function refreshDone(host: HTMLElement, day: Day, settings: Settings): void {
+/** After an edit that doesn't draw home anew (typing): the tick, the lines and «згорнути секцію» follow what is done now. */
+function refreshDone(host: HTMLElement, day: Day, settings: Settings, finished: boolean): void {
   for (const section of host.querySelectorAll<HTMLElement>('.home-section')) {
     const id = section.querySelector<HTMLElement>('[data-section]')?.dataset.section as SectionId | undefined;
     if (!id) continue;
-    const done = sectionDone(id, day, settings);
+    const done = sectionDone(id, day, settings, finished);
+    section.classList.toggle('home-section--done', done);
     const lead = leadOf(String(section.dataset.description), done);
     for (const line of section.querySelectorAll<HTMLElement>('[data-lead]')) if (line.innerHTML !== lead) line.innerHTML = lead;
     section.querySelector<HTMLElement>('.home-section__end')!.hidden = !done;
@@ -120,7 +127,9 @@ function wireCollapse(home: HTMLElement): void {
 }
 
 function markup(state: HomeState, actions: HomeActions): string {
-  const ctx: SectionContext = { settings: state.settings, day: dayOf(state), days: state.days, session: state.session, tipOpen: actions.tips?.open };
+  const ctx: SectionContext = {
+    settings: state.settings, day: dayOf(state), days: state.days, session: state.session, tipOpen: actions.tips?.open, finished: finishedOn(state, actions),
+  };
   const sections = homeSections(state.settings).map((section) => sectionMarkup(section, actions.sectionOpen(section.id), ctx));
   return `
     <div class="home">
@@ -167,6 +176,7 @@ function fillHero(host: HTMLElement, state: HomeState): () => void {
 }
 
 const dayOf = (state: HomeState): Day => state.days[state.date] ?? emptyDay(state.date);
+const finishedOn = (state: HomeState, actions: HomeActions) => actions.finished?.finished(state.date) ?? false;
 
 function calendarView(state: HomeState, place: string): CalendarView {
   return {
@@ -318,7 +328,7 @@ function sectionControls(host: HTMLElement, state: HomeState, actions: HomeActio
         current = { ...current, days };
         fillBar(host, current);
         calendar.refresh(current);
-        refreshDone(host, dayOf(current), current.settings);
+        refreshDone(host, dayOf(current), current.settings, finishedOn(current, actions));
       }
       const after = days[state.date] ?? emptyDay(state.date);
       reward(host, state.date, completed(before, after, state.settings), state.settings.accessibility);
@@ -333,6 +343,16 @@ function sectionControls(host: HTMLElement, state: HomeState, actions: HomeActio
     closeTip(id) {
       actions.tips?.close(id);
       keepingFocus(() => actions.refresh());
+    },
+    tipOpen: (id) => actions.tips?.open(id) ?? false,
+    tipDone: (id) => actions.tips?.succeed?.(id),
+    finish(done, render) {
+      actions.finished?.finish(state.date, done);
+      if (!render) return;
+      if (done) announce('тренування закінчено');
+      actions.refresh();
+      // the button changed its words in place: the focus stays on it
+      host.querySelector<HTMLElement>('[data-act="finish"]')?.focus({ preventScroll: true });
     },
   };
 }

@@ -14,6 +14,7 @@ import { forgetTyped, wireNumberErrors } from './number-errors';
 import { announce } from '../ui/announce';
 import { dropPulse, pulseRunning, PULSE_READY_MS, PULSE_SAYS, schedulePulse, type HomeSession } from './session';
 import { prepareSound } from './signal';
+import { REMOVE_TIP, ROUNDS_TIP, SETS_TIP, SLIDER_TIP, SLIDER_TIP_TEXT, tip } from './sections';
 
 /*
  * What a tap or a keystroke inside the sections does. The markup
@@ -38,6 +39,12 @@ export interface SectionControls {
   toast(message: ToastMessage): void;
   /** «зрозуміло» on a tip for newcomers: it doesn't show again on this phone. */
   closeTip?(id: string): void;
+  /** Whether a tip for newcomers still shows. */
+  tipOpen?(id: string): boolean;
+  /** The person did what a tip explains; after three times it stops showing (wave 5b). */
+  tipDone?(id: string): void;
+  /** «закінчити тренування» / «продовжити тренування»; `render` draws the screen again (wave 5b). */
+  finish?(done: boolean, render: boolean): void;
 }
 
 export const AUTOSAVE_MS = 20_000;
@@ -85,6 +92,9 @@ function remove(c: SectionControls, target: string, button: HTMLElement): void {
   forget(c.session, key);
   const [kind = '', id = '', at = '0'] = target.split('|');
   const { edit, message, rowStays } = REMOVALS[removalKind(kind)](c, id, at);
+  // before the edit: the render it makes already leaves out a tip done for the third time
+  c.tipDone?.(REMOVE_TIP);
+  if (removalKind(kind) === 'set' && !rowStays) c.tipDone?.(SETS_TIP);
   const row = button.closest('.set-row, .pulse__row');
   const was = row?.querySelector('[data-sw-time]')?.textContent ?? '';
   const leave = rowStays ? () => {} : rowLeaving(row);
@@ -216,6 +226,7 @@ function saveDraft(c: SectionControls, element: HTMLElement): void {
   const draft = c.session.drafts.get(key);
   c.session.drafts.delete(key);
   if (!draft) return;
+  c.tipDone?.(SLIDER_TIP);
   c.edit(answer(draft.moment, draft.tracker, draft.value), true);
   sliderSaved(sliderAt(c, key));
 }
@@ -291,12 +302,18 @@ const TAPS: Record<string, Tap> = {
   },
   chip: (c, el) => c.edit(toggleChip(data(el, 'group')), true),
   pick: (c, el) => {
+    // a workout picked anew starts unfinished, also after «прибрати з цього дня»
+    c.finish?.(false, false);
     c.edit(pickSession(data(el, 'session')), true);
     workoutAssembles(c.screen());
   },
   drop: (c) => dropWorkout(c),
   'more-sets': (c, el) => adding(c, el, 'ex', showMoreSets(data(el, 'ex'), planned(c, data(el, 'ex')))),
-  'more-rounds': (c, el) => adding(c, el, 'ex', showMoreRounds(data(el, 'ex'))),
+  'more-rounds': (c, el) => {
+    c.tipDone?.(ROUNDS_TIP);
+    adding(c, el, 'ex', showMoreRounds(data(el, 'ex')));
+  },
+  finish: (c, el) => c.finish?.(data(el, 'done') === 'true', true),
   'add-lap': (c, el) => adding(c, el, 'kind', addLap(data(el, 'kind'))),
   rm: (c, el) => remove(c, data(el, 'rm'), el),
   sw: (c, el) => stopwatch(c, data(el, 'sw'), el),
@@ -347,6 +364,10 @@ const TYPING: Record<string, Typing> = {
       tracker.querySelector('.tracker__value')!.insertAdjacentHTML('afterend',
         `<button type="button" class="ctl btn btn--tertiary" data-act="slide-save" data-moment="${moment(el)}">зберегти</button>`);
       tracker.querySelector<HTMLElement>('[data-act="slide-save"]')!.dataset.tracker = data(el, 'tracker');
+    }
+    // the tip under the first slider moved without a render (one at a time)
+    if (c.tipOpen?.(SLIDER_TIP) && !c.screen().querySelector(`[data-tip-id="${SLIDER_TIP}"]`)) {
+      tracker.querySelector('.slider-row')!.insertAdjacentHTML('afterend', tip(SLIDER_TIP, SLIDER_TIP_TEXT));
     }
   },
 };

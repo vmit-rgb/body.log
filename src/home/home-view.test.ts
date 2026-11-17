@@ -74,7 +74,7 @@ describe('goalLine', () => {
   });
 });
 
-describe('sectionDone (wave 5: «хороша робота <3»)', () => {
+describe('sectionDone (waves 5 and 5b: the tick and «хороша робота <3»)', () => {
   const settings = readSettings(EXAMPLE_DIARY.profile);
   const day = (raw: Record<string, unknown>) => readDay(raw, '2026-11-09' as DayKey);
 
@@ -83,11 +83,16 @@ describe('sectionDone (wave 5: «хороша робота <3»)', () => {
     expect(sectionDone('note', day({ note: 'було добре' }), settings)).toBe(false);
   });
 
-  it('any doing counts: one ticked exercise, one timed round, one zone, one set, one lap, one answer', () => {
-    expect(sectionDone('mw', day({ mw: { ticks: ['exercise-1'] } }), settings)).toBe(true);
-    expect(sectionDone('mw', day({ mw: { times: { 'exercise-2': [12] } } }), settings)).toBe(true);
+  it('one zone, one lap, one answer count; the morning warm-up needs a finished level, the workout «закінчити тренування»', () => {
+    expect(sectionDone('mw', day({ mw: { ticks: ['exercise-1'] } }), settings)).toBe(false);
+    expect(sectionDone('mw', day({ mw: { times: { 'exercise-2': [12] } } }), settings)).toBe(false);
+    expect(sectionDone('mw', day({ mw: { ticks: ['exercise-1', 'exercise-2'] } }), settings)).toBe(true);
     expect(sectionDone('dw', day({ dw: ['back'] }), settings)).toBe(true);
-    expect(sectionDone('wo', day({ wo: { session: 'a', ex: { 'exercise-6': [{ r: 8 }] } } }), settings)).toBe(true);
+    expect(sectionDone('wo', day({ wo: { session: 'a', ex: { 'exercise-6': [{ r: 8 }] } } }), settings)).toBe(false);
+    expect(sectionDone('wo', day({ wo: { session: 'a', ex: { 'exercise-6': [{ r: 8 }] } } }), settings, true)).toBe(true);
+    expect(sectionDone('wo', day({ wo: { session: 'a' } }), settings, true)).toBe(true);
+    // finished, then «прибрати з цього дня»: nothing to be done
+    expect(sectionDone('wo', day({}), settings, true)).toBe(false);
     expect(sectionDone('mv', day({ mv: { 'movement-1': { min: 20 } } }), settings)).toBe(true);
     expect(sectionDone('ck-evening', day({ t: { evening: { tiredness: 4 } } }), settings)).toBe(true);
   });
