@@ -115,7 +115,8 @@ describe('checkProfile: limits (PROFILE-FORMAT.md)', () => {
     ['trackers', 21, (i: number) => ({ id: `t${i}`, name: 'питання', kind: 'yesno', ask: ['morning'] })],
     ['encouragement', 11, () => 'фраза'],
   ])('%s: %i entries are one too many', (path, n, make) => {
-    expect(issuesAt(path, many(n, make))).toEqual([{ kind: 'maxItems', path: path.split('.').map((key) => (/^\d+$/.test(key) ? Number(key) : key)), limit: n - 1, actual: n }]);
+    // the same «plank» 31 times in a level is F-07's error too; here only the limit is checked
+    expect(issuesAt(path, many(n, make)).filter((issue) => issue.kind !== 'sharedExercise')).toEqual([{ kind: 'maxItems', path: path.split('.').map((key) => (/^\d+$/.test(key) ? Number(key) : key)), limit: n - 1, actual: n }]);
   });
 
   it('keeps a group of exercises at 2–3', () => {

@@ -64,6 +64,8 @@ function what(issue: ProfileIssue, profile: unknown): string {
     case 'duplicateId': return `id "${issue.id}" повторюється. у кожного запису свій id`;
     case 'missingExercise': return `вправи з id "${issue.id}" немає в каталозі вправ ("exercises"). додай її туди або виправ id`;
     case 'minNotBelowMax': return '"min" має бути менше за "max"';
+    case 'sharedExercise':
+      return `вправа "${issue.id}" вже є в рівні ${issue.level}. у кожного рівня свої вправи: заведи в каталозі окрему вправу з іншим id (наприклад "${issue.id}-2")`;
   }
 }
 

@@ -131,8 +131,11 @@ describe('upgradeProfile: settings older than format 0.1', () => {
     expect(OLD.workout.sessions[0]!.items[0]).toMatchObject({ side: 'на кожну ногу', reps: 10 });
   });
 
-  it('gives settings the strict check accepts, apart from keys it never knew', () => {
-    expect(checkProfile(upgraded)).toEqual({ issues: [], unknown: [['somethingNew']] });
+  it('gives settings the strict check accepts, apart from keys it never knew and exercises shared by levels', () => {
+    // F-07 is for settings pasted from now on: old settings keep their shared exercises, so old days read as before
+    const checked = checkProfile(upgraded);
+    expect(checked.unknown).toEqual([['somethingNew']]);
+    expect(new Set(checked.issues.map((issue) => issue.kind))).toEqual(new Set(['sharedExercise']));
   });
 
   it('survives settings with holes and odd values', () => {

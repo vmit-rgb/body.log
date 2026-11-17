@@ -126,7 +126,9 @@ describe('morning warm-up', () => {
   it('times a round of a timed exercise and adds another with «ще раз»', () => {
     const now = vi.spyOn(performance, 'now').mockReturnValue(1000);
     byLabel('запустити секундомір, 1').click();
-    now.mockReturnValue(32_400);
+    now.mockReturnValue(35_400);
+    // F-05: «3 · 2 · 1» first; the count starts 3 s after ▶
+    vi.advanceTimersByTime(3_000);
     byLabel('зупинити й зберегти, 1').click();
     expect(saved().mw.times.t).toEqual([31]);
     expect($('[data-sw-time]').textContent).toBe('00.31.00');
@@ -232,8 +234,10 @@ describe('workout', () => {
     const now = vi.spyOn(performance, 'now').mockReturnValue(0);
     $('.wo-group [aria-label="запустити секундомір, 1"]').click();
     vi.advanceTimersByTime(100);
-    now.mockReturnValue(45_000);
-    vi.advanceTimersByTime(100);
+    // F-05: «3 · 2 · 1» first, then the count from zero
+    expect($('.wo-group [data-sw-time]').textContent).toBe('3');
+    now.mockReturnValue(48_000);
+    vi.advanceTimersByTime(3_000);
     expect($('.wo-group [data-sw-time]').textContent).toBe('00.45.00');
     $('.wo-group [aria-label="зупинити й зберегти, 1"]').click();
     expect(saved().wo!.ex.p).toEqual([{ w: null, r: null, s: 45 }]);

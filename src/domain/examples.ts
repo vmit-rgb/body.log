@@ -30,8 +30,9 @@ const EXAMPLE_PROFILE = {
     weeklyTarget: 5,
     levels: [
       { id: 'level-1', name: 'рівень 1', duration: '5 хв', items: [{ exercise: 'exercise-1', reps: '10' }, { exercise: 'exercise-2', seconds: 30 }] },
+      // F-07: the same exercises again, but as the level's own (own ids), so a tick in one level never ticks the other
       { id: 'level-2', name: 'рівень 2', duration: '10 хв', items: [
-        { exercise: 'exercise-1', reps: '15' }, { exercise: 'exercise-2', seconds: 45 }, { exercise: 'exercise-3', reps: '10' },
+        { exercise: 'exercise-9', reps: '15' }, { exercise: 'exercise-10', seconds: 45 }, { exercise: 'exercise-3', reps: '10' },
       ] },
     ],
   },
@@ -58,7 +59,7 @@ const EXAMPLE_PROFILE = {
     weeklyTarget: 3,
     kinds: [{ id: 'movement-1', name: 'рух 1', fields: ['km', 'minutes'], source: { type: 'user' } }],
   },
-  exercises: [1, 2, 3, 4, 5, 6, 7, 8].map(exercise),
+  exercises: [...[1, 2, 3, 4, 5, 6, 7, 8].map(exercise), { ...exercise(1), id: 'exercise-9' }, { ...exercise(2), id: 'exercise-10' }],
   trackers: [
     { id: 'energy', name: 'енергія', hint: '0 — немає сил, 10 — повно сил', kind: 'scale', min: 0, max: 10, ask: ['morning', 'afterWorkout'] },
     { id: 'pulse', name: 'пульс', kind: 'number', units: ['уд/хв'], ask: ['morning'], timer: { enabled: true, seconds: 30 } },

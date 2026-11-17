@@ -10,7 +10,8 @@ import type { MonthKey } from '../domain/stats';
  * Glossary
  * - armed: a × tapped once; it turns into ✓, and the second tap removes (ACCESSIBILITY.md, deleting).
  * - draft: a slider value moved but not saved; only «зберегти» saves it (wave 5c).
- * - retry: a saved stopwatch or pulse tapped once; the next tap starts it again from zero.
+ * - retry: a saved stopwatch tapped once; the next tap starts it again from zero.
+ * - running: when each stopwatch counts from, as performance.now(): 3 s after ▶ (F-05, «3 · 2 · 1» first).
  */
 export interface HomeSession {
   readonly open: Map<string, boolean>;
@@ -35,10 +36,11 @@ export interface HomeSession {
 export interface Draft { readonly moment: Moment; readonly tracker: string; readonly value: number }
 
 /**
- * The pulse timer (ACCESSIBILITY.md, Figma `tracker/pulse-timer`):
- * ready (3 s to find the pulse) → counting → beats (how many?) → done (the
- * line «42 удари за 30 с × 2», until the day changes). ■ in ready or counting
- * and «скасувати» at beats drop the run (Olesia, 2026-11-12).
+ * The pulse timer (ACCESSIBILITY.md, wave 6): ready (3 s to find the pulse)
+ * → counting → beats («готово» / «скасувати» in the timer's place, until
+ * one of them or the app is closed) → done (the line «42 удари за 30 с × 2»,
+ * until the day changes). ■ in ready or counting and «скасувати» at beats
+ * drop the run (Olesia, 2026-11-12 and 2026-11-15).
  */
 export interface PulseRun {
   readonly key: string;
@@ -47,6 +49,8 @@ export interface PulseRun {
   /** When the phase shown ends (ready, counting), as Date.now(). */
   readonly ends: number;
   readonly beats: number | null;
+  /** What is typed in «скільки ударів» so far: the field comes at ▶, and a render must not lose it. */
+  readonly typed: string;
 }
 
 /**
@@ -55,9 +59,12 @@ export interface PulseRun {
  */
 export const PULSE_SAYS = { ready: 'приготуйся', counting: 'рахуй удари' } as const;
 export const pulseQuestion = (seconds: number) => `скільки ударів за ${seconds} с?`;
+/** What a screen reader hears when a stopwatch starts counting after «3 · 2 · 1» (F-05; Нитка's draft). */
+export const STOPWATCH_GO = 'почали';
 
-/** Time to find the pulse before the count starts (Olesia, 2026-11-12). */
+/** Time to find the pulse before the count starts (Olesia, 2026-11-12); the same «3 · 2 · 1» before a stopwatch (F-05, 2026-11-15). */
 export const PULSE_READY_MS = 3000;
+export const READY_MS = PULSE_READY_MS;
 
 /** Ready or counting: ■ is on screen and a step is pending. */
 export const pulseRunning = (run: PulseRun | null | undefined): boolean => run?.phase === 'ready' || run?.phase === 'counting';
@@ -98,6 +105,14 @@ export function formatStopwatch(ms: number): string {
   const total = Math.max(0, Math.floor(ms / 10));
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${pad(Math.floor(total / 6000))}.${pad(Math.floor(total / 100) % 60)}.${pad(total % 100)}`;
+}
+
+/**
+ * What a running stopwatch shows (F-05): «3», «2», «1» before `started`
+ * (the start is set 3 s ahead), then the time counting up from zero.
+ */
+export function stopwatchTime(started: number, now: number): string {
+  return now < started ? String(Math.max(1, Math.ceil((started - now) / 1000))) : formatStopwatch(now - started);
 }
 
 export type StopwatchState = 'default' | 'running' | 'saved' | 'retry';

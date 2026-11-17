@@ -8,13 +8,14 @@ import { MOMENTS, type Moment, type Settings, type WorkoutItem } from '../domain
 import { undo, type ToastMessage } from '../ui/toast';
 import { bpm } from '../domain/stats';
 import {
-  control, rowAdded, rowLeaving, rowsBack, rowsNow, sliderReset, sliderSaved, stopwatchMoved, stopwatchSeen, timeDissolves, workoutAssembles,
+  comesIn, control, rowAdded, rowLeaving, rowsBack, rowsNow, sliderReset, sliderSaved, stopwatchMoved, stopwatchSeen, timeDissolves, timerLeft, timerSlides,
+  workoutAssembles,
 } from './control-motion';
 import { forgetTyped, wireNumberErrors } from './number-errors';
 import { announce } from '../ui/announce';
-import { dropPulse, pulseRunning, PULSE_READY_MS, PULSE_SAYS, schedulePulse, type HomeSession } from './session';
-import { prepareSound } from './signal';
-import { REMOVE_TIP, ROUNDS_TIP, SETS_TIP, SLIDER_TIP, SLIDER_TIP_TEXT, tip } from './sections';
+import { dropPulse, pulseRunning, PULSE_READY_MS, PULSE_SAYS, READY_MS, schedulePulse, STOPWATCH_GO, type HomeSession } from './session';
+import { prepareSound, startSignal } from './signal';
+import { REMOVE_TIP, ROUNDS_TIP, SETS_TIP, SLIDER_TIP, SLIDER_TIP_TEXT, SW_RUNNING_LABEL, tip } from './sections';
 
 /*
  * What a tap or a keystroke inside the sections does. The markup
@@ -90,7 +91,7 @@ function remove(c: SectionControls, target: string, button: HTMLElement): void {
   // before the edit: the render it makes already leaves out a tip done for the third time
   c.tipDone?.(REMOVE_TIP);
   if (removalKind(kind) === 'set' && !rowStays) c.tipDone?.(SETS_TIP);
-  const row = button.closest('.set-row, .pulse__row');
+  const row = button.closest('.set-row');
   const was = row?.querySelector('[data-sw-time]')?.textContent ?? '';
   const leave = rowStays ? () => {} : rowLeaving(row);
   removeWithUndo(c, edit, message);
@@ -98,12 +99,11 @@ function remove(c: SectionControls, target: string, button: HTMLElement): void {
   if (rowStays) timeDissolves([...c.screen().querySelectorAll<HTMLElement>('[data-sw-time]')].find((time) => time.dataset.swTime === key), was);
 }
 
-/** What the session held for a removed target: its ✓, its stopwatch or pulse run, its «знову». */
+/** What the session held for a removed target: its ✓, its stopwatch, its «знову». */
 function forget(session: HomeSession, key: string): void {
   session.armed = null;
   session.running.delete(key);
   session.retry.delete(key);
-  if (session.pulse?.key === key) dropPulse(session);
 }
 
 /** What × does: the edit, its toast, and whether the row stays (the only timer is reset to zero, not removed). */
@@ -114,21 +114,17 @@ const reset = (edit: Edit): Removal => ({ edit, message: 'таймер скин�
 
 /**
  * What × removes: a lap; a round, or the only round's time; a set, or the
- * only timed set's time; the pulse's number (`pulse|moment|tracker`), so the
- * field is empty and the timer waits for ▶ (Olesia, 2026-11-12).
+ * only timed set's time. The pulse has no × since wave 6: its number is
+ * corrected in its field (Olesia, 2026-11-15).
  */
-type RemovalKind = 'lap' | 'round' | 'set' | 'pulse';
-const removalKind = (kind: string): RemovalKind => (kind === 'lap' || kind === 'round' || kind === 'pulse' ? kind : 'set');
+type RemovalKind = 'lap' | 'round' | 'set';
+const removalKind = (kind: string): RemovalKind => (kind === 'lap' || kind === 'round' ? kind : 'set');
 
 const REMOVALS: Record<RemovalKind, (c: SectionControls, id: string, at: string) => Removal> = {
   lap: (_c, id, at) => removed(removeLap(id, Number(at)), 'коло видалено'),
   round: (c, id, at) => {
     const i = Number(at);
     return roundRows(c.day(), id) > 1 ? removed(removeRound(id, i), 'таймер видалено') : reset(setRound(id, i, null));
-  },
-  pulse: (c, id, at) => {
-    const name = c.settings.trackers.find((tracker) => tracker.id === at)?.name || 'без назви';
-    return { edit: answer(asMoment(id), at, null), message: `${name} скинуто`, rowStays: true };
   },
   set: (c, id, at) => {
     const i = Number(at);
@@ -145,26 +141,50 @@ function stopwatch(c: SectionControls, target: string, button: HTMLElement): voi
   stopwatchMoved(control(c.screen(), 'sw', 'sw', target), seen);
 }
 
-/** ▶ starts, ■ stops and saves whole seconds, ✓ asks to overwrite, ↻ starts again from zero. */
+/**
+ * ▶ starts «3 · 2 · 1», then counts up (F-05); ■ stops and saves whole
+ * seconds, or during «3 · 2 · 1» calls the start off and saves nothing;
+ * ✓ asks to overwrite, ↻ starts again from zero.
+ */
 function tapStopwatch(c: SectionControls, target: string): void {
   const key = dayKey(c, target);
   const started = c.session.running.get(key);
   const [kind = '', id = '', at = '0'] = target.split('|');
   const round = kind === 'round';
-  if (started === undefined) return startStopwatch(c, key, round ? c.day().mw.times[id]?.[Number(at)] : c.day().wo?.ex[id]?.[Number(at)]?.s);
+  if (started === undefined) return startStopwatch(c, key, target, round ? c.day().mw.times[id]?.[Number(at)] : c.day().wo?.ex[id]?.[Number(at)]?.s);
   c.session.running.delete(key);
+  if (performance.now() < started) return c.render();
   const seconds = Math.round((performance.now() - started) / 1000);
   c.edit(round ? setRound(id, Number(at), seconds) : setSet(id, Number(at), 's', seconds), true);
 }
 
-/** A saved time asks first (↻ «знову»); then, or without a time, it counts from zero. */
-function startStopwatch(c: SectionControls, key: string, saved: number | null | undefined): void {
+/**
+ * A saved time asks first (↻ «знову»); then, or without a time, «3 · 2 · 1»
+ * and the count from zero, with the start signal (F-05, F-06: as the pulse timer).
+ */
+function startStopwatch(c: SectionControls, key: string, target: string, saved: number | null | undefined): void {
   if (saved != null && !c.session.retry.has(key)) c.session.retry.add(key);
   else {
     c.session.retry.delete(key);
-    c.session.running.set(key, performance.now());
+    const started = performance.now() + READY_MS;
+    c.session.running.set(key, started);
+    prepareSound();
+    announce(PULSE_SAYS.ready);
+    setTimeout(() => stopwatchStarts(c, key, target, started), READY_MS);
   }
   c.render();
+}
+
+/** «3 · 2 · 1» is over: the signal, unless ■ called it off (or it was started anew). */
+function stopwatchStarts(c: SectionControls, key: string, target: string, started: number): void {
+  if (c.session.running.get(key) !== started) return;
+  startSignal(c.settings.accessibility);
+  announce(STOPWATCH_GO);
+  // the label of ■ now says it saves; the digits are counted by the screen (tickStopwatches)
+  const n = Number(target.split('|')[2] ?? 0) + 1;
+  for (const button of document.querySelectorAll<HTMLElement>('[data-act="sw"]')) {
+    if (button.dataset.sw === target && button.closest('.home')) button.setAttribute('aria-label', `${SW_RUNNING_LABEL}, ${n}`);
+  }
 }
 
 function dropWorkout(c: SectionControls): void {
@@ -225,27 +245,30 @@ function resetSlider(c: SectionControls, element: HTMLElement): void {
 
 /* ---- pulse timer: 3 s to get ready, count down, ask for the beats, save beats per minute ---- */
 
-/** A tap on the pulse timer's button, and its motion on the button drawn after it (as the stopwatch). */
+/** The pulse question of `element`, on the screen drawn now. */
+const pulseOf = (c: SectionControls, element: HTMLElement) =>
+  [...c.screen().querySelectorAll<HTMLElement>('[data-pulse]')].find((box) => box.dataset.moment === data(element, 'moment') && box.dataset.tracker === data(element, 'tracker'));
+
+/**
+ * A tap on the pulse timer's button: ▶ starts, ■ cancels (wave 6: no ✓ and
+ * no ↻ any more; a saved number is corrected in its field). The timer slides
+ * to the right of its row and back; its button turns by frames as the stopwatch.
+ */
 function pulseButton(c: SectionControls, button: HTMLElement): void {
   const target = data(button, 'pulseSw');
   const seen = stopwatchSeen(button);
+  const wasLeft = timerLeft(button.closest('[data-pulse]'));
   tapPulse(c, button, dayKey(c, target));
+  timerSlides(pulseOf(c, button), wasLeft);
   stopwatchMoved(control(c.screen(), 'pulse', 'pulseSw', target), seen);
 }
 
-/** ■ cancels the run; a saved number asks first (↻ «знову»); then, or without a number, ▶ starts. */
 function tapPulse(c: SectionControls, button: HTMLElement, key: string): void {
   const run = c.session.pulse;
   if (run?.key === key && pulseRunning(run)) {
     dropPulse(c.session);
     return c.render();
   }
-  const saved = c.day().t[moment(button)]?.[data(button, 'tracker')];
-  if (saved != null && !c.session.retry.has(key)) {
-    c.session.retry.add(key);
-    return c.render();
-  }
-  c.session.retry.delete(key);
   startPulse(c, button, key);
 }
 
@@ -253,12 +276,20 @@ function startPulse(c: SectionControls, element: HTMLElement, key: string): void
   const tracker = c.settings.trackers.find((t) => t.id === data(element, 'tracker'));
   if (tracker?.kind !== 'number' || tracker.timer === null) return;
   prepareSound();
-  c.session.pulse = { key, seconds: tracker.timer, phase: 'ready', ends: Date.now() + PULSE_READY_MS, beats: null };
+  c.session.pulse = { key, seconds: tracker.timer, phase: 'ready', ends: Date.now() + PULSE_READY_MS, beats: null, typed: '' };
   announce(PULSE_SAYS.ready);
   schedulePulse(c.session, PULSE_READY_MS);
   c.render();
 }
 
+/** After «готово» or «скасувати» the timer is back in its place, and the focus on its ▶. */
+function timerBack(c: SectionControls, element: HTMLElement): void {
+  const box = pulseOf(c, element);
+  comesIn(box?.querySelector('.pulse__row .sw'));
+  box?.querySelector<HTMLElement>('[data-act="pulse"]')?.focus({ preventScroll: true });
+}
+
+/** «готово»: beats per minute go into the pulse field, the timer returns to its starting look. */
 function finishPulse(c: SectionControls, element: HTMLElement): void {
   const run = c.session.pulse;
   const field = element.closest('[data-pulse]')?.querySelector<HTMLInputElement>('[data-input="beats"]');
@@ -268,8 +299,11 @@ function finishPulse(c: SectionControls, element: HTMLElement): void {
     return;
   }
   const counted = Math.round(beats);
-  c.session.pulse = { ...run, phase: 'done', beats: counted };
+  c.session.pulse = { ...run, phase: 'done', beats: counted, typed: '' };
+  // what was typed in the pulse field by hand gives way to the counted number
+  c.session.typed.delete(`${c.day().date}|num|${moment(element)}|${data(element, 'tracker')}|0`);
   c.edit(answer(moment(element), data(element, 'tracker'), bpm(counted, run.seconds)), true);
+  timerBack(c, element);
 }
 
 /* ---- taps ---- */
@@ -322,9 +356,10 @@ const TAPS: Record<string, Tap> = {
   'ai-tip': (c) => c.toast(AI_LINK),
   pulse: pulseButton,
   'pulse-done': finishPulse,
-  'pulse-cancel': (c) => {
+  'pulse-cancel': (c, el) => {
     dropPulse(c.session);
     c.render();
+    timerBack(c, el);
   },
 };
 
@@ -352,6 +387,11 @@ const TYPING: Record<string, Typing> = {
     c.edit(setSet(data(el, 'ex'), index(el), field, field === 'r' && value !== null ? Math.round(value) : value), false);
   },
   lap: (c, el) => c.edit(setLap(data(el, 'kind'), index(el), data(el, 'f') as 'km', parseNumber(el.value)), false),
+  // the beats typed while counting stay through the renders of its phases
+  beats: (c, el) => {
+    const run = c.session.pulse;
+    if (run) c.session.pulse = { ...run, typed: el.value };
+  },
   slide: (c, el) => {
     setDraft(c, el, Number(el.value));
     const tracker = el.closest<HTMLElement>('.tracker')!;

@@ -120,9 +120,9 @@ describe('«історія» (Figma screen/log-history 165:2758)', () => {
     expect(first.querySelector('.day-check')!.textContent).toContain('вправа 1');
     expect([...first.querySelectorAll('.day-check')][1]!.textContent).toContain('вправа 2 · 30 с, 25 с');
     expect(first.querySelector('.value-row--text')!.textContent).toContain('питання, якого вже немає·так собі');
-    // as in «бета 0.81»: an exercise ticked once shows under every level that has it
-    expect(first.querySelectorAll('.day-block .checkbox__box')).toHaveLength(4);
-    expect([...first.querySelectorAll('.day-block__group')].map((g) => g.textContent)).toEqual(['рівень 1 · готово', 'рівень 2']);
+    // F-07: level 2 of the example has its own exercises now, so the ticks of level 1 show under level 1 only
+    expect(first.querySelectorAll('.day-block .checkbox__box')).toHaveLength(2);
+    expect([...first.querySelectorAll('.day-block__group')].map((g) => g.textContent)).toEqual(['рівень 1 · готово']);
     expect(first.textContent).toContain('коліно трохи болить');
   });
 

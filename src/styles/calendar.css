@@ -286,26 +286,27 @@ button.cal-day--today {
   flex-direction: column;
   gap: var(--gap-items);
 }
-.pulse__head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--gap-items);
-}
-/* «пульс» … «уд/хв», then the field with the timer beside it, drawn as the stopwatch (Olesia, 2026-11-12) */
-.tracker > .pulse__head {
-  align-items: center;
-}
+/*
+ * Wave 6 (Olesia, MY-FIXES, 2026-11-15): the field and «уд/хв» on one row,
+ * the timer on the next. From ▶ the «скільки ударів» field is on the left and
+ * the timer on the right; when the count ends «готово» and «скасувати» stand
+ * where the timer was. A row too narrow for both wraps (C-01).
+ */
 .pulse__row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--gap-items);
 }
-.pulse .labeled__fields {
-  flex-direction: row;
+.pulse__row--busy > .sw,
+.pulse__end {
+  margin-inline-start: auto;
+}
+.pulse__end {
+  display: flex;
   flex-wrap: wrap;
   align-items: center;
+  gap: var(--gap-items);
 }
 .pulse p {
   margin: 0;
