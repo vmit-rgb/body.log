@@ -250,8 +250,22 @@ describe('«що нового» and «як користуватись»', () => 
     const first = button('як відмітити вправу?');
     expect(first.getAttribute('aria-expanded')).toBe('false');
     first.click();
-    expect(host.querySelector(`#${first.getAttribute('aria-controls')}`)!.textContent).toContain('тапни на вправу');
-    expect(host.querySelectorAll('.faq button.accordion')).toHaveLength(9);
+    expect(host.querySelector(`#${first.getAttribute('aria-controls')}`)!.textContent).toContain('натисни на вправу');
+    expect(host.querySelectorAll('.faq button.accordion')).toHaveLength(19);
+  });
+
+  it('says «натисни», never «тапни» (glossary, E-11)', () => {
+    tap('як користуватись');
+    expect(host.querySelector('.faq')!.textContent).not.toMatch(/тапни/);
+  });
+
+  it('names all nine «доступність» options (E-12)', () => {
+    tap('як користуватись');
+    const answer = button('як збільшити текст чи вимкнути анімації?');
+    const text = host.querySelector(`#${answer.getAttribute('aria-controls')}`)!.textContent!;
+    for (const word of ['текст', 'зони тапу', 'всі анімації', 'фонові', 'вібрацію', 'звук', 'нижню панель', 'повідомлення', '⋯']) {
+      expect(text).toContain(word);
+    }
   });
 
   it('goes back to the menu with ≡ and home with ✕', () => {
