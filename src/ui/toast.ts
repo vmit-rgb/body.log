@@ -119,7 +119,8 @@ export function mountToast(host: HTMLElement): Toast {
   function write(next: ToastMessage): void {
     text.textContent = next.message;
     if (!next.emoticon) return;
-    const emoticon = document.createElement('span');
+    // the toast's own document, not the global one: the settle timer can fire after a test file's page is gone (it broke two deploys)
+    const emoticon = text.ownerDocument.createElement('span');
     emoticon.className = 'toast__emoticon';
     emoticon.textContent = next.emoticon;
     text.append(' ', emoticon);
