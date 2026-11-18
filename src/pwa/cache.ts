@@ -21,6 +21,15 @@ export function precacheList(builtFiles: readonly string[], staticFiles: readonl
   return ['./', ...new Set(files)];
 }
 
+/**
+ * How the worker fetches the offline copy: past the browser's own cache.
+ * GitHub Pages lets a browser keep a page for 10 minutes; a worker that took
+ * the start page from there after a new deploy kept an old page whose files
+ * were gone, and the app stayed on «щось пішло не так» for good (Pixel,
+ * 2026-11-17). With `reload` the page and its files come from one deploy.
+ */
+export const PRECACHE_FETCH = { cache: 'reload' } as const;
+
 export function cacheName(version: string): string {
   return `${PREFIX}${version}`;
 }

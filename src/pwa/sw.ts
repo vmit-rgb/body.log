@@ -1,4 +1,4 @@
-import { cacheName, servesFromCache, staleCaches } from './cache';
+import { cacheName, PRECACHE_FETCH, servesFromCache, staleCaches } from './cache';
 
 /*
  * The service worker: keeps the app working offline. Built to /sw.js; the
@@ -28,7 +28,7 @@ const CACHE = cacheName(VERSION);
 const START_PAGE = new URL('./', worker.registration.scope).href;
 
 worker.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(__PRECACHE__)));
+  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(__PRECACHE__.map((url) => new Request(url, PRECACHE_FETCH)))));
 });
 
 worker.addEventListener('activate', (event) => {
