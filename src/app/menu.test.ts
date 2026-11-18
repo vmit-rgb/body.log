@@ -251,7 +251,19 @@ describe('«що нового» and «як користуватись»', () => 
     expect(first.getAttribute('aria-expanded')).toBe('false');
     first.click();
     expect(host.querySelector(`#${first.getAttribute('aria-controls')}`)!.textContent).toContain('натисни на вправу');
-    expect(host.querySelectorAll('.faq button.accordion')).toHaveLength(19);
+    expect(host.querySelectorAll('.faq button.accordion')).toHaveLength(34);
+  });
+
+  it('puts the questions in five groups, each answer under its own id', () => {
+    tap('як користуватись');
+    expect([...host.querySelectorAll('.faq > h2')].map((h) => h.textContent)).toEqual(
+      ['перший раз', 'щодня', 'календар і статистика', 'налаштування', 'копія й дані']);
+    const ids = [...host.querySelectorAll('.faq button.accordion')].map((b) => b.getAttribute('aria-controls'));
+    expect(new Set(ids).size).toBe(ids.length);
+    const last = button('як стерти свої дані?');
+    last.click();
+    expect(last.getAttribute('aria-expanded')).toBe('true');
+    expect(host.querySelector<HTMLElement>(`#${last.getAttribute('aria-controls')}`)!.hidden).toBe(false);
   });
 
   it('says «натисни», never «тапни» (glossary, E-11)', () => {
