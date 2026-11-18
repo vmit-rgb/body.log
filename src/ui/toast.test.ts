@@ -178,6 +178,18 @@ describe('how long a toast stays (ACCESSIBILITY.md rule 7)', () => {
     expect(box().hidden).toBe(false);
   });
 
+  it('wave 7a: «скасувати» goes when another screen comes, even with «вимкнути зникання повідомлень»', () => {
+    toast.keep(true);
+    toast.show({ message: 'вправу видалено', action: undo(() => {}) });
+    wait(600_000);
+    expect(box().hidden).toBe(false);
+    toast.screenChanged();
+    expect(box().hidden).toBe(true);
+    toast.show({ message: 'нова версія готова', action: { label: 'оновити', run: () => {} } });
+    toast.screenChanged();
+    expect(box().hidden).toBe(false);
+  });
+
   it('B-09: does not close while the focus is on it, and goes when the focus leaves', () => {
     toast.show({ message: 'збережено' });
     wait(1000);

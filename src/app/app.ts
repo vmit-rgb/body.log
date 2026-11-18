@@ -184,8 +184,8 @@ export function startApp(env: AppEnv): void {
 
   /**
    * «скасувати» on home (F-01): puts a day back as it was, under its own
-   * date, whatever day or screen is shown by now. Nothing else can have
-   * changed since: the next change closes the toast.
+   * date, whatever day is shown by now. Nothing else can have changed since:
+   * the next change or another screen closes the toast (wave 7a).
    */
   function restoreDay(day: Day): void {
     if (!diary) return;
@@ -207,7 +207,7 @@ export function startApp(env: AppEnv): void {
       if (screen === 'install-first') showInstallFirst(host, phoneOf(env.platform), useBrowser);
       else if (screen === 'unreadable') showUnreadable(host, { saveAsFile: saveUnreadable, restore, startOver: () => show('first-launch') });
       else {
-        showFirstLaunch(host, env.platform, {
+        showFirstLaunch(host, {
           copyPrompt, applySettings: (text) => paste.apply(text), pasteAct: (act) => paste.act(act), pasteEdited: () => paste.reset(), restore, startWithoutAi,
         }, !env.installed);
       }

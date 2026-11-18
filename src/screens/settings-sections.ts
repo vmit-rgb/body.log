@@ -7,6 +7,7 @@ import {
 } from '../domain/settings';
 import { esc } from '../ui/html';
 import { iconSvg } from '../ui/icons';
+import { tip } from '../home/sections';
 import { act, checkbox, daysSlider, iconButton, tertiary } from './settings-bits';
 
 /*
@@ -40,6 +41,8 @@ export interface SectionsView {
   readonly picking: Picking | null;
   /** Whether an entry's «дії» menu has anything in it (then its ⋯ shows). Without it: always. */
   readonly movable?: ((slot: Slot, family: string) => boolean) | undefined;
+  /** The «затисни, щоб відкрити дії» tip under the first entry with a menu (wave 7a). */
+  readonly holdTip?: boolean;
 }
 
 /** How a value is typed in the full-screen field. */
@@ -48,6 +51,8 @@ export type EditKind = 'text' | 'long' | 'number' | 'url' | 'rx';
 interface Ctx {
   readonly settings: Settings;
   readonly view: SectionsView;
+  /** Set once the «затисни» tip is drawn, so it shows under one entry only. */
+  tipDrawn?: boolean;
 }
 
 export const KIND_NAMES: Record<ActivityKind, string> = {
@@ -107,17 +112,28 @@ export const entryKey = (family: string, id: string) => `${family}:${id}`;
  * An entry that can be dragged, with its menu. B-06 (Olesia, MY-FIXES): the
  * menu opens two ways, a long press without moving and a visible ⋯ at the
  * top right (drawn by CSS; its name stays «дії: …»). No ⋯ when the menu
- * would be empty.
+ * would be empty. Wave 7a (Olesia, 2026-11-18): ⋯ only with «показувати ⋯
+ * біля пунктів, що потребують затискання» in «доступність»; without it the
+ * first entry with a menu has the tip «затисни, щоб відкрити дії».
  */
 function entry(ctx: Ctx, family: string, slot: Slot, id: string, name: string, inner: string, cls = '', attrs = ''): string {
   const movable = ctx.view.movable?.(slot, family) ?? true;
-  const dots = movable
+  const dots = movable && ctx.settings.accessibility.showDots
     ? `<button type="button" class="ctl icon-btn icon-btn--secondary st-actions" ${act('menu', `data-family="${family}" ${slotData(slot)}`)}><span class="st-actions__name">дії: ${esc(shown(name))}</span></button>`
     : '';
   return `
       <div class="st-item${cls}${movable ? ' st-item--movable' : ''}" data-family="${family}" data-key="${esc(entryKey(family, id))}" data-name="${esc(shown(name))}" ${slotData(slot)}${attrs}>
         ${dots}${inner}${menuMarkup(ctx, slot, name)}
-      </div>`;
+      </div>${movable && !dots ? holdTip(ctx) : ''}`;
+}
+
+export const HOLD_TIP = 'hold';
+const HOLD_TIP_TEXT = 'затисни, щоб відкрити дії.';
+
+function holdTip(ctx: Ctx): string {
+  if (!ctx.view.holdTip || ctx.tipDrawn) return '';
+  ctx.tipDrawn = true;
+  return tip(HOLD_TIP, HOLD_TIP_TEXT);
 }
 
 function list(family: string, path: string, items: string[], end = ''): string {

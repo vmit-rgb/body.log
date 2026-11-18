@@ -28,7 +28,7 @@ export interface Toast {
   show(message: ToastMessage): void;
   /** Something was changed: a toast with «скасувати» for an earlier change goes (F-01). */
   changed(): void;
-  /** Another screen came: a toast about the screen before goes (A-02). */
+  /** Another screen came: a toast about the screen before goes (A-02), and so does «скасувати» (wave 7a). */
   screenChanged(): void;
   /** «вимкнути зникання повідомлень»: every toast stays until ×. */
   keep(on: boolean): void;
@@ -80,7 +80,7 @@ function slideUnderBar(box: HTMLElement): { rise(): void; hide(): void } {
  * The single toast of the app; a new message replaces the current one.
  * How long it stays (ACCESSIBILITY.md rule 7, Olesia 2026-11-14):
  * - success and neutral messages: 4 s, shown by the bar on top that melts;
- * - with «скасувати»: until × or the next change;
+ * - with «скасувати»: until ×, the next change or another screen (wave 7a, even with «вимкнути зникання повідомлень»);
  * - with another button («оновити») or an error: until ×;
  * - never while the focus, a finger or the pointer is on it (B-09); when the
  *   focus leaves, it goes;
@@ -229,7 +229,8 @@ export function mountToast(host: HTMLElement): Toast {
       });
     },
     screenChanged() {
-      if (current?.local) close();
+      // wave 7a (Olesia, 2026-11-18): «скасувати» can't be used from another screen
+      if (current?.local || current?.action?.undo) close();
     },
     keep(on) {
       if (keepAll === on) return;

@@ -2,7 +2,9 @@
  * The month's ASCII scene in the header of home (Olesia, 2026-11-17: «задній
  * фон постійно один, в залежності від місяця змінюється тільки шапка»;
  * 2026-11-18: a scene for every month, header-animations/ in the workspace).
- * The scene is picked by today's month, not by the day shown.
+ * The scene is the month the calendar on home shows: the day shown, or the
+ * month the calendar was turned to (wave 7a, Olesia 2026-11-18: «сцена в шапці
+ * має відповідати обраному місяцю»; before, it was today's month).
  *
  * Home is drawn anew on every change, so the scene lives here, outside the
  * screen: a new canvas takes over the running scene and its leaves don't
@@ -52,9 +54,9 @@ export const SCENES: Readonly<Record<number, Month>> = {
 
 const monthOf = (day: DayKey) => Number(day.slice(5, 7));
 
-/** The scene of the month of `today`, drawn in `family` on `bg`. */
-export function sceneFor(today: DayKey, family: string, bg: string): HeroScene {
-  const month = SCENES[monthOf(today)] ?? SCENES[1]!;
+/** The scene of the month of `day`, drawn in `family` on `bg`. */
+export function sceneFor(day: DayKey, family: string, bg: string): HeroScene {
+  const month = SCENES[monthOf(day)] ?? SCENES[1]!;
   return heroScene(month.make, month.band, family, bg);
 }
 
@@ -66,21 +68,31 @@ let running: { month: number; scene: HeroScene; w: number; h: number; dpr: numbe
 export interface SceneHost {
   readonly root: HTMLElement;
   readonly canvas: HTMLCanvasElement;
-  readonly today: DayKey;
+  /** A day of the month to show. */
+  readonly day: DayKey;
   readonly reducedMotion: { matches: boolean; addEventListener(type: 'change', listener: () => void, options?: { signal: AbortSignal }): void };
 }
 
-/** Starts today's scene on `canvas`; returns what stops it. */
-export function mountHeroScene({ root, canvas, today, reducedMotion }: SceneHost): () => void {
+export interface HeroSceneRun {
+  /** Shows the scene of the month of `day` (the calendar was turned); the same month changes nothing. */
+  show(day: DayKey): void;
+  stop(): void;
+}
+
+/** Starts the scene of `day`'s month on `canvas`. */
+export function mountHeroScene({ root, canvas, day, reducedMotion }: SceneHost): HeroSceneRun {
   const ctx = canvas.getContext('2d', { alpha: false });
-  if (!ctx) return () => {};
+  if (!ctx) return { show: () => {}, stop: () => {} };
   const style = getComputedStyle(root);
   const family = style.getPropertyValue('--font').trim() || 'monospace';
   // the dark theme's page colour, in both themes (Olesia, 2026-11-18)
   const bg = style.getPropertyValue('--scene-bg').trim() || '#161616';
-  const month = monthOf(today);
-  if (running?.month !== month) running = { month, scene: sceneFor(today, family, bg), w: 0, h: 0, dpr: 0, t: 0 };
-  const scene = running;
+  const take = (next: DayKey) => {
+    const month = monthOf(next);
+    if (running?.month !== month) running = { month, scene: sceneFor(next, family, bg), w: 0, h: 0, dpr: 0, t: 0 };
+    return running;
+  };
+  let scene = take(day);
   const stop = new AbortController();
   let frame = 0;
   let last = 0;
@@ -145,10 +157,17 @@ export function mountHeroScene({ root, canvas, today, reducedMotion }: SceneHost
   else if (fonts) void fonts.load(`9px ${family}`).catch(() => undefined).finally(() => !stop.signal.aborted && refit());
   else refit();
 
-  return () => {
-    stop.abort();
-    watch.disconnect();
-    seen?.disconnect();
-    cancelAnimationFrame(frame);
+  return {
+    show(next) {
+      if (stop.signal.aborted || monthOf(next) === scene.month) return;
+      scene = take(next);
+      refit();
+    },
+    stop() {
+      stop.abort();
+      watch.disconnect();
+      seen?.disconnect();
+      cancelAnimationFrame(frame);
+    },
   };
 }

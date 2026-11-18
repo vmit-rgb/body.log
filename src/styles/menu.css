@@ -13,6 +13,9 @@
   flex-direction: column;
   gap: var(--gap-huge);
   padding-top: max(var(--pad-screen-top), env(safe-area-inset-top));
+  /* wave 7a: the blocks turn as they fly in and stick out past the sides for a moment;
+     Chrome on Android then zooms the page out and the bar slides down (Pixel, Olesia) */
+  overflow-x: clip;
 }
 
 /* menu/top-bar: ☼ / ☾ at the size of the bar's ≡ */

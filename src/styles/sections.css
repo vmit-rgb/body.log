@@ -513,6 +513,11 @@
 #sec-mv .number {
   --chars: 9;
 }
+/* wave 7a (Olesia, 2026-11-18): кг × повтори on one row; two characters narrower (4 ch, «22.5»)
+   so the pair fits from 360 px; with larger text on a narrow screen they still wrap */
+#sec-wo .set-row__fields .number {
+  --chars: 4;
+}
 .rm-space {
   width: var(--tap);
 }
@@ -570,9 +575,12 @@
   align-items: center;
   flex: none;
 }
+/* wave 7a (Olesia, 2026-11-18): bigger, and in the middle of the title with its underline:
+   the underline hangs under the text box, so the tick goes down a little */
 .accordion__done .icon {
-  width: 0.8em;
-  height: 0.8em;
+  width: 1.1em;
+  height: 1.1em;
+  transform: translateY(0.12em);
 }
 .home-section:not(.home-section--done) .accordion__done {
   display: none;

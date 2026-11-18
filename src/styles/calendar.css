@@ -284,13 +284,16 @@ button.cal-day--today {
 .pulse {
   display: flex;
   flex-direction: column;
-  gap: var(--gap-items);
+  /* wave 7a (Olesia, 2026-11-18): the timer belongs to the field, so it sits closer to it than the next question */
+  gap: var(--gap-nano);
 }
 /*
  * Wave 6 (Olesia, MY-FIXES, 2026-11-15): the field and «уд/хв» on one row,
  * the timer on the next. From ▶ the «скільки ударів» field is on the left and
  * the timer on the right; when the count ends «готово» and «скасувати» stand
  * where the timer was. A row too narrow for both wraps (C-01).
+ * Wave 7a (Olesia, 2026-11-18): the timer is always on the right, under the
+ * field, and doesn't slide any more.
  */
 .pulse__row {
   display: flex;
@@ -298,7 +301,7 @@ button.cal-day--today {
   align-items: center;
   gap: var(--gap-items);
 }
-.pulse__row--busy > .sw,
+.pulse__row > .sw,
 .pulse__end {
   margin-inline-start: auto;
 }

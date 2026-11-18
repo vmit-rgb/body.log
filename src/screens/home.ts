@@ -14,7 +14,7 @@ import {
 import { PULSE_SAYS, pulseQuestion, pulseRunning, pulseTime, schedulePulse, stopwatchTime, type HomeSession } from '../home/session';
 import { calendarMarkup, type CalendarView } from '../home/calendar';
 import { endSignal, startSignal } from '../home/signal';
-import { monthOf, shiftMonth } from '../domain/stats';
+import { monthOf, shiftMonth, type MonthKey } from '../domain/stats';
 import { wireAccordions } from '../ui/accordion';
 import { esc } from '../ui/html';
 import { announce } from '../ui/announce';
@@ -214,6 +214,8 @@ function wireTips(host: HTMLElement, state: HomeState, signal: AbortSignal): voi
   }, { signal });
 }
 
+const firstOf = (month: MonthKey) => `${month}-01` as DayKey;
+
 function calendarView(state: HomeState, place: string): CalendarView {
   return {
     settings: state.settings,
@@ -236,7 +238,8 @@ interface Calendar {
 /** B-03: what lies under the open sheet and must not take the focus: all but the date, which closes it. */
 const UNDER_SHEET = '.home, .to-top, .bar__menu, .bar__goal, .date-nav__step';
 
-function wireCalendar(host: HTMLElement, state: HomeState, go: (date: DayKey) => void, signal: AbortSignal): Calendar {
+/** `turned`: the calendar shows another month now (the header's scene follows it, wave 7a). */
+function wireCalendar(host: HTMLElement, state: HomeState, go: (date: DayKey) => void, turned: (month: MonthKey) => void, signal: AbortSignal): Calendar {
   let current = state;
   const dateButton = part<HTMLButtonElement>(host, '.date-nav__date');
   // one closing back into the date doesn't count: the date opens a new one
@@ -279,6 +282,7 @@ function wireCalendar(host: HTMLElement, state: HomeState, go: (date: DayKey) =>
     const container = button.closest<HTMLElement>('.cal-block')!;
     const by = String(button.dataset.by);
     state.session.month = shiftMonth(calendarView(current, '').month, Number(by));
+    turned(state.session.month);
     swapMonth(container, () => {
       container.innerHTML = calendarMarkup(calendarView(current, container.dataset.place ?? 'home'));
       container.querySelector<HTMLElement>(`[data-cal="month"][data-by="${by}"]`)!.focus();
@@ -437,9 +441,10 @@ export function showHome(host: HTMLElement, state: HomeState, actions: HomeActio
   host.innerHTML = markup(state, actions);
   const fit = fillHero(host, state);
   const canvas = host.querySelector<HTMLCanvasElement>('.hero__scene canvas');
-  const stopScene = canvas
-    ? mountHeroScene({ root: document.documentElement, canvas, today: state.today, reducedMotion: typeof matchMedia === 'function' ? matchMedia('(prefers-reduced-motion: reduce)') : { matches: false, addEventListener: () => {} } })
-    : () => {};
+  // wave 7a: the scene of the month the calendar shows, not of today
+  const scene = canvas
+    ? mountHeroScene({ root: document.documentElement, canvas, day: firstOf(calendarView(state, '').month), reducedMotion: typeof matchMedia === 'function' ? matchMedia('(prefers-reduced-motion: reduce)') : { matches: false, addEventListener: () => {} } })
+    : null;
   fillBar(host, state);
   // on .home, which every render makes anew: on host the listeners would pile up
   const home = part<HTMLElement>(host, '.home');
@@ -453,7 +458,7 @@ export function showHome(host: HTMLElement, state: HomeState, actions: HomeActio
     state.session.month = null;
     actions.goTo(date);
   };
-  const calendar = wireCalendar(host, state, go, listeners.signal);
+  const calendar = wireCalendar(host, state, go, (month) => scene?.show(firstOf(month)), listeners.signal);
   const controls = sectionControls(host, state, actions, calendar);
   wireSections(home, controls);
   wireCollapse(home);
@@ -474,6 +479,6 @@ export function showHome(host: HTMLElement, state: HomeState, actions: HomeActio
   addEventListener('resize', fit, { signal: listeners.signal });
   return () => {
     listeners.abort();
-    stopScene();
+    scene?.stop();
   };
 }

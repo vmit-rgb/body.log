@@ -31,10 +31,10 @@ export const PHONE_NAMES: Record<Phone, string> = {
   iphone: 'айфон',
 };
 
-/** tabs/platform: two toggles, one per phone. `prefix` is «маю » on the first screen. */
-export function platformToggles(prefix: string): string {
+/** tabs/platform: two toggles, one per phone (only on the install screen since wave 7a). */
+export function platformToggles(): string {
   const toggle = (platform: Phone) =>
-    `<button type="button" class="ctl tab" aria-pressed="false" data-platform="${platform}">${prefix}${PHONE_NAMES[platform]}</button>`;
+    `<button type="button" class="ctl tab" aria-pressed="false" data-platform="${platform}">${PHONE_NAMES[platform]}</button>`;
   return `<div class="segmented" role="group" aria-label="твій телефон">${toggle('android')}${toggle('iphone')}</div>`;
 }
 
