@@ -9,6 +9,7 @@ import './styles/calendar.css';
 import './styles/menu.css';
 import './styles/history.css';
 import './styles/settings.css';
+import './styles/glass.css';
 import './styles/motion.css';
 // last: a text style class (t-*) wins over any earlier font rule of the same weight (VISUAL-AUDIT Н2)
 import './styles/typography.css';

@@ -42,6 +42,8 @@
   --scrim-shadow: rgb(0 0 0 / 25%);
   /* color/background/design-section: the body of a home section */
   --panel: rgb(18 20 19 / 55%);
+  /* the blur under every panel, as on the section titles (glass.css) */
+  --glass-blur: blur(4px);
 
   --accent: rgb(var(--accent-rgb));
   --surface: rgb(var(--accent-rgb) / 5%);

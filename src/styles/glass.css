@@ -1,0 +1,63 @@
+/*
+ * Glass (Olesia, 2026-11-18): text never sits straight on «Політ символів».
+ * Every block of a page stands on the half-clear panel colour, blurred like
+ * the section titles (accordion--section, 4 px), so the glyphs behind turn
+ * into a soft haze. Blocks that already had a tint keep it over the panel.
+ * The start screen is one frame instead (.screen--framed below).
+ */
+.home-section__body,
+.home-section__hint,
+.home .cal-block,
+.history .cal-block,
+.search__results,
+.screen__section,
+.settings__intro,
+.tab-note,
+.lang,
+.footer,
+.day-card,
+.st-part {
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+}
+.screen__section,
+.settings__intro,
+.tab-note,
+.lang,
+.footer,
+.day-card {
+  background: var(--panel);
+}
+.st-part {
+  background: linear-gradient(var(--surface), var(--surface)), var(--panel);
+}
+/* the blocks that had no box get some room inside their glass */
+.screen__section,
+.tab-note,
+.lang {
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+.settings__intro {
+  padding-top: 12px;
+}
+
+/* the start screen: one frame like a home section (accent lines, glass, shadow); nothing inside doubles it */
+.screen--framed {
+  margin-top: max(var(--pad-screen-top), env(safe-area-inset-top));
+  margin-bottom: var(--gap-huge);
+  padding: var(--gap-section) 0;
+  border-top: var(--stroke-4) solid var(--accent);
+  border-bottom: var(--stroke-4) solid var(--accent);
+  background: var(--panel);
+  box-shadow: 0 2px 12px rgb(0 0 0 / 25%);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+}
+.screen--framed :is(.screen__section, .tab-note, .lang, .footer) {
+  padding-top: 0;
+  padding-bottom: 0;
+  background: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}

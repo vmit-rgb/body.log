@@ -53,6 +53,7 @@ h1[tabindex='-1']:focus {
 :root[data-no-flight] .flight {
   visibility: hidden;
 }
+
 /*
  * Noise over everything (Figma overlay/noise 360:9070): light 1 px grain in
  * SCREEN and dark grain in MULTIPLY, each about 10 % of the pixels at 25 %

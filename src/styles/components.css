@@ -465,8 +465,8 @@
   --weight-0: 700;
   --weight-hover: 700;
   padding: 4px 16px 8px;
-  -webkit-backdrop-filter: blur(4px);
-  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
   font-size: calc(29px * var(--text-scale));
   font-stretch: 80%;
   line-height: 1.3;

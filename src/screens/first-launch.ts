@@ -37,7 +37,7 @@ const PASTE_HOW: Record<Phone, string> = {
 };
 
 const MARKUP = `
-  <div class="screen">
+  <div class="screen screen--framed">
     ${LANGUAGE_SWITCH}
     <section class="screen__section" aria-labelledby="intro-title">
       <h1 id="intro-title" class="t-h3">привіт! почнімо з налаштувань :)</h1>
