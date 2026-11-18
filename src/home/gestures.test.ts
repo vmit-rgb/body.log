@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { barShown, swipeDays, toTopShown, type ScrollFacts } from './gestures';
+import { barShown, swipeDays, swipeMonths, toTopShown, type ScrollFacts } from './gestures';
 
 describe('swipeDays', () => {
   const start = { x: 200, y: 700 };
@@ -36,5 +36,20 @@ describe('toTopShown', () => {
     expect(toTopShown(501, true)).toBe(true);
     expect(toTopShown(500, true)).toBe(false);
     expect(toTopShown(2000, false)).toBe(false);
+  });
+});
+
+describe('swipeMonths', () => {
+  it('a quarter of the width turns the month: left to the next, right to the previous', () => {
+    expect(swipeMonths(-90, 320, 600)).toBe(1);
+    expect(swipeMonths(90, 320, 600)).toBe(-1);
+  });
+  it('a quick flick turns it too', () => {
+    expect(swipeMonths(-40, 320, 60)).toBe(1);
+  });
+  it('a slow short drag springs back', () => {
+    expect(swipeMonths(-40, 320, 600)).toBe(0);
+    expect(swipeMonths(20, 320, 10)).toBe(0);
+    expect(swipeMonths(0, 320, 0)).toBe(0);
   });
 });
