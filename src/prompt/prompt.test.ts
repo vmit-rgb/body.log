@@ -15,6 +15,14 @@ describe('the prompt file', () => {
     for (const accent of schema.properties.theme.properties.accent.enum) expect(PROMPT.text).toContain(`(${accent})`);
   });
 
+  it('shows both shapes of «source» as the format has them (Gemini wrote links without url and by, 2026-11-18)', () => {
+    expect(PROMPT.text).toContain('"source": { "type": "user" }');
+    expect(PROMPT.text).toContain('"source": { "type": "link", "url": "https://…", "by": "user" }');
+    const [user, link] = schema.$defs.source.oneOf;
+    expect(user!.required).toEqual(['type']);
+    expect(link!.required).toEqual(['type', 'url', 'by']);
+  });
+
   it('carries the same schema and example the paste check reads, with no placeholder left', () => {
     expect(PROMPT.text).toContain(JSON.stringify(schema, null, 1));
     expect(PROMPT.text).toContain(JSON.stringify(example, null, 1));
