@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { cacheName, fillWorker, precacheList, servesFromCache, staleCaches } from './cache';
+import { cacheName, fillWorker, PRECACHE_FETCH, precacheList, servesFromCache, staleCaches } from './cache';
+import worker from './sw.ts?raw';
 
 describe('precacheList', () => {
   it('keeps the start page, the built and the static files, sorted', () => {
@@ -45,5 +46,12 @@ describe('fillWorker', () => {
   });
   it('stops the build when an unknown placeholder is left', () => {
     expect(() => fillWorker('x(__SCOPE__)', [], 'abc')).toThrow('placeholder');
+  });
+});
+
+describe('the offline copy comes from the network', () => {
+  it('skips the browser cache, so the start page and its files are from one deploy', () => {
+    expect(PRECACHE_FETCH.cache).toBe('reload');
+    expect(worker).toContain('new Request(url, PRECACHE_FETCH)');
   });
 });
