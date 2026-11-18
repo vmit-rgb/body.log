@@ -191,6 +191,24 @@ describe('first launch in the installed app', () => {
     expect(stored()).toBeNull();
   });
 
+  it('empties the field after a refusal, so the next answer goes in at once (Olesia, 2026-11-18)', async () => {
+    const field = host.querySelector<HTMLTextAreaElement>('[data-paste-field]')!;
+    pasteText('не json');
+    expect(field.value).toBe('');
+    expect(host.querySelector<HTMLButtonElement>('[data-apply]')!.disabled).toBe(true);
+    expect(result().hidden).toBe(false);
+    pasteText(JSON.stringify({ ...PASTED, exercises: [{ id: 'neck-rolls', name: '' }] }));
+    expect(field.value).toBe('');
+    // «скопіювати для ШІ» still has the text the field held
+    resultButton('скопіювати для ШІ').click();
+    await vi.waitFor(() => expect(device.copied[0]).toContain('вправа 1 → назва'));
+  });
+
+  it('keeps the field when the settings are read', () => {
+    pasteText(JSON.stringify(PASTED));
+    expect(host.querySelector<HTMLTextAreaElement>('[data-paste-field]')!.value).not.toBe('');
+  });
+
   it('hides the result as soon as the text changes', () => {
     pasteText('не json');
     expect(result().hidden).toBe(false);
@@ -205,6 +223,7 @@ describe('first launch in the installed app', () => {
     pasteText(JSON.stringify({ ...PASTED, schedule: 'daily' }));
     expect(result().querySelector('[data-paste-title]')!.textContent).toBe('ось що застосунок не прочитав');
     expect(result().textContent).toContain('"schedule"');
+    expect(host.querySelector<HTMLTextAreaElement>('[data-paste-field]')!.value).toBe('');
     const buttons = [...result().querySelectorAll('button')];
     expect(buttons.map((b) => b.textContent)).toEqual(['скопіювати для ШІ, щоб виправити', 'продовжити без цього']);
     expect(buttons[0]!.className).toContain('btn--primary');

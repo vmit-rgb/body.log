@@ -12,7 +12,7 @@ import { tidy } from '../domain/sections-edit';
 import { readSettings, type ActivityKind, type Settings } from '../domain/settings';
 import { russianReason } from '../paste/russian';
 import { ACCENT_NAMES, ACCESS_SHORT } from '../screens/settings';
-import { copyPrompt, PasteFlow, RUSSIAN_COPY } from './paste-flow';
+import { copyPrompt, PasteFlow, pasteFailed, RUSSIAN_COPY } from './paste-flow';
 import { showSettings, type PartId, type SettingsAct } from '../screens/settings';
 import { SectionsEditor } from './sections-page';
 import { buzz } from '../home/signal';
@@ -107,6 +107,7 @@ class Draft implements SettingsPage {
     copyText: (text) => this.env.copyText(text),
     say: (message) => this.say(message),
     show: () => {
+      if (pasteFailed(this.paste.view)) this.pasted = '';
       this.redraw();
       this.home.host.querySelector<HTMLElement>('[data-paste-title]')?.focus();
     },

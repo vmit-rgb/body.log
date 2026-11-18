@@ -98,6 +98,14 @@ function wirePaste(host: HTMLElement, actions: FirstLaunchActions): void {
   });
 }
 
+/** Empties the paste field after a failed «застосувати»; «застосувати» goes off with it. */
+export function clearPasteField(host: ParentNode): void {
+  const field = host.querySelector<HTMLTextAreaElement>('[data-paste-field]');
+  if (field) field.value = '';
+  const apply = host.querySelector<HTMLButtonElement>('[data-apply]');
+  if (apply) apply.disabled = true;
+}
+
 function wireOtherWays(host: HTMLElement, actions: FirstLaunchActions): void {
   wireRestore(host, actions.restore);
   part(host, '[data-start-without-ai]').addEventListener('click', () => actions.startWithoutAi());
