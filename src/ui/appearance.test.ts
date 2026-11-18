@@ -2,7 +2,8 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import tokens from '../styles/tokens.css?raw';
 import settings from '../styles/settings.css?raw';
 import { ACCENTS } from '../domain/accents';
-import { DEFAULT_APPEARANCE, lookOf, startAppearance, type SystemTheme } from './appearance';
+import indexHtml from '../../index.html?raw';
+import { BAR_COLOUR, DEFAULT_APPEARANCE, lookOf, startAppearance, type SystemTheme } from './appearance';
 
 type Theme = 'dark' | 'light';
 const THEMES: readonly Theme[] = ['dark', 'light'];
@@ -88,6 +89,44 @@ describe('appearance', () => {
     phone.switchTo(true);
     expect(root.dataset.theme).toBe('light');
     expect(root.dataset.accent).toBe('cyan');
+  });
+
+  describe('the browser bar colour (wave 11, item 4)', () => {
+    const bars = () => [...document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')].map((meta) => meta.content);
+    beforeEach(() => {
+      document.head.innerHTML =
+        '<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#161616" />' +
+        '<meta name="theme-color" media="(prefers-color-scheme: light)" content="#f6f5f7" />';
+    });
+
+    it('is the page colour of the theme shown, on every tag', () => {
+      startAppearance(document.documentElement, fakePhone(true).media, DEFAULT_APPEARANCE);
+      expect(bars()).toEqual([BAR_COLOUR.light, BAR_COLOUR.light]);
+    });
+
+    it('follows the phone', () => {
+      const phone = fakePhone(false);
+      startAppearance(document.documentElement, phone.media, DEFAULT_APPEARANCE);
+      expect(bars()).toEqual([BAR_COLOUR.dark, BAR_COLOUR.dark]);
+      phone.switchTo(true);
+      expect(bars()).toEqual([BAR_COLOUR.light, BAR_COLOUR.light]);
+    });
+
+    it('follows ☼ / ☾ against the phone', () => {
+      const apply = startAppearance(document.documentElement, fakePhone(true).media, DEFAULT_APPEARANCE);
+      apply({ ...DEFAULT_APPEARANCE, theme: 'dark' });
+      expect(bars()).toEqual([BAR_COLOUR.dark, BAR_COLOUR.dark]);
+      apply({ ...DEFAULT_APPEARANCE, theme: 'light' });
+      expect(bars()).toEqual([BAR_COLOUR.light, BAR_COLOUR.light]);
+    });
+
+    it('is the --bg of each theme in tokens.css and the colour index.html starts with', () => {
+      for (const theme of THEMES) {
+        const block = tokens.slice(tokens.indexOf(`${THEME_BLOCK[theme]} {`));
+        expect(block.match(/--bg:\s*(#[0-9a-f]{6})/i)?.[1]?.toLowerCase()).toBe(BAR_COLOUR[theme]);
+        expect(indexHtml).toContain(`media="(prefers-color-scheme: ${theme})" content="${BAR_COLOUR[theme]}"`);
+      }
+    });
   });
 
   it('turns the accessibility options off again', () => {
