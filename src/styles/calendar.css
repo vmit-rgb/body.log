@@ -380,6 +380,10 @@
 span.cal-day {
   font-weight: 420;
 }
+/* the room of a sixth week a 4- or 5-week month doesn't have: kept, not shown */
+.cal-day--blank {
+  visibility: hidden;
+}
 /* the weight goes through .ctl, so «сьогодні» can be 720 (calendar/day today, Н5) */
 button.cal-day {
   --fg-0: var(--ink);

@@ -167,6 +167,8 @@ function dayCell(view: CalendarView, key: DayKey, inMonth: boolean): string {
 }
 
 const WEEKDAYS = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'нд'];
+/** The most weeks a month spans. */
+const WEEKS = 6;
 
 /** The tip about the long tap; it stops after three periods chosen. */
 export const PERIOD_TIP = 'period';
@@ -188,7 +190,10 @@ function periodRow(view: CalendarView): string {
 
 function month(view: CalendarView): string {
   const heading = `cal-${view.place}-month`;
-  const cells = monthCells(view.month).map(({ key, inMonth }) => dayCell(view, key, inMonth)).join('');
+  const days = monthCells(view.month);
+  // every month takes six weeks of room, so the page doesn't jump when a 5-week month follows a 6-week one (Olesia, 2026-11-18: the last row empty)
+  const cells = days.map(({ key, inMonth }) => dayCell(view, key, inMonth)).join('')
+    + '<span class="cal-day cal-day--blank" aria-hidden="true"></span>'.repeat(Math.max(0, WEEKS * 7 - days.length));
   const last = view.month >= monthOf(view.today);
   return `
     <h3 class="t-h5 cal__month" id="${heading}">${monthName(view.month, view.today)}</h3>
