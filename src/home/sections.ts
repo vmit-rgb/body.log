@@ -311,7 +311,7 @@ function noteTracker(ctx: SectionContext, moment: Moment, tracker: Tracker): str
   return `
     <div class="tracker">
       <label class="tracker__note"><span class="t-1st-semibold">${esc(tracker.name || 'без назви')}</span>
-        ${withGrip(`<textarea class="field" rows="3" placeholder="як минув день? пиши як є" data-input="tracker-note" ${trackerData(moment, tracker)}
+        ${withGrip(`<textarea class="field" rows="3" placeholder="напиши щось" data-input="tracker-note" ${trackerData(moment, tracker)}
           ${keyed(dayKey(ctx, `tnote|${moment}|${tracker.id}`))}>${esc(typeof saved === 'string' ? saved : '')}</textarea>`)}</label>${hint(tracker)}
     </div>`;
 }

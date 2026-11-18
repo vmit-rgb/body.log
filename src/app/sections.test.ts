@@ -102,7 +102,7 @@ describe('sections in the settings: closed', () => {
     expect(meta('денна розминка')).toBe('1 зона');
     expect(meta('тренування')).toBe('1 тренування');
     expect(meta('рух')).toBe('рух 1');
-    expect(meta('самопочуття')).toBe('4 поля');
+    expect(meta('самопочуття')).toBe('4 питання');
   });
 
   it('say «вимкнено» when off, and name unnamed movement by count', async () => {
@@ -426,9 +426,9 @@ describe('самопочуття', () => {
   });
 
   it('groups questions by kind, each kind opens', async () => {
-    const kinds = [...host.querySelectorAll('.st-box h3')].map((h) => h.textContent);
+    const kinds = [...host.querySelectorAll('.st-box h4')].map((h) => h.textContent);
     expect(kinds).toEqual(['повзунки', 'питання так / ні', 'два числа', 'одне число', 'нотатки']);
-    expect(host.textContent).toContain('2 поля');
+    expect(host.textContent).toContain('2 питання');
     await tap('розгорнути: повзунки');
     expect(host.textContent).toContain('0 — немає сил, 10 — повно сил');
     expect(host.textContent).toContain('від 0');

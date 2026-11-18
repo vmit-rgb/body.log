@@ -15,7 +15,8 @@
 }
 .settings p,
 .settings h2,
-.settings h3 {
+.settings h3,
+.settings h4 {
   margin: 0;
 }
 .settings__intro {
@@ -27,7 +28,19 @@
 .settings__parts {
   display: flex;
   flex-direction: column;
+  gap: var(--gap-section);
+}
+
+/* E-14 (Olesia, 2026-11-18): a group of parts on its own background; it never folds */
+.settings__group {
+  display: flex;
+  flex-direction: column;
   gap: var(--gap-items);
+  padding: 12px 0 var(--gap-items);
+}
+.settings__group-title {
+  padding: 0 var(--pad-screen-x);
+  color: var(--accent);
 }
 
 /* one part: the trigger edge to edge, the body 16 px in, on the accent surface */
@@ -210,7 +223,7 @@
 .st-box__head {
   align-items: flex-start;
 }
-.st-box__head h3 {
+.st-box__head h4 {
   margin: 0;
   padding-top: 12px;
 }
