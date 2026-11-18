@@ -98,6 +98,16 @@ describe('calendar block on home', () => {
     expect(order.indexOf('cal-block')).toBe(order.indexOf('home__sections') + 1);
   });
 
+  it('always takes six weeks of room, the missing ones hidden (no jump on the iPhone, 2026-11-18)', () => {
+    const grid = () => all('.cal__grid > *', block());
+    const blanks = () => all('.cal__grid > .cal-day--blank', block());
+    // November 2026 spans six weeks, October five
+    expect([grid().length, blanks().length]).toEqual([42, 0]);
+    byLabel('попередній місяць', block()).click();
+    expect([grid().length, blanks().length]).toEqual([42, 7]);
+    expect(blanks().every((cell) => cell.getAttribute('aria-hidden') === 'true')).toBe(true);
+  });
+
   it('counts this week per activity, with the target when there is one', () => {
     expect(texts('.stat__label', block())).toEqual(['розминка', 'тренування', 'рух']);
     expect(texts('.stat__value', block())).toEqual(['1 з 6 днів', '1 з 2 днів', '1']);

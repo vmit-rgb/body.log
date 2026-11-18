@@ -286,7 +286,8 @@ function wireCalendar(host: HTMLElement, state: HomeState, go: (date: DayKey) =>
     const by = String(button.dataset.by);
     swapMonth(container, () => {
       turnMonth(container, Number(by));
-      container.querySelector<HTMLElement>(`[data-cal="month"][data-by="${by}"]`)!.focus();
+      // the arrow is where the finger is: its focus comes back without scrolling the page
+      container.querySelector<HTMLElement>(`[data-cal="month"][data-by="${by}"]`)!.focus({ preventScroll: true });
     });
   }
 
