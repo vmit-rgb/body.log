@@ -20,7 +20,7 @@ import { esc } from '../ui/html';
 import { announce } from '../ui/announce';
 import { iconSvg } from '../ui/icons';
 import { closesOnBack } from '../ui/back';
-import { hasScene, mountHeroScene } from '../ui/hero-scene';
+import { mountHeroScene } from '../ui/hero-scene';
 import type { ToastMessage } from '../ui/toast';
 import { barMarkup, fillBar, goalText, TO_TOP, wireDateNav, wireScroll } from './bar';
 import { FOOTER, part, TAB_NOTE } from './parts';
@@ -30,10 +30,9 @@ import { FOOTER, part, TAB_NOTE } from './parts';
  * `navigation` 189:6897; `button/to-top` 288:10620). Stage 5a: the frame of
  * the screen; 5b: the inside of the sections (home/sections.ts, home/controls.ts);
  * the calendar comes in 5c.
- * The month's ASCII scene behind the phrase (ui/hero-scene.ts) sits on a dark
- * plate under a veil, as in the betas; the cover above the hero hides «Політ
- * символів» down to 16 px below it, so the two never overlap (Olesia, 2026-10-30
- * for 0.8x, again 2026-11-17).
+ * The header (Olesia, 2026-11-18): the month's ASCII scene (ui/hero-scene.ts)
+ * in a 400 px block, nothing over it; the phrase stands in the empty 90 px at
+ * its bottom. The block hides «Політ символів» and fades into it below.
  * Texts from the settings are set as text, never as HTML.
  */
 
@@ -133,11 +132,10 @@ function markup(state: HomeState, actions: HomeActions): string {
     settings: state.settings, day: dayOf(state), days: state.days, session: state.session, tipOpen: (id) => tipShows(state, actions, id),
   };
   const sections = homeSections(state.settings).map((section) => sectionMarkup(section, actions.sectionOpen(section.id), ctx));
-  const scene = hasScene(state.today);
   return `
     <div class="home">
       <h1 class="visually-hidden">головна</h1>
-      ${scene ? SCENE_COVER : ''}<header class="${scene ? 'hero hero--scene' : 'hero'}">${scene ? SCENE : ''}<p class="hero__text"></p></header>${state.inTab ? TAB_NOTE : ''}
+      ${HERO_FADE}<header class="hero">${SCENE}<div class="hero__words"><p class="hero__text"></p></div></header>${state.inTab ? TAB_NOTE : ''}
       <div class="home__sections">${sections.join('')}</div>
       <section class="cal-block" aria-label="календар">${calendarMarkup(calendarView(state, 'home'))}</section>
       ${FOOTER}
@@ -145,22 +143,30 @@ function markup(state: HomeState, actions: HomeActions): string {
     ${barMarkup('menu')}${TO_TOP}`;
 }
 
-/** Hides the page background behind the hero and fades it back in under it. */
-const SCENE_COVER = '<div class="home__cover" aria-hidden="true"></div>';
+/** Under the header: its plate fading into «Політ символів». */
+const HERO_FADE = '<div class="home__fade" aria-hidden="true"></div>';
 const SCENE = '<div class="hero__scene" aria-hidden="true"><canvas></canvas></div>';
 
-/** Lines a phrase takes in a style, measured on a hidden copy of the same width. */
+/** The height a phrase takes in a style, measured on a hidden copy of the same width. */
 function measure(text: HTMLElement): (style: HeroStyle) => number {
   return (style) => {
     const probe = text.cloneNode(true) as HTMLElement;
     probe.className = `hero__text ${style}`;
     probe.style.cssText = 'position:absolute;visibility:hidden;left:0;right:0';
     text.parentElement!.append(probe);
-    const lines = probe.getBoundingClientRect().height / parseFloat(getComputedStyle(probe).lineHeight);
+    const height = probe.getBoundingClientRect().height;
     probe.remove();
     // no layout (e.g. a hidden tab) measures nothing: keep header 1
-    return Number.isFinite(lines) ? Math.round(lines) : 0;
+    return Number.isFinite(height) ? height : 0;
   };
+}
+
+/** The empty space at the bottom of the header that the phrase may take, px. */
+function roomOf(text: HTMLElement): number {
+  const words = text.parentElement!;
+  const room = words.getBoundingClientRect().height - (parseFloat(getComputedStyle(words).paddingBottom) || 0);
+  // no layout measures nothing: then every style «fits»
+  return room > 0 ? room : Infinity;
 }
 
 function fillHero(host: HTMLElement, state: HomeState): () => void {
@@ -178,7 +184,7 @@ function fillHero(host: HTMLElement, state: HomeState): () => void {
   }
   return () => {
     text.classList.remove(...HERO_STYLES);
-    text.classList.add(heroStyle(measure(text)));
+    text.classList.add(heroStyle(measure(text), roomOf(text)));
   };
 }
 
