@@ -116,7 +116,7 @@ describe('first launch in the installed app', () => {
     click('[data-copy-prompt]');
     await vi.waitFor(() => expect(toastSays()).toBe('✓ промпт 0.1 скопійовано'));
     expect(device.copied).toEqual([PROMPT.text]);
-    expect(PROMPT.text).toContain('ЧЕРНЕТКА');
+    expect(PROMPT.text).toContain('"format": "phys-activity-profile"');
   });
 
   it('says so when the phone refuses to copy the prompt', async () => {
