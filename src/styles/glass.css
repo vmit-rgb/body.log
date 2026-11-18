@@ -4,6 +4,7 @@
  * the section titles (accordion--section, 4 px), so the glyphs behind turn
  * into a soft haze. Blocks that already had a tint keep it over the panel.
  * The start screen is one frame instead (.screen--framed below).
+ * «це вкладка браузера…» (.tab-note) is a solid yellow plate, not glass (screens.css).
  */
 .home-section__body,
 .home-section__hint,
@@ -12,7 +13,6 @@
 .search__results,
 .screen__section,
 .settings__intro,
-.tab-note,
 .lang,
 .footer,
 .day-card,
@@ -22,7 +22,6 @@
 }
 .screen__section,
 .settings__intro,
-.tab-note,
 .lang,
 .footer,
 .day-card {
@@ -33,7 +32,6 @@
 }
 /* the blocks that had no box get some room inside their glass */
 .screen__section,
-.tab-note,
 .lang {
   padding-top: 12px;
   padding-bottom: 12px;
@@ -54,7 +52,7 @@
   -webkit-backdrop-filter: var(--glass-blur);
   backdrop-filter: var(--glass-blur);
 }
-.screen--framed :is(.screen__section, .tab-note, .lang, .footer) {
+.screen--framed :is(.screen__section, .lang, .footer) {
   padding-top: 0;
   padding-bottom: 0;
   background: none;

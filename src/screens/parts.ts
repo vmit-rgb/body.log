@@ -23,7 +23,7 @@ export const FOOTER = `
  * tab is closed (storage/store.ts, `storageFor`), and the screen must say so.
  */
 export const TAB_NOTE = `
-  <p class="tab-note t-3rd-bold" role="note">це вкладка браузера: закриєш її — і записи зникнуть. встанови застосунок, щоб вони лишилися.</p>`;
+  <p class="tab-note t-2nd-bold" role="note">це вкладка браузера: закриєш її — і записи зникнуть. встанови застосунок, щоб вони лишилися.</p>`;
 
 export const PHONE_NAMES: Record<Phone, string> = {
   android: 'андроїд',

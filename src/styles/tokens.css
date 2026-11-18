@@ -24,6 +24,10 @@
      away from every accent (Olesia, 2026-11-12; appearance.test.ts checks it). */
   --warn: #e2c74f;
   --err: #ef6663;
+  /* «це вкладка браузера…» (wave 11, Olesia, 2026-11-18): the same yellow and black in both
+     themes, so the light block below never overrides them; tab-note.test.ts checks the contrast */
+  --tab-note-bg: #ffd60a;
+  --tab-note-ink: #000000;
   /* each accent's primary, read by its accent block and by its swatch in the picker */
   --rgb-gray: 193 187 197;
   --rgb-orange: 247 140 3;
