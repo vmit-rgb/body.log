@@ -40,3 +40,19 @@ export function barShown({ y, lastY, maxY, barFocused, barShown: shown }: Scroll
 export function toTopShown(y: number, bar: boolean): boolean {
   return bar && y > 500;
 }
+
+/**
+ * Swipe on the calendar's days turns the month (Olesia, 2026-11-18): the
+ * days follow the finger; let go past a quarter of the width, or a quick
+ * flick of 30 px, and the month turns. Left goes to the next month, right to
+ * the previous. `ms` is how long the finger was on the glass.
+ */
+export function swipeMonths(dx: number, width: number, ms: number): -1 | 0 | 1 {
+  const far = Math.abs(dx) > width / 4;
+  const flick = Math.abs(dx) > 30 && Math.abs(dx) / Math.max(ms, 1) > 0.5;
+  if (!far && !flick) return 0;
+  return dx < 0 ? 1 : -1;
+}
+
+/** The days lag behind the finger where the month can't turn (no months after this one). */
+export const rubber = (dx: number) => dx * 0.25;

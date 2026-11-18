@@ -7,6 +7,7 @@ import type { Settings } from '../domain/settings';
 import { monthOf, shiftMonth, type MonthKey } from '../domain/stats';
 import { calendarMarkup, PERIOD_TIP, periodName, type Period, type Picking } from '../home/calendar';
 import { mountCarousels, wireCarousels, type CarouselMemory } from '../home/carousel';
+import { wireMonthSwipe } from '../home/month-swipe';
 import type { TipMemory } from '../storage/store';
 import { announce } from '../ui/announce';
 import { goalLine } from '../home/home-view';
@@ -180,10 +181,16 @@ export function showHistory(host: HTMLElement, state: HistoryState, actions: His
   }
 
   function showMonth(by: string): void {
-    view.month = shiftMonth(view.month, Number(by));
+    turnMonth(Number(by));
+    focus(`[data-cal="month"][data-by="${by}"]`);
+  }
+
+  /** The month `by` away (arrows and the swipe); returns the calendar drawn. */
+  function turnMonth(by: number): HTMLElement | null {
+    view.month = shiftMonth(view.month, by);
     view.open = firstOpen(state, view.month);
     render();
-    focus(`[data-cal="month"][data-by="${by}"]`);
+    return root.querySelector<HTMLElement>('.cal-block');
   }
 
   /* ---- «обрати період» (wave 9): the button or a long tap on the first day, then a tap on the last ---- */
@@ -237,6 +244,7 @@ export function showHistory(host: HTMLElement, state: HistoryState, actions: His
     onTap(actions.goTo, tapDay, showMonth, periodButton)(event);
   });
   wireCarousels(root, view.carousel, listeners.signal);
+  wireMonthSwipe(root, (_block, by) => turnMonth(by), listeners.signal);
   // the tip is a bubble that a tap anywhere hides (as on home, wave 5c)
   const hush = () => {
     const bubble = root.querySelector('.tip');

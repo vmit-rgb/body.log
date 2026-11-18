@@ -14,6 +14,7 @@ import {
 import { PULSE_SAYS, pulseQuestion, pulseRunning, pulseTime, schedulePulse, stopwatchTime, type HomeSession } from '../home/session';
 import { calendarMarkup, type CalendarView } from '../home/calendar';
 import { mountCarousels, wireCarousels } from '../home/carousel';
+import { wireMonthSwipe } from '../home/month-swipe';
 import { endSignal, startSignal } from '../home/signal';
 import { monthOf, shiftMonth, type MonthKey } from '../domain/stats';
 import { wireAccordions } from '../ui/accordion';
@@ -283,13 +284,19 @@ function wireCalendar(host: HTMLElement, state: HomeState, go: (date: DayKey) =>
     }
     const container = button.closest<HTMLElement>('.cal-block')!;
     const by = String(button.dataset.by);
-    state.session.month = shiftMonth(calendarView(current, '').month, Number(by));
-    turned(state.session.month);
     swapMonth(container, () => {
-      container.innerHTML = calendarMarkup(calendarView(current, container.dataset.place ?? 'home'));
-      mountCarousels(container, state.session.carousel);
+      turnMonth(container, Number(by));
       container.querySelector<HTMLElement>(`[data-cal="month"][data-by="${by}"]`)!.focus();
     });
+  }
+
+  /** The month `by` away, drawn in the same block (arrows and the swipe). */
+  function turnMonth(container: HTMLElement, by: number): HTMLElement {
+    state.session.month = shiftMonth(calendarView(current, '').month, by);
+    turned(state.session.month);
+    container.innerHTML = calendarMarkup(calendarView(current, container.dataset.place ?? 'home'));
+    mountCarousels(container, state.session.carousel);
+    return container;
   }
 
   function openSheet(): void {
@@ -323,6 +330,8 @@ function wireCalendar(host: HTMLElement, state: HomeState, go: (date: DayKey) =>
   wireCarousels(part(host, '.home .cal-block'), state.session.carousel, signal);
   mountCarousels(part(host, '.home .cal-block'), state.session.carousel);
   dateButton.addEventListener('click', () => (sheet() ? closeSheet() : openSheet()), { signal });
+  // the swipe on the days: on home and in the sheet, both inside host
+  wireMonthSwipe(host, turnMonth, signal);
   // home drawn anew under an open sheet takes the sheet away: its step goes too
   signal.addEventListener('abort', letGo);
   return {
