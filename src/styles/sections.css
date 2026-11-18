@@ -360,7 +360,8 @@
   --weight-0: 600;
   --weight-hover: 720;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  /* the amount gets at most 40 %, so a long free-text amount wraps instead of squeezing the name to a letter a line */
+  grid-template-columns: minmax(0, 1fr) fit-content(40%) auto;
   align-items: center;
   min-width: 0;
   min-height: var(--tap);
@@ -377,6 +378,7 @@
   color: var(--muted);
   font-size: calc(12px * var(--text-scale));
   font-weight: 600;
+  overflow-wrap: anywhere;
 }
 .accordion--exercise .accordion__icon {
   min-height: 0;
