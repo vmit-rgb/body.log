@@ -98,6 +98,47 @@ export function confirmDialog(spec: ConfirmSpec): Promise<ConfirmAnswer> {
   });
 }
 
+export interface ListSpec {
+  readonly title: string;
+  readonly items: readonly string[];
+  /** The one in view now: bold, and it takes the focus. */
+  readonly current: number;
+}
+
+/**
+ * A sheet from below with a list of names, like the calendar sheet (wave 9:
+ * the questions of the carousel, Olesia 2026-11-18). The index picked, or
+ * null when it was closed without a choice.
+ */
+export function pickFromList(spec: ListSpec): Promise<number | null> {
+  let answer: (value: number | null) => void = () => {};
+  const { root, dissolve } = layer(`
+    <div class="list-sheet" role="dialog" aria-modal="true" aria-labelledby="list-sheet-title">
+      <div class="list-sheet__scrim" data-pick="none"></div>
+      <div class="list-sheet__panel">
+        <h2 class="t-h5" id="list-sheet-title">${esc(spec.title)}</h2>
+        <ul class="list-sheet__items" role="list">${spec.items.map((item, i) => `
+          <li><button type="button" class="ctl list-sheet__item t-1st-regular" data-pick="${i}"${i === spec.current ? ' aria-current="true"' : ''}>${esc(item)}</button></li>`).join('')}</ul>
+      </div>
+    </div>`, () => answer(null));
+  (root.querySelector<HTMLElement>('[aria-current="true"]') ?? root.querySelector<HTMLElement>('[data-pick="0"]'))?.focus();
+  play(root.querySelector('.list-sheet__panel'), [{ transform: 'translateY(100%)' }, { transform: 'none' }], { duration: MS.m, easing: EASE.out });
+  play(root.querySelector('.list-sheet__scrim'), [{ opacity: 0 }, { opacity: 1 }], { duration: MS.m, easing: EASE.out });
+  return new Promise((resolve) => {
+    let answered = false;
+    answer = (value) => {
+      if (answered) return;
+      answered = true;
+      dissolve();
+      resolve(value);
+    };
+    root.addEventListener('click', (event) => {
+      const target = (event.target as Element).closest<HTMLElement>('[data-pick]');
+      if (target) answer(target.dataset.pick === 'none' ? null : Number(target.dataset.pick));
+    });
+  });
+}
+
 export interface TextEditSpec {
   /** Muted, above the value: what is being changed. */
   readonly label: string;

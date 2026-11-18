@@ -209,6 +209,7 @@ export function pagesOverHome(env: DeviceEnv, home: Home, steps: BackSteps): { o
       // A-11: the day opens over the history, and «назад» comes back to the same place
       goTo: (date) => open('day', date),
       toast: (message) => home.toast.show(message),
+      tips: env.tips,
     }, memory);
   }
 

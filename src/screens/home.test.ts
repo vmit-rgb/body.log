@@ -108,8 +108,9 @@ describe('home', () => {
     expect(host.querySelector('.hero__text')!.className).toBe('hero__text t-h3');
   });
 
-  it('ends with the footer', () => {
-    expect(text('.footer')).toContain('(Олеся + Нитка / AI)');
+  it('ends with the footer: the version and the rights, no surname (Olesia, 2026-11-18)', () => {
+    const lines = [...host.querySelectorAll('.footer p')].map((p) => p.textContent);
+    expect(lines).toEqual(['бета 0.9', '© 2026 (Олеся + Нитка / AI) · усі права захищено']);
   });
 });
 

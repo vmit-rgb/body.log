@@ -11,12 +11,11 @@ export const LANGUAGE_SWITCH = `
     <button type="button" class="ctl btn btn--tertiary lang__soon" aria-disabled="true" title="англійська версія буде згодом">eng</button>
   </nav>`;
 
-/** layout/footer (113:4801) */
+/** layout/footer (113:4801); two lines and no surname since 2026-11-18 (Olesia). */
 export const FOOTER = `
   <footer class="footer t-3rd-regular">
-    <p>(Олеся + Нитка / AI)</p>
     <p class="muted">${VERSION_LABEL}</p>
-    <p class="muted">© 2026 Олеся Кіштанова · усі права захищено</p>
+    <p class="muted">© 2026 (Олеся + Нитка / AI) · усі права захищено</p>
   </footer>`;
 
 /**

@@ -251,7 +251,7 @@ describe('«що нового» and «як користуватись»', () => 
     expect(first.getAttribute('aria-expanded')).toBe('false');
     first.click();
     expect(host.querySelector(`#${first.getAttribute('aria-controls')}`)!.textContent).toContain('тапни на вправу');
-    expect(host.querySelectorAll('.faq button.accordion')).toHaveLength(7);
+    expect(host.querySelectorAll('.faq button.accordion')).toHaveLength(9);
   });
 
   it('goes back to the menu with ≡ and home with ✕', () => {

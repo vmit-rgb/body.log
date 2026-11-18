@@ -114,7 +114,7 @@ describe('stylesheets', () => {
     const history = read('./history.css');
     expect(block(history, '.history__days')).toContain('gap: 0;');
     expect(history).toMatch(/\.day-card \+ \.day-card \{[^}]*border-top: 0;/);
-    expect(block(history, '.avgs--column')).toContain('grid-template-columns: minmax(0, 1fr);');
+    expect(block(read('./calendar.css'), '.avgs--column')).toContain('grid-template-columns: minmax(0, 1fr);');
     expect(block(history, '.value-row')).toContain('display: block;');
     expect(block(history, ".bar__search[aria-pressed='true']")).not.toContain('background');
     expect(block(history, '.search')).toContain('bottom: calc(var(--bar-h) + 8px + env(safe-area-inset-bottom));');

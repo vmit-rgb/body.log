@@ -25,6 +25,8 @@ export interface HomeSession {
   readonly quietTips: Set<string>;
   /** The month the calendar shows; null follows the day shown. */
   month: MonthKey | null;
+  /** The card the carousel of averages shows, on home and in the sheet (wave 9). */
+  readonly carousel: { card: number };
   /** The pulse timer in use, if any (one at a time: both hands are busy). */
   pulse: PulseRun | null;
   /** The next step of the pulse timer (ready → counting → beats); set by the screen shown. */
@@ -84,7 +86,7 @@ export function dropPulse(session: HomeSession): void {
 export function homeSession(): HomeSession {
   return {
     open: new Map(), armed: null, running: new Map(), retry: new Set(), drafts: new Map(), typed: new Map(), quietTips: new Set(),
-    month: null, pulse: null, pulseStep: () => {}, pulseTimer: undefined,
+    month: null, carousel: { card: 0 }, pulse: null, pulseStep: () => {}, pulseTimer: undefined,
   };
 }
 

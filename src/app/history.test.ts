@@ -1,9 +1,10 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { HOLD_MS } from '../screens/history';
 import type { DayKey } from '../domain/dates';
 import { readDay } from '../domain/day';
 import type { Diary } from '../domain/diary';
 import { EXAMPLE_DIARY } from '../domain/examples';
-import { browserChoice, diaryStore, sectionMemory } from '../storage/store';
+import { browserChoice, diaryStore, sectionMemory, tipMemory } from '../storage/store';
 import { mountToast } from '../ui/toast';
 import { startApp } from './app';
 import { fakeDevice } from './test-env';
@@ -43,6 +44,7 @@ function start(diary: Diary = DIARY): void {
     onDiary: () => {},
     today: () => TODAY,
     sections: sectionMemory(localStorage),
+    tips: tipMemory(localStorage),
     whenHidden: () => {},
     ...fake.env,
   });
@@ -61,6 +63,7 @@ const tap = (name: string) => {
   if (!found) throw new Error(`no button «${name}»`);
   found.click();
 };
+const texts = (selector: string, root: ParentNode = host) => [...root.querySelectorAll(selector)].map((element) => element.textContent!.replace(/\s+/g, ' ').trim());
 const cards = () => [...host.querySelectorAll<HTMLElement>('.day-card')];
 const cardTitle = (card: HTMLElement) => card.querySelector('.accordion__title')!.textContent;
 const isOpen = (card: HTMLElement) => card.querySelector('button.accordion')!.getAttribute('aria-expanded') === 'true';
@@ -92,15 +95,17 @@ describe('«історія» (Figma screen/log-history 165:2758)', () => {
     expect(host.querySelector('footer')).toBeTruthy();
   });
 
-  it('shows the month’s averages', () => {
-    const averages = host.querySelector<HTMLElement>('.history__averages')!;
-    expect(averages.querySelector('h2')!.textContent).toBe('середнє за період');
-    expect(averages.textContent).toContain('за місяць, який відкрито в календарі');
-    expect([...averages.querySelectorAll('.avg')].map((row) => row.textContent!.replace(/\s+/g, ' ').trim()))
-      .toEqual(['енергія · зранку 5', 'втома · ввечері 3']);
-    // history/period-averages: one column, «назва · 2,7» at 14 px (VISUAL-AUDIT п. 24)
-    expect(averages.querySelector('.avgs')!.classList).toContain('avgs--column');
-    expect([...averages.querySelector('.avg')!.children].map((part) => part.className)).toEqual(['avg__label t-2nd-regular', 'avg__value t-2nd-bold']);
+  it('counts the month open: the cards «за листопад» and the carousel in place of «середнє за період» (wave 9)', () => {
+    expect(host.querySelector('.history__averages')).toBeNull();
+    expect(texts('.history .cal-block h3')).toEqual(['за листопад', 'середнє за листопад', 'листопад']);
+    expect(texts('.history .stat__goal')[0]).toBe('за 9 днів');
+    expect(texts('.history .avg-card__title')).toEqual(['енергія', 'пульс', 'було важко?', 'втома']);
+    const [energy, pulse, , tired] = [...host.querySelectorAll<HTMLElement>('.history .avg-card')];
+    expect(texts('.avg', energy)).toEqual(['зранку 5', 'після тренування —']);
+    expect(pulse!.textContent).toContain('записів немає');
+    expect(texts('.avg', tired)).toEqual(['ввечері 3']);
+    // a point per day of the month so far: from 01.11 to today
+    expect([...energy!.querySelectorAll('.chart text')].slice(3).map((t) => t.textContent)).toEqual(['01.11', '09.11']);
   });
 
   it('has 🔍 as a switch that is off', () => {
@@ -186,7 +191,8 @@ describe('«історія» (Figma screen/log-history 165:2758)', () => {
     expect(host.querySelector('.history__summary')!.textContent).toBe('жовтень: 0 днів з розминкою, 0 тренувань');
     expect(cards().map(cardTitle)).toEqual(['вівторок, 20.10.2026']);
     expect(isOpen(cards()[0]!)).toBe(true);
-    expect(host.querySelector('.history__averages')!.textContent).toContain('ще немає значень за цей місяць');
+    expect(host.querySelector('.carousel h3')!.textContent).toBe('середнє за жовтень');
+    expect(texts('.history .avg-card__empty')).toHaveLength(4);
     expect(document.activeElement).toBe(button('попередній місяць'));
     tap('попередній місяць');
     expect(host.querySelector('.history__empty')!.textContent).toBe('цього місяця записів немає. зате попереду ще купа днів :3');
@@ -205,7 +211,7 @@ describe('«історія» (Figma screen/log-history 165:2758)', () => {
   });
 });
 
-describe('«середнє за період»', () => {
+describe('the carousel in the history', () => {
   it('counts today, but not the days of the next or last month shown in the grid', () => {
     start({
       ...DIARY,
@@ -216,7 +222,105 @@ describe('«середнє за період»', () => {
       ]),
     });
     openHistory();
-    expect(host.querySelector('.history__averages .avg')!.textContent!.replace(/\s+/g, ' ').trim()).toBe('енергія · зранку 3');
+    expect(texts('.avg', host.querySelector<HTMLElement>('.history .avg-card')!)[0]).toBe('зранку 3');
+  });
+});
+
+describe('«обрати період» (wave 9)', () => {
+  beforeEach(() => {
+    start();
+    openHistory();
+  });
+
+  it('chooses with two taps after the button, in any order, and counts the period', () => {
+    tap('обрати період');
+    expect(host.querySelector('.cal__period [role="status"]')!.textContent).toBe('торкнись першого дня періоду');
+    calDay('2026-11-08').click();
+    expect(host.querySelector('.cal__period [role="status"]')!.textContent).toBe('від 08.11: торкнись останнього дня');
+    // a tap while choosing doesn't open the day: only the newest card is open, as at first
+    expect(cards().filter(isOpen).map(cardTitle)).toEqual(['неділя, 08.11.2026']);
+    calDay('2026-11-03').click();
+    expect(texts('.history .cal-block h3')).toEqual(['за 03.11–08.11', 'середнє за 03.11–08.11', 'листопад']);
+    expect(texts('.history .stat__goal')[0]).toBe('за 6 днів');
+    expect(texts('.cal__period p')).toEqual(['період 03.11–08.11']);
+    expect([...host.querySelectorAll<HTMLElement>('.cal-day--period')].map((day) => day.dataset.day))
+      .toEqual(['2026-11-03', '2026-11-04', '2026-11-05', '2026-11-06', '2026-11-07', '2026-11-08']);
+    expect(calDay('2026-11-05').getAttribute('aria-label')).toContain('у періоді');
+    expect(texts('.legend li').at(-1)).toBe('обраний період');
+    expect(document.activeElement).toBe(button('скинути період'));
+  });
+
+  it('keeps the period while the month changes, and «скинути період» goes back to the month', () => {
+    tap('обрати період');
+    calDay('2026-11-02').click();
+    calDay('2026-11-04').click();
+    tap('попередній місяць');
+    expect(host.querySelector('.carousel h3')!.textContent).toBe('середнє за 02.11–04.11');
+    tap('скинути період');
+    expect(host.querySelector('.carousel h3')!.textContent).toBe('середнє за жовтень');
+    expect(host.querySelector('.cal-day--period')).toBeNull();
+    expect(document.activeElement).toBe(button('обрати період'));
+  });
+
+  it('«скасувати» stops choosing, and a tap opens a day again', () => {
+    tap('обрати період');
+    calDay('2026-11-08').click();
+    tap('скасувати');
+    expect(host.querySelector('.cal-day--period')).toBeNull();
+    calDay('2026-11-05').click();
+    expect(isOpen(cards().find((card) => cardTitle(card) === 'четвер, 05.11.2026')!)).toBe(true);
+  });
+
+  it('starts with a long tap on the first day; the click after it does nothing', () => {
+    vi.useFakeTimers();
+    try {
+      calDay('2026-11-03').dispatchEvent(new Event('pointerdown', { bubbles: true }));
+      vi.advanceTimersByTime(HOLD_MS);
+      calDay('2026-11-03').click();
+      expect(host.querySelector('.cal__period [role="status"]')!.textContent).toBe('від 03.11: торкнись останнього дня');
+      calDay('2026-11-09').click();
+      expect(texts('.cal__period p')).toEqual(['період 03.11–09.11']);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('a short press is still a tap', () => {
+    vi.useFakeTimers();
+    try {
+      const day = calDay('2026-11-05');
+      day.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+      vi.advanceTimersByTime(HOLD_MS - 100);
+      day.dispatchEvent(new Event('pointerup', { bubbles: true }));
+      vi.advanceTimersByTime(200);
+      day.click();
+      expect(host.querySelector('.cal__period [role="status"]')).toBeNull();
+      expect(isOpen(cards().find((card) => cardTitle(card) === 'четвер, 05.11.2026')!)).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('tells about the long tap under the button until three periods are chosen; a tap hides it', () => {
+    expect(host.querySelector('.cal__period .tip')!.textContent).toBe('швидше: затисни перший день періоду, а потім торкнись останнього.');
+    document.body.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    expect(host.querySelector('.cal__period .tip')).toBeNull();
+    for (let i = 0; i < 3; i++) {
+      if (i > 0) tap('скинути період');
+      tap('обрати період');
+      calDay('2026-11-02').click();
+      calDay('2026-11-03').click();
+    }
+    tap('закрити');
+    openHistory();
+    expect(host.querySelector('.cal__period .tip')).toBeNull();
+  });
+
+  it('is shown as a tip again when the history opens anew, until then', () => {
+    document.body.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    tap('закрити');
+    openHistory();
+    expect(host.querySelector('.cal__period .tip')).not.toBeNull();
   });
 });
 

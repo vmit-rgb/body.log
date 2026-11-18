@@ -113,25 +113,89 @@ describe('calendar block on home', () => {
     expect(shownDate()).toBe('середа, 11.11.2026');
   });
 
-  it('averages the sliders over the last 7 days', () => {
-    expect(texts('.avg', block())).toEqual(['біль · зранку 3,5']);
+  it('averages each question over the last 7 days in a carousel, a card each (wave 9)', () => {
+    expect(texts('.carousel > h3', block())).toEqual(['середнє за 7 днів']);
+    expect(texts('.avg-card__title', block())).toEqual(['біль', 'пульс']);
+    const [pain, pulse] = all('.avg-card', block());
+    expect(texts('.avg', pain)).toEqual(['зранку 3,5']);
+    expect(pain!.querySelector('.chart')).not.toBeNull();
+    expect(texts('.chart__legend li', pain)).toEqual(['зранку']);
+    expect($('.avg-card__empty', pulse).textContent).toBe('записів немає');
   });
 
-  it('has no averages heading when nothing was answered', () => {
+  it('draws the chart: a point per day of the 7, weekdays under them', () => {
+    const svg = $('.avg-card .chart svg', block());
+    expect([...svg.querySelectorAll('text')].slice(3).map((t) => t.textContent)).toEqual(['чт', 'пт', 'сб', 'нд', 'пн', 'вт', 'ср']);
+    expect(svg.querySelectorAll('.chart__line')).toHaveLength(1);
+    expect(svg.querySelectorAll('.chart__dot')).toHaveLength(2);
+  });
+
+  it('shows empty cards when nothing was answered', () => {
     start({});
-    expect(texts('h3', block())).toEqual(['цей тиждень', 'листопад']);
+    expect(texts('h3', block())).toEqual(['цей тиждень', 'середнє за 7 днів', 'листопад']);
+    expect(texts('.avg-card__empty', block())).toEqual(['записів немає', 'записів немає']);
   });
 
-  it('shows the month: levels, markers, today and the day shown', () => {
+  it('turns cards with the arrows and the dots, and keeps the card when home is drawn again', () => {
+    const [back, next] = all('[data-car="by"]', block()) as HTMLButtonElement[];
+    expect(back!.disabled).toBe(true);
+    expect(all('.carousel__pip', block()).map((pip) => pip.hasAttribute('data-on'))).toEqual([true, false]);
+    next!.click();
+    expect(all('.carousel__pip', block()).map((pip) => pip.hasAttribute('data-on'))).toEqual([false, true]);
+    expect((all('[data-car="by"]', block())[1] as HTMLButtonElement).disabled).toBe(true);
+    // typing redraws the block; the carousel stays on its card
+    byLabel('наступний день').click();
+    byLabel('попередній день').click();
+    expect($('.carousel', block()).dataset.card).toBe('1');
+  });
+
+  it('opens the list of questions from the name and goes to the one picked', async () => {
+    $('.avg-card__title', block()).click();
+    const list = $('.list-sheet', document.body);
+    expect(list.getAttribute('role')).toBe('dialog');
+    expect(texts('.list-sheet__item', list)).toEqual(['біль', 'пульс']);
+    expect(document.activeElement!.textContent).toBe('біль');
+    byText('пульс', list).click();
+    await Promise.resolve();
+    expect($('.carousel', block()).dataset.card).toBe('1');
+  });
+
+  it('shows «3 / 9» instead of the dots when there are many questions', () => {
+    const trackers = Array.from({ length: 9 }, (_, i) => ({ id: `q${i}`, name: `питання ${i}`, kind: 'scale', ask: ['morning'] }));
+    start(DAYS, { ...profile, trackers });
+    expect($('.carousel__where', block()).textContent).toBe('1 / 9');
+  });
+
+  it('shows the month: dots for levels, markers, today and the day shown', () => {
     expect($('h3.cal__month', block()).textContent).toBe('листопад');
-    const monday = byLabel('понеділок, 09.11.2026, розминка рівень 2', block());
-    expect(monday.classList.contains('cal-day--lv2')).toBe(true);
+    const monday = byLabel('понеділок, 09.11.2026, ранкова розминка: 2 рівні', block());
+    expect(monday.querySelectorAll('.cal-day__dots--bottom i')).toHaveLength(2);
+    expect(monday.className).not.toMatch(/--lv/);
     const tuesday = byLabel('вівторок, 10.11.2026, тренування, рух', block());
-    expect(tuesday.className).toContain('cal-day--workout');
-    expect(tuesday.className).toContain('cal-day--movement');
+    expect(tuesday.querySelector('.cal-day__mark--workout')).not.toBeNull();
+    expect(tuesday.querySelector('.cal-day__mark--movement')).not.toBeNull();
     const today = byLabel('середа, 11.11.2026', block());
     expect(today.className).toContain('cal-day--today');
+    expect(today.className).toContain('cal-day--shown');
     expect(today.getAttribute('aria-current')).toBe('date');
+  });
+
+  it('puts a number instead of dots from 6 levels, and daytime groups above the number', () => {
+    const levels = [1, 2, 3, 4, 5, 6].map((n) => ({ id: `l${n}`, items: [{ exercise: `e${n}` }] }));
+    const lots = {
+      ...profile,
+      morningWarmup: { enabled: true, levels },
+      daytimeWarmup: { enabled: true, groups: [{ id: 'neck', name: 'шия' }, { id: 'back', name: 'спина' }] },
+    };
+    start({ [TODAY]: readDay({ mw: { ticks: ['e1', 'e2', 'e3', 'e4', 'e5', 'e6'] }, dw: ['neck', 'back'] }, TODAY) }, lots);
+    const today = byLabel('середа, 11.11.2026, ранкова розминка: 6 рівнів, денна розминка: 2 групи', block());
+    expect($('.cal-day__dots--bottom', today).textContent).toBe('6');
+    expect(today.querySelectorAll('.cal-day__dots--top i')).toHaveLength(2);
+    expect(texts('.legend li', block())[1]).toBe('над числом: виконані групи денної розминки');
+  });
+
+  it('has no «обрати період» on home', () => {
+    expect(block().querySelector('[data-cal^="period"]')).toBeNull();
   });
 
   it('lets only past days and today be tapped', () => {
@@ -141,19 +205,17 @@ describe('calendar block on home', () => {
     expect(days.find((day) => day.textContent === '12')!.tagName).toBe('SPAN');
   });
 
-  it('shows the legend for what is switched on, three levels at most', () => {
-    expect(texts('.legend li', block())).toEqual(['рівень 1', 'рівень 2', 'тренування', 'рух']);
+  it('explains in the legend what is switched on, as shapes', () => {
+    expect(texts('.legend li', block())).toEqual(['під числом: пройдені рівні ранкової розминки, з 6 — число', 'тренування', 'рух']);
     // its own class: the settings' colour «.swatch» made these 48 px circles (VISUAL-AUDIT п. 2)
-    expect([...block().querySelectorAll('.legend .legend__swatch')].map((s) => s.className))
-      .toEqual(['legend__swatch legend__swatch--lv1', 'legend__swatch legend__swatch--lv2']);
     expect(block().querySelector('.legend .swatch')).toBeNull();
-    const fiveLevels = { ...profile, morningWarmup: { enabled: true, levels: [1, 2, 3, 4, 5].map((n) => ({ id: `l${n}`, items: [] })) }, workout: { enabled: false } };
-    start({}, fiveLevels);
-    expect(texts('.legend li', block())).toEqual(['рівень 1', 'рівень 2', 'рівень 3', 'рух']);
+    expect(block().querySelector('.legend__swatch')).toBeNull();
+    start({}, { ...profile, workout: { enabled: false } });
+    expect(texts('.legend li', block())).toEqual(['під числом: пройдені рівні ранкової розминки, з 6 — число', 'рух']);
   });
 
   it('opens a day from the calendar', () => {
-    byLabel('понеділок, 09.11.2026, розминка рівень 2', block()).click();
+    byLabel('понеділок, 09.11.2026, ранкова розминка: 2 рівні', block()).click();
     expect(shownDate()).toBe('понеділок, 09.11.2026');
     expect($('.hero__text').textContent).toContain('це запис за пн, 09.11.2026.');
   });
@@ -180,8 +242,10 @@ describe('calendar block on home', () => {
 
   it('starts «почати без ШІ» with the legend and no marks (Olesia, 2026-11-09)', () => {
     start(EXAMPLE_DIARY.days, EXAMPLE_DIARY.profile);
-    expect(texts('.legend li', block())).toEqual(['рівень 1', 'рівень 2', 'тренування', 'рух']);
-    expect(all('[class*="cal-day--lv"], .cal-day--workout, .cal-day--movement', block())).toHaveLength(0);
+    expect(texts('.legend li', block())).toEqual([
+      'під числом: пройдені рівні ранкової розминки, з 6 — число', 'над числом: виконані групи денної розминки', 'тренування', 'рух',
+    ]);
+    expect(all('.cal-day__dots, .cal-day__mark', block())).toHaveLength(0);
   });
 });
 

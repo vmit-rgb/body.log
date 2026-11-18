@@ -87,46 +87,225 @@
   color: var(--muted);
 }
 
+/* yes / no rows and the like: one column */
+.avgs--column {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* ---- «середнє за 7 днів»: the carousel (wave 9, home/carousel.ts) ----
+   One filled block; the heading never changes; every card is as tall as
+   the tallest (the track stretches them), so the arrows don't jump. */
+.carousel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-items);
+  margin-top: var(--gap-group);
+  padding: 12px;
+  background: var(--sunk);
+}
+.cal-block .carousel h3 {
+  margin-top: 0;
+}
+.carousel__track {
+  display: flex;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+.carousel__track::-webkit-scrollbar {
+  display: none;
+}
+.avg-card {
+  display: flex;
+  flex: 0 0 100%;
+  flex-direction: column;
+  gap: var(--gap-items);
+  min-width: 0;
+  scroll-snap-align: start;
+}
+.avg-card__heading {
+  margin: 0;
+  font: inherit;
+}
+/* the name opens the list of questions: underlined; pressed it grows and fills with the accent */
+.avg-card__title {
+  --fg-0: var(--ink);
+  --fill-pressed: var(--accent);
+  --fg-pressed: var(--on-accent);
+  --fg-alpha-pressed: 100%;
+  justify-content: flex-start;
+  min-width: 0;
+  max-width: 100%;
+  margin-inline-start: -6px;
+  padding: 0 6px;
+  text-decoration: underline;
+  text-decoration-thickness: var(--stroke-2);
+  text-underline-offset: 5px;
+  transform-origin: left center;
+  overflow-wrap: anywhere;
+}
+@media (prefers-reduced-motion: no-preference) {
+  :root:not([data-no-motion]) .avg-card__title {
+    transition: transform 120ms cubic-bezier(.2, .8, .2, 1), background-color 120ms;
+  }
+  :root:not([data-no-motion]) .avg-card__title:active {
+    transform: scale(1.06);
+  }
+}
+.avg-card__empty {
+  margin: 0;
+}
+/* pressure: every record; the list scrolls only when it is taller than the card */
+.avg-card__fill {
+  position: relative;
+  flex: 1 1 0;
+  min-height: calc(8 * 1.3em);
+}
+.avg-card__list {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-micro);
+  margin: 0;
+  padding: 0 var(--gap-items) 0 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  list-style: none;
+  font-variant-numeric: tabular-nums;
+}
+.avg-card__list:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+.carousel__nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gap-items);
+}
+.carousel__where {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.carousel__pip {
+  width: 7px;
+  height: 7px;
+  border: var(--stroke-2) solid var(--ink);
+  border-radius: 50%;
+}
+.carousel__pip[data-on] {
+  background: var(--ink);
+}
+.carousel__nav .ctl:disabled {
+  opacity: 0.35;
+}
+
+/* the chart: drawn in CSS pixels once its width is known; a line per moment */
+.chart {
+  width: 100%;
+  min-height: 132px;
+}
+.chart__svg {
+  display: block;
+  overflow: visible;
+}
+.chart__grid {
+  stroke: var(--ink);
+  stroke-opacity: 0.12;
+  stroke-width: 1;
+}
+.chart__line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: var(--stroke-1);
+  stroke-linejoin: round;
+}
+.chart__dot {
+  fill: var(--ink);
+}
+.chart__dot--open {
+  fill: var(--bg);
+  stroke: var(--ink);
+  stroke-width: var(--stroke-2);
+}
+.chart__text {
+  fill: var(--muted);
+  font-family: var(--font);
+  font-size: calc(11px * var(--text-scale));
+}
+/* the legend under the chart (Olesia, 2026-11-18) */
+.chart__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap-micro) 14px;
+  color: var(--muted);
+}
+.chart__legend li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.chart__key {
+  flex: none;
+  width: 26px;
+  height: 10px;
+  overflow: visible;
+}
+
 /* ---- the month ----
-   Every day is a tap target of at least --tap (48, 56 with «більші зони»;
-   ACCESSIBILITY.md rule 1, Olesia 2026-11-11), so the grid takes the whole
-   width and the legend goes under it in one row. The cells touch; a
-   transparent 2 px border draws the 4 px gap without leaving dead space. */
+   Wave 9, variant B (Olesia, 2026-11-18): the cells narrow to the screen and
+   keep --tap in height; only «більші зони» keeps 56 × 56 and scrolls
+   sideways. The cells touch; a transparent 2 px border draws the 4 px gap
+   without leaving dead space. Every mark is a shape, not a colour. */
 .cal {
   display: flex;
   flex-direction: column;
   gap: var(--gap-items);
   min-width: 0;
 }
-.cal__info {
-  order: 2;
-}
 .legend {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--gap-micro) var(--gap-items);
+  flex-direction: column;
+  gap: var(--gap-micro);
   color: var(--muted);
 }
 .legend li {
   display: flex;
   align-items: center;
-  gap: var(--gap-micro);
-  white-space: nowrap;
+  gap: var(--gap-items);
 }
-.legend__swatch {
+.legend__key {
+  position: relative;
+  display: flex;
   flex: none;
-  width: 12px;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 22px;
   height: 12px;
 }
-.legend__swatch--lv1 { background: rgb(var(--accent-rgb) / 30%); }
-.legend__swatch--lv2 { background: rgb(var(--accent-rgb) / 50%); }
-.legend__swatch--lv3 { background: rgb(var(--accent-rgb) / 70%); }
+.legend__key i,
+.cal-day__dots i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--ink);
+}
+.legend__key--bottom { align-items: flex-end; }
+.legend__key--top { align-items: flex-start; }
+.legend__key--period { background: rgb(var(--accent-rgb) / 35%); }
 .marker {
   flex: none;
   box-sizing: border-box;
-  width: 7px;
-  height: 7px;
-  margin: 0 2.5px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
 }
 .marker--workout {
@@ -144,9 +323,24 @@
   max-width: calc(7 * (var(--tap) + 8px));
   min-width: 0;
 }
+.cal__scroll {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-micro);
+  min-width: 0;
+}
 .cal__weekdays,
 .cal__grid {
   display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+:root[data-larger-targets] .cal__scroll {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  padding-bottom: 6px;
+}
+:root[data-larger-targets] .cal__weekdays,
+:root[data-larger-targets] .cal__grid {
   grid-template-columns: repeat(7, minmax(var(--tap), 1fr));
 }
 .cal__weekdays {
@@ -160,6 +354,7 @@
   display: grid;
   place-items: center;
   width: 100%;
+  min-width: 0;
   min-height: var(--tap);
   aspect-ratio: 1 / 1;
   padding: 0;
@@ -169,6 +364,11 @@
   font-size: calc(12px * var(--text-scale));
   font-variant-numeric: tabular-nums;
   line-height: 1;
+  /* a long tap chooses a period in the history: no text selection, no phone menu */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
 }
 span.cal-day {
   font-weight: 420;
@@ -188,35 +388,52 @@ button.cal-day {
   box-shadow: inset 0 0 0 var(--stroke-4) var(--disabled);
   color: var(--disabled);
 }
-/* levels after the plain cell, so their fill wins (Olesia, 2026-10-31: 30 / 50 / 70 %, no outline) */
-.cal-day--lv1 { background-color: rgb(var(--accent-rgb) / 30%); }
-.cal-day--lv2 { background-color: rgb(var(--accent-rgb) / 50%); }
-.cal-day--lv3 { background-color: rgb(var(--accent-rgb) / 70%); }
-.cal-day--workout::after {
-  content: '';
+/* dots above the number: daytime groups; under it: morning levels; from 6 a number */
+.cal-day__dots {
   position: absolute;
-  top: 2px;
-  right: 2px;
-  width: 7px;
-  height: 7px;
+  right: 0;
+  left: 0;
+  display: flex;
+  justify-content: center;
+  gap: 2px;
+  line-height: 1;
+}
+.cal-day__dots--top { top: 3px; }
+.cal-day__dots--bottom { bottom: 3px; }
+.cal-day__count {
+  font-size: calc(9px * var(--text-scale));
+  font-weight: 720;
+}
+/* on the number's line: movement on the left, workout on the right */
+.cal-day__mark {
+  position: absolute;
+  top: 50%;
+  box-sizing: border-box;
+  width: 6px;
+  height: 6px;
+  margin-top: -3px;
   border-radius: 50%;
+}
+.cal-day__mark--movement {
+  left: calc(50% - 15px);
+  border: var(--stroke-2) solid var(--ink);
+}
+.cal-day__mark--workout {
+  right: calc(50% - 15px);
   background: var(--ink);
 }
-.cal-day--movement {
-  background-image: radial-gradient(circle at 5.5px calc(100% - 5.5px), transparent 2.2px, var(--ink) 2.3px, var(--ink) 3.5px, transparent 3.6px);
-}
+/* today: a faint accent, bold; a chosen period has the same fill, and today in it is told by the bold number */
 button.cal-day--today {
   --weight-0: 720;
   --weight-hover: 720;
-  box-shadow: inset 0 0 0 var(--stroke-1) var(--accent);
 }
-.cal-day--today.cal-day--lv2,
-.cal-day--today.cal-day--lv3 {
-  box-shadow: inset 0 0 0 var(--stroke-1) var(--ink);
+.cal-day--today,
+.cal-day--period {
+  background-color: rgb(var(--accent-rgb) / 35%);
 }
+/* the day shown: a frame */
 .cal-day--shown {
-  outline: 2px solid var(--ink);
-  outline-offset: -1px;
+  box-shadow: inset 0 0 0 var(--stroke-focus) var(--ink);
 }
 .cal__nav {
   display: flex;
@@ -224,6 +441,24 @@ button.cal-day--today {
 }
 .cal__nav .ctl:disabled {
   opacity: 0.35;
+}
+/* history: «обрати період», what to tap while choosing, «скинути період» */
+.cal__period {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--gap-group);
+}
+.cal__period .tip-anchor {
+  flex-basis: 100%;
+}
+.cal__period .tip {
+  inset-inline-start: 0;
+  inset-inline-end: auto;
+}
+.cal__period .tip::before {
+  inset-inline-start: 22px;
+  inset-inline-end: auto;
 }
 /* «більші зони» on a phone: 7 × 56 needs 392 px, so the block's sides shrink to 8 */
 @media (max-width: 440px) {
@@ -337,4 +572,52 @@ button.cal-day--today {
 @keyframes flash {
   from { opacity: 0.8; }
   to { opacity: 0; }
+}
+
+/* ---- the list of questions from a card's name (wave 9): a sheet like the calendar's ---- */
+.list-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+}
+.list-sheet__scrim {
+  position: absolute;
+  inset: 0;
+  background: rgb(0 0 0 / 60%);
+}
+.list-sheet__panel {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-micro);
+  max-width: var(--content-max);
+  max-height: calc(100dvh - 48px);
+  margin: 0 auto;
+  padding: var(--gap-group) var(--pad-screen-x) calc(var(--gap-section) + env(safe-area-inset-bottom));
+  overflow: auto;
+  overscroll-behavior: contain;
+  background: var(--bg);
+  box-shadow: 0 -2px 12px rgb(0 0 0 / 25%);
+}
+.list-sheet__panel h2 {
+  margin: 0 0 var(--gap-items);
+}
+.list-sheet__items {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.list-sheet__item {
+  --fg-0: var(--ink);
+  --weight-0: 420;
+  justify-content: flex-start;
+  width: 100%;
+  border-bottom: var(--stroke-4) solid var(--sunk);
+  overflow-wrap: anywhere;
+}
+.list-sheet__item[aria-current='true'] {
+  --weight-0: 720;
 }
