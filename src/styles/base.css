@@ -36,8 +36,9 @@ h1[tabindex='-1']:focus {
 }
 
 /*
- * «Політ символів» (ui/flight.ts): the ASCII background behind every screen.
+ * «Політ символів» (ui/flight.ts): the ASCII background behind the screens.
  * Under the content, over the page colour; a screen with its own fill covers it.
+ * Not in the menu (Olesia, 2026-11-18): the menu sets data-no-flight.
  */
 .flight {
   position: fixed;
@@ -48,6 +49,9 @@ h1[tabindex='-1']:focus {
   height: 100vh;
   height: 100dvh;
   pointer-events: none;
+}
+:root[data-no-flight] .flight {
+  visibility: hidden;
 }
 /*
  * Noise over everything (Figma overlay/noise 360:9070): light 1 px grain in

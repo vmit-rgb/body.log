@@ -1,7 +1,29 @@
 import { describe, expect, it } from 'vitest';
 import base from '../styles/base.css?raw';
 import html from '../../index.html?raw';
-import { PLANES, advance, flightMoves, makeRun, populate, readColours } from './flight';
+import { PLANES, advance, flightMoves, hideFlight, makeRun, populate, readColours } from './flight';
+
+describe('«Політ символів», the small version for the app (Olesia, 2026-11-18)', () => {
+  it('has three planes of one size, 9 px like the header scenes; depth from speed', () => {
+    expect(PLANES.map((plane) => plane.size)).toEqual([9, 9, 9]);
+    expect(PLANES.map((plane) => plane.speed)).toEqual([14, 30, 58]);
+    expect(PLANES.map((plane) => plane.dens)).toEqual([3.2, 1.6, 0.6]);
+  });
+
+  it('puts its rows 9 × 1.05 px apart', () => {
+    const run = makeRun(1, true, 360, 780, [], seeded(5));
+    expect(run.y / (9 * 1.05) - run.row).toBeCloseTo(0.85, 6);
+  });
+
+  it('is hidden in the menu', () => {
+    const root = document.createElement('html');
+    hideFlight(true, root);
+    expect(root.hasAttribute('data-no-flight')).toBe(true);
+    hideFlight(false, root);
+    expect(root.hasAttribute('data-no-flight')).toBe(false);
+    expect(base).toMatch(/:root\[data-no-flight\] \.flight \{\s*visibility: hidden;/);
+  });
+});
 
 /** The same «random» every run, so the tests don't flicker. */
 function seeded(seed = 7): () => number {

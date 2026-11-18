@@ -81,6 +81,21 @@ describe('the menu (Figma screen/menu 183:3210)', () => {
     expect(device.depth()).toBe(0);
   });
 
+  it('has no «Політ символів» behind it; home, history and settings have it again (Olesia, 2026-11-18)', () => {
+    const noFlight = () => document.documentElement.hasAttribute('data-no-flight');
+    expect(noFlight()).toBe(true);
+    tap('закрити меню');
+    expect(noFlight()).toBe(false);
+    for (const page of ['історія', 'налаштування']) {
+      openMenu();
+      expect(noFlight()).toBe(true);
+      tap(page);
+      expect(heading(), page).toBe(page);
+      expect(noFlight(), page).toBe(false);
+      history.back();
+    }
+  });
+
   it('goes back home with the phone’s back button', () => {
     device.pressBack();
     expect(heading()).toBe('головна');

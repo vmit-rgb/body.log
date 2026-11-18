@@ -1,5 +1,6 @@
 import type { DayKey } from '../domain/dates';
 import type { ThemeChoice } from '../storage/store';
+import { hideFlight } from '../ui/flight';
 import { iconSvg } from '../ui/icons';
 import { barMarkup, fillBar, wireDateNav, type BarState } from './bar';
 import { FOOTER, part } from './parts';
@@ -90,5 +91,10 @@ export function showMenu(host: HTMLElement, state: MenuState, actions: MenuActio
 
   const listeners = new AbortController();
   wireDateNav(host, state, actions.goTo, listeners.signal);
-  return () => listeners.abort();
+  // the menu has no «Політ символів» behind it (Olesia, 2026-11-18)
+  hideFlight(true);
+  return () => {
+    listeners.abort();
+    hideFlight(false);
+  };
 }
