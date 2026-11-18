@@ -30,6 +30,8 @@ export interface DraftHost {
   replace(profile: JsonObject): void;
   redraw(): void;
   say(message: ToastMessage): void;
+  /** A menu opened: one success of the «затисни» tip (wave 7a). */
+  menuOpened?(): void;
 }
 
 type Obj = Record<string, unknown>;
@@ -295,7 +297,9 @@ export class SectionsEditor {
     return items;
   }
 
-  openMenu(slot: Slot, family: string): void {
+  /** `toggle` (⋯): a second tap on the same entry closes its menu (wave 7a). */
+  openMenu(slot: Slot, family: string, toggle = false): void {
+    if (toggle && this.menu && this.menu.slot.list === slot.list && this.menu.slot.index === slot.index) return this.menuItem('cancel');
     const items = this.moves(slot, family);
     if (!items.length) return;
     items.push({ key: 'cancel', label: 'скасувати' });
@@ -306,6 +310,7 @@ export class SectionsEditor {
       this.menuStep = null;
       this.menuItem('cancel');
     });
+    this.draft.menuOpened?.();
     this.draft.redraw();
   }
 

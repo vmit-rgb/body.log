@@ -20,6 +20,8 @@ import { confirmDialog, editText } from '../ui/dialog';
 import { accentFlicker } from '../ui/flicker';
 import { fillThrough, spinWhile } from '../ui/motion';
 import { undo, type Toast, type ToastMessage } from '../ui/toast';
+import type { TipMemory } from '../storage/store';
+import { HOLD_TIP } from '../screens/settings-sections';
 
 /*
  * The settings page's working copy (Figma screen/edit-profile; «бета 0.81»
@@ -41,6 +43,8 @@ export interface SettingsEnv {
   /** The font for PDFs; rejects when it can't load. */
   pdfFonts(): Promise<PdfFonts>;
   now(): Date;
+  /** Tips for newcomers (storage/store.ts tipMemory); none without it. */
+  tips?: TipMemory | undefined;
 }
 
 export interface SettingsHome {
@@ -93,6 +97,8 @@ class Draft implements SettingsPage {
   private exportTab: ExportTab = 'records';
   private pasted = '';
   private shown = false;
+  /** The «затисни» tip was hidden by a tap in this visit. */
+  private tipQuiet = false;
   readonly sections: SectionsEditor;
   /** «застосувати»: compares with the settings on screen; «зберегти» keeps the pasted ones at once. */
   readonly paste = new PasteFlow({
@@ -118,6 +124,7 @@ class Draft implements SettingsPage {
       replace: (profile) => this.change(() => profile),
       redraw: () => this.redraw(),
       say: (message) => this.say(message),
+      menuOpened: () => this.env.tips?.succeed?.(HOLD_TIP),
     });
   }
 
@@ -143,7 +150,7 @@ class Draft implements SettingsPage {
       exportTab: this.exportTab,
       pasted: this.pasted,
       pasteView: this.paste.view,
-      sections: this.sections.view(),
+      sections: { ...this.sections.view(), holdTip: !this.tipQuiet && (this.env.tips?.open(HOLD_TIP) ?? false) },
       unsaved: !same(this.draft, this.saved),
     }, {
       act: (action) => ACTS[action.act](this, action as never),
@@ -153,6 +160,9 @@ class Draft implements SettingsPage {
       },
       restore: (file) => void this.restore(file),
       lifted: () => this.sections.lifted(),
+      tipHushed: () => {
+        this.tipQuiet = true;
+      },
     });
     return () => {
       this.shown = false;
@@ -443,7 +453,7 @@ const ACTS: Acts = {
   rm: (p, a) => void p.sections.remove(a.slot),
   inner: (p, a) => p.sections.toggle(a.id),
   add: (p, a) => void p.sections.add(a.what, a.kind, a.list),
-  menu: (p, a) => p.sections.openMenu(a.slot, a.family),
+  menu: (p, a) => p.sections.openMenu(a.slot, a.family, a.toggle),
   'menu-item': (p, a) => p.sections.menuItem(a.key),
   ask: (p, a) => p.sections.ask(a.path, a.moment, a.on),
   timed: (p, a) => p.sections.timed(a.path, a.on),

@@ -528,13 +528,13 @@ describe('«скасувати» brings back only what its toast removed (F-01)'
     expect($('.hero__text').textContent).toContain('10.11.2026');
   });
 
-  it('brings the lap back from the menu as well', () => {
+  it('goes when the menu opens: «скасувати» is not offered on another screen (wave 7a)', () => {
     twoLaps();
     removeLap2();
     byLabel('меню').click();
-    toastAction().click();
     expect(host.querySelector('h1')!.textContent).toBe('меню');
-    expect(saved().mv.walk).toHaveLength(2);
+    expect(toastText()).toBeUndefined();
+    expect(saved().mv.walk).toHaveLength(1);
   });
 
   it('a removal after a removal offers to undo only the last one', async () => {

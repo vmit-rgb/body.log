@@ -69,7 +69,8 @@ export type SettingsAct =
   | { readonly act: 'rm'; readonly slot: Slot }
   | { readonly act: 'inner'; readonly id: string }
   | { readonly act: 'add'; readonly what: AddWhat; readonly kind: Tracker['kind']; readonly list: string }
-  | { readonly act: 'menu'; readonly slot: Slot; readonly family: string }
+  /** `toggle`: from ⋯, whose second tap closes the menu (wave 7a); a long press only opens it. */
+  | { readonly act: 'menu'; readonly slot: Slot; readonly family: string; readonly toggle?: boolean }
   | { readonly act: 'menu-item'; readonly key: string }
   | { readonly act: 'ask'; readonly path: string; readonly moment: Moment; readonly on: boolean }
   | { readonly act: 'timed'; readonly path: string; readonly on: boolean }
@@ -86,6 +87,8 @@ export interface SettingsActions {
   restore(file: File): void;
   /** A dragged entry is up: a short vibration, if allowed. */
   lifted(): void;
+  /** A tap anywhere hid the «затисни» tip until the settings are opened again. */
+  tipHushed?(): void;
 }
 
 /* COPY.md: accent names; blue is «синій» since sky took «блакитний» (2026-11-12). */
@@ -104,6 +107,7 @@ const ACCESS_LABELS: Record<AccessibilityKey, string> = {
   largerText: 'збільшити розмір тексту',
   mirrored: 'віддзеркалити нижню панель',
   keepToasts: 'вимкнути зникання повідомлень',
+  showDots: 'показувати ⋯ біля пунктів, що потребують затискання',
 };
 /* Small text under a checkbox whose name needs it (Olesia, 2026-11-15: words that work without «тост»). */
 const ACCESS_HINTS: Partial<Record<AccessibilityKey, string>> = {
@@ -119,6 +123,7 @@ export const ACCESS_SHORT: Record<AccessibilityKey, string> = {
   largerText: 'більший текст',
   mirrored: 'дзеркальна панель',
   keepToasts: 'повідомлення не зникають',
+  showDots: 'видно ⋯',
 };
 const MOTION_KEYS: readonly AccessibilityKey[] = ['noMotion', 'noBackgroundMotion'];
 
@@ -279,7 +284,9 @@ function markup(state: SettingsState): string {
       <div class="settings__intro">
         <p class="t-2nd-regular">тапни на будь-який текст, щоб змінити його. коли закінчиш — збережи внизу.</p>
         <p class="t-3rd-regular muted">усе всередині розділів можна перетягувати: вправи, рівні, трекери. затримай палець на записі й веди: так міняється порядок, а вправа може переїхати в інший рівень чи тренування.</p>
-        <p class="t-3rd-regular muted">без перетягування: натисни ⋯ біля запису або затримай на ньому палець і відпусти.</p>
+        <p class="t-3rd-regular muted">${state.settings.accessibility.showDots
+    ? 'без перетягування: натисни ⋯ біля запису або затримай на ньому палець і відпусти.'
+    : 'без перетягування: затримай палець на записі й відпусти.'}</p>
       </div>
       <div class="settings__parts">${parts.map(([id, title, body]) => partMarkup(id, title, meta[id], state.open.has(id), body)).join('')}</div>
       ${FOOTER}
@@ -321,7 +328,7 @@ const READ: Record<string, Read> = {
   rm: (el) => ({ act: 'rm', slot: slot(el) }),
   inner: (el) => ({ act: 'inner', id: d(el, 'id') }),
   add: (el) => ({ act: 'add', what: d(el, 'what') as AddWhat, kind: d(el, 'kind') as Tracker['kind'], list: d(el, 'list') }),
-  menu: (el) => ({ act: 'menu', slot: slot(el), family: d(el, 'family') }),
+  menu: (el) => ({ act: 'menu', slot: slot(el), family: d(el, 'family'), toggle: true }),
   'menu-item': (el) => ({ act: 'menu-item', key: d(el, 'key') }),
   ask: (el, on) => ({ act: 'ask', path: d(el, 'path'), moment: d(el, 'moment') as Moment, on }),
   timed: (el, on) => ({ act: 'timed', path: d(el, 'path'), on }),
@@ -375,6 +382,13 @@ function wire(host: HTMLElement, actions: SettingsActions, state: SettingsState)
     if (input.type === 'checkbox') actions.act(READ[d(input, 'act')]!(input, input.checked));
   });
   host.addEventListener('input', (event) => typed(host, event.target as HTMLInputElement, actions));
+  // the «затисни» tip is a bubble that a tap anywhere hides, as on home; the tap still does what it was for
+  host.addEventListener('pointerdown', () => {
+    const tips = host.querySelectorAll('.tip');
+    if (!tips.length) return;
+    tips.forEach((tip) => tip.remove());
+    actions.tipHushed?.();
+  }, { capture: true });
   // an open menu closes with Escape
   host.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && state.sections.menu) actions.act({ act: 'menu-item', key: 'cancel' });

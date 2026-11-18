@@ -194,6 +194,8 @@
   --ring-w-hover: 0px;
   --weight-0: 420;
   --weight-hover: 720;
+  /* wave 7a (Olesia, 2026-11-18): the accent only while the finger is on it; after that muted again */
+  --fg-pressed: var(--accent);
   --fg-alpha-pressed: 100%;
   justify-content: flex-start;
   font-size: calc(17px * var(--text-scale));
@@ -377,19 +379,17 @@
   .number:hover {
     --part: var(--accent);
     --part-weight: 700;
-    --unit-weight: 700;
   }
 }
-/* focus, after a tap too (Olesia, 2026-11-11): accent brackets, line 2 px and unit, 900, no frame */
+/* focus, after a tap too (Olesia, 2026-11-11): accent brackets and line 2 px, 900, no frame.
+   The unit stays as it is: it can't be tapped (wave 7a, Olesia 2026-11-18) */
 .number:focus-within {
   --part: var(--accent);
   --part-weight: 900;
   --num-line: var(--accent);
   --num-line-w: var(--stroke-focus);
-  --unit: var(--accent);
-  --unit-weight: 900;
 }
-/* in a pair only the half being typed in lights up; the unit lights up for either */
+/* in a pair only the half being typed in lights up */
 .number--pair:focus-within .number__half:not(:focus-within) {
   --part: var(--muted);
   --part-weight: 500;

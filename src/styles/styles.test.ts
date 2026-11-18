@@ -58,8 +58,9 @@ describe('stylesheets', () => {
   it('show each field’s own Figma focus after a tap as after a key (Olesia, 2026-11-11, Н3)', () => {
     const css = read('./components.css');
     expect(css).not.toContain('data-modality');
-    // number: accent brackets, line 2 px and unit at 900, no frame
-    expect(block(css, '.number:focus-within')).toMatch(/--part: var\(--accent\);[^}]*--part-weight: 900;[^}]*--num-line: var\(--accent\);[^}]*--num-line-w: var\(--stroke-focus\);[^}]*--unit: var\(--accent\);[^}]*--unit-weight: 900;/);
+    // number: accent brackets and line 2 px at 900, no frame; the unit doesn't light up (wave 7a)
+    expect(block(css, '.number:focus-within')).toMatch(/--part: var\(--accent\);[^}]*--part-weight: 900;[^}]*--num-line: var\(--accent\);[^}]*--num-line-w: var\(--stroke-focus\);/);
+    expect(block(css, '.number:focus-within')).not.toMatch(/--unit/);
     expect(block(css, '.number:focus-within')).not.toContain('box-shadow');
     // text: the ring
     expect(block(css, '.field:focus')).toContain('box-shadow: var(--focus-ring);');
@@ -70,7 +71,8 @@ describe('stylesheets', () => {
     expect(block(css, '.number__input')).toMatch(/background-position: calc\(min\(var\(--len, 0\), var\(--chars\)\) \* 1ch\) 100%;/);
     expect(block(css, '.number__input')).toMatch(/width: calc\(var\(--chars\) \* 1ch\);/);
     expect(block(css, '.number')).not.toMatch(/\bwidth: 180px/);
-    expect(css).toMatch(/\.number:hover \{[^}]*--part: var\(--accent\);[^}]*--part-weight: 700;[^}]*--unit-weight: 700;/);
+    expect(css).toMatch(/\.number:hover \{[^}]*--part: var\(--accent\);[^}]*--part-weight: 700;/);
+    expect(css).not.toMatch(/\.number:hover \{[^}]*--unit/);
     expect(css).not.toMatch(/\.number:hover \{[^}]*--num-line: var\(--accent\)/);
     // an error keeps the unit muted
     expect(block(css, ".number:has([aria-invalid='true'])")).not.toContain('--unit');
@@ -206,7 +208,11 @@ describe('stylesheets', () => {
       expect(css).not.toContain('.number--pair {');
       expect(block(css, '.number__input')).not.toContain('--len, 0) + 1');
       expect(block(read('./sections.css'), '#sec-mv .number')).toContain('--chars: 9;');
-      expect(read('./sections.css')).not.toMatch(/\.set-row__fields \.number \{|\.lap \.number \{/);
+      expect(read('./sections.css')).not.toMatch(/^\.set-row__fields \.number \{|\.lap \.number \{/m);
+    });
+
+    it('wave 7a: кг × повтори fit one row from 360 px, two characters narrower', () => {
+      expect(block(read('./sections.css'), '#sec-wo .set-row__fields .number')).toContain('--chars: 4;');
     });
 
     it('break a word that is longer than its line (C-03)', () => {

@@ -8,7 +8,7 @@ import { MOMENTS, type Moment, type Settings, type WorkoutItem } from '../domain
 import { undo, type ToastMessage } from '../ui/toast';
 import { bpm } from '../domain/stats';
 import {
-  comesIn, control, rowAdded, rowLeaving, rowsBack, rowsNow, sliderReset, sliderSaved, stopwatchMoved, stopwatchSeen, timeDissolves, timerLeft, timerSlides,
+  comesIn, control, rowAdded, rowLeaving, rowsBack, rowsNow, sliderReset, sliderSaved, stopwatchMoved, stopwatchSeen, timeDissolves,
   workoutAssembles,
 } from './control-motion';
 import { forgetTyped, wireNumberErrors } from './number-errors';
@@ -251,15 +251,14 @@ const pulseOf = (c: SectionControls, element: HTMLElement) =>
 
 /**
  * A tap on the pulse timer's button: ▶ starts, ■ cancels (wave 6: no ✓ and
- * no ↻ any more; a saved number is corrected in its field). The timer slides
- * to the right of its row and back; its button turns by frames as the stopwatch.
+ * no ↻ any more; a saved number is corrected in its field). The timer stays
+ * on the right under the field (wave 7a: no slide); its button turns by frames
+ * as the stopwatch.
  */
 function pulseButton(c: SectionControls, button: HTMLElement): void {
   const target = data(button, 'pulseSw');
   const seen = stopwatchSeen(button);
-  const wasLeft = timerLeft(button.closest('[data-pulse]'));
   tapPulse(c, button, dayKey(c, target));
-  timerSlides(pulseOf(c, button), wasLeft);
   stopwatchMoved(control(c.screen(), 'pulse', 'pulseSw', target), seen);
 }
 

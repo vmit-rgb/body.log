@@ -72,17 +72,11 @@ describe('first launch in the installed app', () => {
     expect(host.querySelector('footer')!.textContent).toContain('бета 0.9');
   });
 
-  it('shows the paste field for the detected phone', () => {
-    expect(host.querySelector('[data-platform-hint]')!.textContent).toBe('схоже, у тебе андроїд.');
+  it('shows the paste field at once, with no choice of phone (wave 7a)', () => {
     expect(host.querySelector<HTMLElement>('[data-paste]')!.hidden).toBe(false);
-    expect(host.querySelector('[data-platform="android"]')!.getAttribute('aria-pressed')).toBe('true');
-    expect(host.querySelector('[data-paste-how]')!.textContent).toContain('натисни в полі');
-  });
-
-  it('switches the instructions to the other phone', () => {
-    click('[data-platform="iphone"]');
-    expect(host.querySelector('[data-platform="android"]')!.getAttribute('aria-pressed')).toBe('false');
-    expect(host.querySelector('[data-paste-how]')!.textContent).toContain('тапни в полі');
+    expect(host.querySelector('[data-platform]')).toBeNull();
+    expect(host.querySelector('[data-platform-hint]')).toBeNull();
+    expect(host.querySelector('[data-paste-how]')!.textContent).toBe('у чаті з ШІ скопіюй його відповідь з налаштуваннями. тут натисни в полі → «вставити».');
   });
 
   it('enables «застосувати» only once something is pasted', () => {
@@ -283,12 +277,10 @@ describe('first launch in the installed app', () => {
 });
 
 describe('the paste field on a computer', () => {
-  it('waits for the person to pick a phone', () => {
+  it('shows the field at once, as on a phone (wave 7a)', () => {
     start({ platform: 'unknown', installed: false });
-    expect(host.querySelector('[data-platform-hint]')!.textContent).toContain('не вдалося визначити телефон');
-    expect(host.querySelector<HTMLElement>('[data-paste]')!.hidden).toBe(true);
-    click('[data-platform="iphone"]');
     expect(host.querySelector<HTMLElement>('[data-paste]')!.hidden).toBe(false);
+    expect(host.querySelector('[data-platform]')).toBeNull();
   });
 });
 

@@ -1,7 +1,6 @@
 import type { PasteAct } from '../app/paste-flow';
-import type { Phone, Platform } from '../app/start';
 import { pasteActOf, pasteResultBox, showPasteResult } from './paste-result';
-import { FOOTER, LANGUAGE_SWITCH, part, PHONE_NAMES, platformToggles, TAB_NOTE, wirePlatformToggles, wireRestore } from './parts';
+import { FOOTER, LANGUAGE_SWITCH, part, TAB_NOTE, wireRestore } from './parts';
 import { withGrip } from '../ui/grip';
 
 export interface FirstLaunchActions {
@@ -31,10 +30,9 @@ const consoleRows = WARNINGS.map(([marker, kind, label, text]) => `
     <span class="t-2nd-regular">${text.replace('<3', '&lt;3')}</span>
   </li>`).join('');
 
-const PASTE_HOW: Record<Phone, string> = {
-  android: 'у чаті з ШІ скопіюй його відповідь з налаштуваннями. тут натисни в полі → «вставити».',
-  iphone: 'у чаті з ШІ скопіюй його відповідь з налаштуваннями. тут тапни в полі → «вставити».',
-};
+/* wave 7a (Olesia, 2026-11-18): no «маю андроїд / маю айфон» here, the field shows at once;
+   pasting is the same on both phones. The install screen keeps its switch. */
+const PASTE_HOW = 'у чаті з ШІ скопіюй його відповідь з налаштуваннями. тут натисни в полі → «вставити».';
 
 const MARKUP = `
   <div class="screen screen--framed">
@@ -59,10 +57,8 @@ const MARKUP = `
 
     <section class="screen__section" aria-labelledby="paste-title">
       <h2 id="paste-title" class="t-h4">встав відповідь ШІ</h2>
-      <p class="t-2nd-regular muted" data-platform-hint></p>
-      ${platformToggles('маю ')}
-      <div class="paste" data-paste hidden>
-        <p class="t-1st-regular" data-paste-how></p>
+      <div class="paste" data-paste>
+        <p class="t-1st-regular" data-paste-how>${PASTE_HOW}</p>
         ${withGrip('<textarea class="field paste__field" rows="3" aria-label="відповідь ШІ" placeholder="встав сюди відповідь ШІ" data-paste-field></textarea>')}
         <button type="button" class="ctl btn btn--primary btn--wide" data-apply disabled>застосувати</button>
         <p class="t-3rd-regular muted">кнопка стане активною, щойно встав текст.</p>
@@ -85,21 +81,10 @@ const MARKUP = `
     ${FOOTER}
   </div>`;
 
-function wirePaste(host: HTMLElement, detected: Platform, actions: FirstLaunchActions): void {
-  const hint = part<HTMLElement>(host, '[data-platform-hint]');
+function wirePaste(host: HTMLElement, actions: FirstLaunchActions): void {
   const paste = part<HTMLElement>(host, '[data-paste]');
-  const how = part<HTMLElement>(host, '[data-paste-how]');
   const field = part<HTMLTextAreaElement>(host, '[data-paste-field]');
   const apply = part<HTMLButtonElement>(host, '[data-apply]');
-
-  hint.textContent = detected === 'unknown'
-    ? 'не вдалося визначити телефон. обери свій — і зʼявиться поле для вставки.'
-    : `схоже, у тебе ${PHONE_NAMES[detected]}.`;
-  const choose = wirePlatformToggles(host, (phone) => {
-    how.textContent = PASTE_HOW[phone];
-    paste.hidden = false;
-  });
-  if (detected !== 'unknown') choose(detected);
 
   field.addEventListener('input', () => {
     apply.disabled = field.value.trim() === '';
@@ -119,10 +104,10 @@ function wireOtherWays(host: HTMLElement, actions: FirstLaunchActions): void {
 }
 
 /** `inTab`: the app runs in a browser tab, so the screen says that records won't stay (A-04). */
-export function showFirstLaunch(host: HTMLElement, detected: Platform, actions: FirstLaunchActions, inTab = false): void {
+export function showFirstLaunch(host: HTMLElement, actions: FirstLaunchActions, inTab = false): void {
   host.innerHTML = MARKUP;
   if (inTab) part(host, '.lang').insertAdjacentHTML('afterend', TAB_NOTE);
   part(host, '[data-copy-prompt]').addEventListener('click', () => actions.copyPrompt());
-  wirePaste(host, detected, actions);
+  wirePaste(host, actions);
   wireOtherWays(host, actions);
 }

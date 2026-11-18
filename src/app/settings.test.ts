@@ -390,13 +390,14 @@ describe('settings: accent and «доступність»', () => {
     expect((device.looks.at(-1)!.theme as JsonObject).accent).toBe('pink');
   });
 
-  it('has eight checkboxes, applied at once and kept on 💾', async () => {
+  it('has nine checkboxes, applied at once and kept on 💾', async () => {
     await openSettings();
     await openPart('доступність');
     const labels = [...host.querySelectorAll('#st-access label.checkbox')].map((l) => l.textContent!.trim());
     expect(labels).toEqual([
       'вимкнути всі анімації', 'вимкнути фонові анімації (ASCII)', 'вимкнути вібровідгук', 'вимкнути звук',
       'збільшені зони тапу', 'збільшити розмір тексту', 'віддзеркалити нижню панель', 'вимкнути зникання повідомлень',
+      'показувати ⋯ біля пунктів, що потребують затискання',
     ]);
     await tick('збільшити розмір тексту');
     expect((device.looks.at(-1)!.accessibility as JsonObject).largerText).toBe(true);

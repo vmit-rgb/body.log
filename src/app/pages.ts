@@ -7,7 +7,7 @@ import { showHistory, type HistoryMemory } from '../screens/history';
 import { showMenu, type MenuItem } from '../screens/menu';
 import { menuIn, menuOut } from '../screens/menu-motion';
 import type { PdfFonts } from '../pdf/pdf';
-import type { backupMemory, ThemeChoice } from '../storage/store';
+import type { backupMemory, ThemeChoice, TipMemory } from '../storage/store';
 import { buzz } from '../home/signal';
 import { tvFlicker } from '../ui/flicker';
 import { enter, fillThrough } from '../ui/motion';
@@ -46,6 +46,8 @@ export interface DeviceEnv extends Pick<SettingsEnv, 'look' | 'motionReduced'> {
   now(): Date;
   /** The browser's history, which the phone's «назад» moves through (A-05). */
   history: BrowserSteps;
+  /** Tips for newcomers; the settings have «затисни, щоб відкрити дії» (wave 7a). */
+  tips?: TipMemory | undefined;
 }
 
 /** How the app lets these screens take the screen and give it back to home. */

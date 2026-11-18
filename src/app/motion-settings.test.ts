@@ -13,8 +13,14 @@ import { fakeDevice } from './test-env';
 let host: HTMLElement;
 let fake: ReturnType<typeof fakeAnimate>;
 
+/** ⋯ are off by default since wave 7a; these tests find entries by them, so they are on. */
+const withDots = (diary: Diary): Diary => {
+  const profile = diary.profile as { accessibility?: object };
+  return { ...diary, profile: { ...diary.profile, accessibility: { ...profile.accessibility, showDots: true } } } as Diary;
+};
+
 function start(diary: Diary = EXAMPLE_DIARY): void {
-  diaryStore(localStorage, () => new Date()).save(diary);
+  diaryStore(localStorage, () => new Date()).save(withDots(diary));
   document.body.innerHTML = '<main id="app"></main>';
   host = document.querySelector<HTMLElement>('#app')!;
   startApp({

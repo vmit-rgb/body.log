@@ -28,7 +28,7 @@ const MARKUP = `
       <p class="t-1st-regular">зараз він відкритий у браузері. налаштовуй уже у встановленому: на айфоні браузер і застосунок зберігають дані окремо, і налаштування звідси туди не перейдуть.</p>
     </section>
     <section class="screen__section" aria-label="як встановити">
-      ${platformToggles('')}
+      ${platformToggles()}
       <ol class="steps t-1st-regular" data-steps></ol>
       <p class="t-3rd-regular muted">телефон визначено автоматично. якщо не той — перемкни.</p>
     </section>
