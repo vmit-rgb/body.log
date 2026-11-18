@@ -71,7 +71,11 @@ What to take from this:
 
 ### Step 3. Their own exercises
 If the person chose 1, 2 or 3, ask whether they already have their own exercises. Best of all is a programme from a physiotherapist, doctor or trainer; next, what they already do. Anything works: a list, text from notes, links to videos, a photo of a sheet (if you can't see images, ask them to type it out). Sorting everything into sections is your job, not theirs.
-- Their exercises: source { "type": "user" } or a link with "by": "user". Keep the "how to do it" explanations in their own words.
+- "source" has exactly one of two shapes, and nothing else:
+  - from the person, without a link: "source": { "type": "user" }
+  - with a link: "source": { "type": "link", "url": "https://…", "by": "user" } (the person gave the link) or "by": "ai" (you gave it). "url" and "by" are required; the address goes only in "url".
+  - No link and not from the person → leave "source" out.
+- Their exercises: { "type": "user" }, or a link with "by": "user". Keep the "how to do it" explanations in their own words.
 - If they have no exercises, that's fine. Suggest a small set that takes step 2 into account, say plainly that this is your suggestion and not a programme from a specialist, and give links with "by": "ai". Without internet access, give search links (e.g. https://www.youtube.com/results?search_query=...); do not make up addresses.
 
 ### Step 4. Details of the chosen items
