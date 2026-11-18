@@ -179,9 +179,9 @@ function accessBody(settings: Settings, reduced: boolean): string {
     const locked = reduced && MOTION_KEYS.includes(key);
     const hint = ACCESS_HINTS[key];
     const box = checkbox(ACCESS_LABELS[key], locked || settings.accessibility[key], `${act('access')} data-key="${key}"${hint ? ` aria-describedby="access-${key}-hint"` : ''}`, locked);
-    return hint ? `${box}<p class="t-3rd-regular muted st-hint" id="access-${key}-hint">${hint}</p>` : box;
+    return hint ? `${box}<p class="t-2nd-regular muted st-hint" id="access-${key}-hint">${hint}</p>` : box;
   };
-  const note = reduced ? '<p class="t-3rd-regular muted">на телефоні ввімкнено «зменшити рух», тож анімації вимкнені.</p>' : '';
+  const note = reduced ? '<p class="t-2nd-regular muted">на телефоні ввімкнено «зменшити рух», тож анімації вимкнені.</p>' : '';
   return `${ACCESSIBILITY_KEYS.map(row).join('')}${note}`;
 }
 
@@ -202,7 +202,7 @@ function backupBody(state: SettingsState): string {
     `<button type="button" class="ctl tab" ${act('export-tab', `data-tab="${name}"`)} aria-pressed="${state.exportTab === name}">${label}</button>`;
   // E-13: a copy, a JSON and a PDF carry the same health data as the text for an AI, so the warning covers all three buttons
   const warning = state.exportTab === 'records'
-    ? '<p class="t-3rd-bold st-warning">записи — це дані про твоє здоров’я. надсилай їх лише тим, кому довіряєш; у чаті з ШІ вони потрапляють до стороннього сервісу.</p>' : '';
+    ? '<p class="t-2nd-bold st-warning">записи — це дані про твоє здоров’я. надсилай їх лише тим, кому довіряєш; у чаті з ШІ вони потрапляють до стороннього сервісу.</p>' : '';
   // A-07: «відновити з копії» lives here, right under «зберегти копію», not in «налаштування через ШІ»
   return `
       <div class="st-backup">
@@ -211,8 +211,8 @@ function backupBody(state: SettingsState): string {
         <div>${tertiary('відновити з копії', 'data-restore')}</div>
         <input type="file" accept=".json,application/json,text/plain" hidden data-restore-file />
       </div>
-      <p class="t-3rd-regular muted">копія — один файл з усіма записами й налаштуваннями. з нього все відновиться на новому телефоні.</p>
-      <p class="t-3rd-bold st-warning">у копії всі записи про здоров’я.</p>
+      <p class="t-2nd-regular muted">копія — один файл з усіма записами й налаштуваннями. з нього все відновиться на новому телефоні.</p>
+      <p class="t-2nd-bold st-warning">у копії всі записи про здоров’я.</p>
       <h3 class="t-2nd-bold">експорт</h3>
       <div class="segmented" role="group" aria-label="що експортувати">${tab('records', 'записи')}${tab('exercises', 'вправи')}</div>
       ${warning}
@@ -229,7 +229,7 @@ function deleteBody(): string {
       </div>
       <div>${destructive('видалити тільки записи', act('delete-records'))}</div>
       <div>${destructive('стерти все разом з налаштуваннями', act('delete-all'))}</div>
-      <p class="t-3rd-regular muted">після натискання зʼявиться вікно з підтвердженням. утримувати нічого не треба.</p>`;
+      <p class="t-2nd-regular muted">після натискання зʼявиться вікно з підтвердженням. утримувати нічого не треба.</p>`;
 }
 
 /* ---- the lines of closed parts ---- */
@@ -283,8 +283,8 @@ function markup(state: SettingsState): string {
       <h1 class="visually-hidden">налаштування</h1>
       <div class="settings__intro">
         <p class="t-2nd-regular">тапни на будь-який текст, щоб змінити його. коли закінчиш — збережи внизу.</p>
-        <p class="t-3rd-regular muted">усе всередині розділів можна перетягувати: вправи, рівні, трекери. затримай палець на записі й веди: так міняється порядок, а вправа може переїхати в інший рівень чи тренування.</p>
-        <p class="t-3rd-regular muted">${state.settings.accessibility.showDots
+        <p class="t-2nd-regular muted">усе всередині розділів можна перетягувати: вправи, рівні, трекери. затримай палець на записі й веди: так міняється порядок, а вправа може переїхати в інший рівень чи тренування.</p>
+        <p class="t-2nd-regular muted">${state.settings.accessibility.showDots
     ? 'без перетягування: натисни ⋯ біля запису або затримай на ньому палець і відпусти.'
     : 'без перетягування: затримай палець на записі й відпусти.'}</p>
       </div>

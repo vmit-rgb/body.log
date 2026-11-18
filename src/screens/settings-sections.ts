@@ -187,7 +187,7 @@ function timerBlock(tracker: Tracker & { kind: 'number' }): string {
   return `
         <div class="st-timer">
           ${checkbox('таймер для пульсу', tracker.timer !== null, `${act('timer')} data-tracker="${id}"`)}
-          <p class="t-3rd-regular muted">на головній зʼявиться таймер: рахуєш удари, поки він іде, потім вписуєш число — застосунок перерахує в уд/хв.</p>
+          <p class="t-2nd-regular muted">на головній зʼявиться таймер: рахуєш удари, поки він іде, потім вписуєш число — застосунок перерахує в уд/хв.</p>
           ${lengths}
         </div>`;
 }
@@ -217,7 +217,7 @@ function trackerMarkup(ctx: Ctx, tracker: Tracker, index: number, placeholder: s
   const asks = moments.map((moment) => checkbox(ASK_LABELS[moment], tracker.ask.includes(moment), `${act('ask')} data-path="${path}.ask" data-moment="${moment}"`));
   const inner = `
         <div class="st-row">${ed(`${path}.name`, tracker.name, placeholder, 'назва', 'text', 't-1st-semibold')}</div>
-        ${ed(`${path}.hint`, tracker.hint, 'підказка (наприклад, 0 — не болить, 10 — дуже)', 'підказка', 'text', 't-3rd-regular')}
+        ${ed(`${path}.hint`, tracker.hint, 'підказка (наприклад, 0 — не болить, 10 — дуже)', 'підказка', 'text', 't-2nd-regular')}
         ${trackerValues(tracker, path)}
         <div class="st-asks">${asks.join('')}</div>
         ${tracker.kind === 'number' ? timerBlock(tracker) : ''}
@@ -235,7 +235,7 @@ function trackerKind(ctx: Ctx, [kind, title, hint, add, placeholder]: (typeof TR
   const open = ctx.view.inner.has(id);
   const mine = ctx.settings.trackers.flatMap((tracker, index) => (tracker.kind === kind ? [index] : []));
   const end = mine.length ? String(mine.at(-1)! + 1) : '';
-  const body = () => `${hint ? `<p class="t-3rd-regular muted">${hint}</p>` : ''}
+  const body = () => `${hint ? `<p class="t-2nd-regular muted">${hint}</p>` : ''}
         ${list(`tk-${kind}`, TRACKERS, mine.map((index) => trackerMarkup(ctx, ctx.settings.trackers[index]!, index, placeholder)), end)}
         <div class="st-end">${tertiary(add, act('add', `data-what="tracker" data-kind="${kind}"`))}</div>`;
   return `<div class="st-box">${box(`<h3 class="t-h6 st-grow">${title}</h3>`, open, toggle(id, title, open), count(mine.length, FIELDS), body)}</div>`;
@@ -251,7 +251,7 @@ function activityHead(ctx: Ctx, kind: ActivityKind, hint: boolean): string {
   const activity = ctx.settings[kind];
   const head = checkbox('показувати на головній', activity.enabled, `${act('kind-on')} data-kind="${kind}"`);
   if (!activity.enabled) return head;
-  return `${head}${hint ? ed(`${kind}.hint`, activity.hint, 'підказка', 'підказка', 'long', 't-3rd-regular') : ''}`;
+  return `${head}${hint ? ed(`${kind}.hint`, activity.hint, 'підказка', 'підказка', 'long', 't-2nd-regular') : ''}`;
 }
 
 function target(ctx: Ctx, kind: ActivityKind): string {
@@ -278,7 +278,7 @@ function warmupItem(ctx: Ctx, family: string, slot: Slot, item: WarmupItem): str
   const inner = `
         <div class="st-row">${ed(`ex:${item.exercise}.name`, exercise.name, 'вправа', 'назва вправи', 'text')}${value}</div>
         ${removeButton(slot, exercise.name, 'exercise')}
-        ${ed(`ex:${item.exercise}.how`, exercise.how, 'як робити: короткий опис вправи', 'як робити', 'long', 't-3rd-regular')}
+        ${ed(`ex:${item.exercise}.how`, exercise.how, 'як робити: короткий опис вправи', 'як робити', 'long', 't-2nd-regular')}
         ${checkbox('n с', item.seconds !== null, `${act('timed')} data-path="${path}"`)}
         ${linkField(`ex:${item.exercise}.source`, exercise.source)}`;
   return entry(ctx, family, slot, item.exercise, exercise.name, inner, ' st-ex');
@@ -308,7 +308,7 @@ function workoutItem(ctx: Ctx, slot: Slot, item: WorkoutItem): string {
         <div class="st-row">${ed(`ex:${item.exercise}.name`, exercise.name, 'вправа', 'назва вправи', 'text')}${
   ed(`${path}.@rx`, prescription(item), 'n разів', 'підходи × повторення (наприклад, 3 × 10–12)', 'rx', 't-3rd-regular st-value')}</div>
         ${removeButton(slot, exercise.name, 'exercise')}
-        ${ed(`ex:${item.exercise}.how`, exercise.how, 'як робити: короткий опис вправи', 'як робити', 'long', 't-3rd-regular')}
+        ${ed(`ex:${item.exercise}.how`, exercise.how, 'як робити: короткий опис вправи', 'як робити', 'long', 't-2nd-regular')}
         ${linkField(`ex:${item.exercise}.source`, exercise.source)}
         ${workoutFields(item, path)}`;
   return entry(ctx, 'wo-ex', slot, item.exercise, exercise.name, inner, ' st-ex');
@@ -324,7 +324,7 @@ function pickRow(ctx: Ctx, slot: Slot, item: string, exercise: { name: string; h
   const chosen = picking.list === slot.list && picking.chosen.includes(slot.index);
   const other = picking.list !== null && picking.list !== slot.list;
   const full = !chosen && picking.chosen.length >= 3;
-  const how = exercise.how ? `<span class="st-pick__how t-3rd-regular">${esc(exercise.how)}</span>` : '<span class="st-pick__how"></span>';
+  const how = exercise.how ? `<span class="st-pick__how t-2nd-regular">${esc(exercise.how)}</span>` : '<span class="st-pick__how"></span>';
   return `<button type="button" class="ctl st-pick" ${act('pick', slotData(slot))} data-key="${esc(entryKey('wo-ex', item))}" aria-label="${esc(shown(name))}" aria-pressed="${chosen}"${other || full ? ' disabled' : ''}>
     <span class="st-pick__name t-1st-regular">${esc(shown(name))}</span><span class="st-pick__rx t-3rd-regular">${esc(rx || 'n разів')}</span>${how}</button>`;
 }
@@ -406,7 +406,7 @@ export function daytimeBody(ctx: Ctx): string {
 function groupHint(ctx: Ctx): string {
   const { picking } = ctx.view;
   if (!picking) {
-    return `<p class="t-3rd-regular muted">група вправ — 2–3 вправи, які робиш разом. натисни «створити групу» й вибери вправи. або потягни вправу на іншу, як застосунки в папку на телефоні.</p>
+    return `<p class="t-2nd-regular muted">група вправ — 2–3 вправи, які робиш разом. натисни «створити групу» й вибери вправи. або потягни вправу на іншу, як застосунки в папку на телефоні.</p>
         <div>${tertiary('створити групу', act('pick-start'))}</div>`;
   }
   const n = picking.chosen.length;
@@ -429,7 +429,7 @@ export function workoutBody(ctx: Ctx): string {
       head: ed(`${path}.${index}.name`, session.name ? sessionName(session.name) : '', 'тренування (назва)', 'назва тренування', 'text', 't-h6 st-grow'),
       meta: exerciseCount(session.items),
       forceOpen: ctx.view.picking !== null,
-      body: () => `${ed(`${path}.${index}.how`, session.how, 'як робити: як проходить тренування', 'як проходить тренування', 'long', 't-3rd-regular')}
+      body: () => `${ed(`${path}.${index}.how`, session.how, 'як робити: як проходить тренування', 'як проходить тренування', 'long', 't-2nd-regular')}
           ${workoutEntries(ctx, items, session.items)}${ctx.view.picking ? '' : addExercise(items)}`,
     });
   });
