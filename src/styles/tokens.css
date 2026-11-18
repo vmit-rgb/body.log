@@ -91,17 +91,19 @@
   --iron: #2a2a2a;
   --warn: #786500;
   --err: #b3222b;
-  --rgb-gray: 102 97 106;
-  --rgb-orange: 167 92 0;
-  --rgb-pink: 186 61 134;
-  --rgb-magenta: 190 3 185;
-  --rgb-purple: 155 70 198;
-  --rgb-violet: 117 97 197;
-  --rgb-blue: 65 111 193;
-  --rgb-sky: 2 119 152;
-  --rgb-cyan: 9 125 123;
-  --rgb-mint: 6 128 102;
-  --rgb-green: 36 129 28;
+  /* wave 8 (C-06): darker, so accent text passes 4.5:1 on accent tints up to 15 % (Olesia, 2026-11-15:
+     usability over taste); appearance.test.ts checks it */
+  --rgb-gray: 101 96 105;
+  --rgb-orange: 147 80 1;
+  --rgb-pink: 169 44 119;
+  --rgb-magenta: 168 3 164;
+  --rgb-purple: 141 55 183;
+  --rgb-violet: 102 81 179;
+  --rgb-blue: 50 95 176;
+  --rgb-sky: 0 105 135;
+  --rgb-cyan: 4 108 107;
+  --rgb-mint: 3 110 88;
+  --rgb-green: 12 112 2;
   --disabled: #959595;
   --disabled-on: #ffffff;
   --panel: rgb(255 255 255 / 50%);

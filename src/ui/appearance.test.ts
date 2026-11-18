@@ -152,6 +152,29 @@ describe('accent tokens', () => {
     for (const semantic of ['err', 'warn']) expect(contrast(hexOf(theme, semantic)!, page), semantic).toBeGreaterThanOrEqual(4.5);
   });
 
+  // Wave 8 (C-06): accent text sits on accent tints (--surface 5 %, --sunk 10 %, both at once);
+  // it passes 4.5:1 on the page and on tints up to 15 % in both themes.
+  const tint = (top: Rgb, alpha: number, bottom: Rgb): Rgb => [0, 1, 2].map((i) => top[i]! * alpha + bottom[i]! * (1 - alpha)) as unknown as Rgb;
+  it.each(THEMES)('passes AA for accent text on the page and on accent tints up to fifteen percent in the %s theme', (theme) => {
+    const page = hexOf(theme, 'bg')!;
+    for (const accent of ACCENTS) {
+      const colour = rgbOf(theme, accent)!;
+      for (const alpha of [0, 0.05, 0.1, 0.15]) {
+        expect(contrast(colour, tint(colour, alpha, page)), `${accent} on ${alpha * 100} %`).toBeGreaterThanOrEqual(4.5);
+      }
+    }
+  });
+
+  // Wave 8 (C-10): the slider's track outline (--accent-mid) is a part you need to see: 3:1 on the page.
+  it.each(THEMES)('draws the slider outline at 3:1 or more in the %s theme', (theme) => {
+    const page = hexOf(theme, 'bg')!;
+    for (const accent of ACCENTS) {
+      const found = /--accent-mid: #([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2});/.exec(shades(`:root[data-theme='${theme}'][data-accent='${accent}']`))!;
+      const mid: Rgb = [parseInt(found[1]!, 16), parseInt(found[2]!, 16), parseInt(found[3]!, 16)];
+      expect(contrast(mid, page), accent).toBeGreaterThanOrEqual(3);
+    }
+  });
+
   it('needs nothing newer than iOS 15.4 for colours', () => {
     const code = tokens.replace(/\/\*[\s\S]*?\*\//g, '');
     expect(code).not.toMatch(/light-dark\(|color-mix\(/);

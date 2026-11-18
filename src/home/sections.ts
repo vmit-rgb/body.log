@@ -46,7 +46,7 @@ const nextId = () => `p${++ids}`;
 /** The key a new render finds a field by, to give it the focus back. */
 const keyed = (key: string) => `data-key="${esc(key)}"`;
 const muted = (text: string) => (text ? `<p class="t-2nd-regular muted">${esc(text)}</p>` : '');
-const hint = (tracker: Tracker) => (tracker.hint ? `<p class="t-3rd-regular muted">${esc(tracker.hint)}</p>` : '');
+const hint = (tracker: Tracker) => (tracker.hint ? `<p class="t-2nd-regular muted">${esc(tracker.hint)}</p>` : '');
 
 const exerciseName = (ctx: SectionContext, id: string) => nameOf(ctx.settings, [ctx.day, ...Object.values(ctx.days)], id);
 const exerciseById = (ctx: SectionContext, id: string): Exercise | undefined => ctx.settings.exercises.find((x) => x.id === id);

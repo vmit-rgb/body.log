@@ -179,7 +179,8 @@
   font-weight: 720;
 }
 
-/* slider (126:2027): 12 px pill track, ring thumb; never set = faint thumb; saved = locked */
+/* slider (126:2027): 12 px pill track with an outline, ring thumb; never set = dashed ring
+   (wave 8, C-10 / F-03, Olesia 2026-11-15); saved = locked */
 .slider {
   flex: 1;
   min-width: 0;
@@ -192,15 +193,19 @@
   -webkit-appearance: none;
   appearance: none;
 }
+/* the outline is a shadow, not a border, so the thumb keeps its place on the track;
+   accent-mid passes 3:1 on the page in every accent (appearance.test.ts) */
 .slider::-webkit-slider-runnable-track {
   height: 12px;
   border-radius: var(--radius-pill);
   background: var(--sunk);
+  box-shadow: inset 0 0 0 var(--stroke-3) var(--accent-mid);
 }
 .slider::-moz-range-track {
   height: 12px;
   border-radius: var(--radius-pill);
   background: var(--sunk);
+  box-shadow: inset 0 0 0 var(--stroke-3) var(--accent-mid);
 }
 .slider::-webkit-slider-thumb {
   width: 18px;
@@ -220,10 +225,10 @@
   background: var(--bg);
 }
 .tracker--unset .slider::-webkit-slider-thumb {
-  opacity: 0.2;
+  border: var(--stroke-focus) dashed var(--accent);
 }
 .tracker--unset .slider::-moz-range-thumb {
-  opacity: 0.2;
+  border: var(--stroke-focus) dashed var(--accent);
 }
 .slider:disabled {
   cursor: default;

@@ -178,6 +178,7 @@
 .st-text.t-h6 { --weight-0: 460; font-size: calc(20px * var(--text-scale)); font-stretch: 90%; }
 .st-text.t-1st-semibold { --weight-0: 600; --weight-hover: 720; font-size: calc(17px * var(--text-scale)); }
 .st-text.t-1st-regular { font-size: calc(17px * var(--text-scale)); }
+.st-text.t-2nd-regular { font-size: calc(14px * var(--text-scale)); font-stretch: 98%; }
 .st-text.t-3rd-regular { font-size: calc(12px * var(--text-scale)); }
 .st-text--empty {
   color: var(--muted);
