@@ -8,7 +8,7 @@ import { russianReason } from '../paste/russian';
 import { showPasteResult } from '../screens/paste-result';
 import { ACCENT_NAMES, ACCESS_SHORT } from '../screens/settings';
 import { homeSession } from '../home/session';
-import { showFirstLaunch } from '../screens/first-launch';
+import { clearPasteField, showFirstLaunch } from '../screens/first-launch';
 import { showHome } from '../screens/home';
 import { showInstallFirst } from '../screens/install-first';
 import { showUnreadable } from '../screens/unreadable';
@@ -20,7 +20,7 @@ import { titleFor } from '../ui/screen-focus';
 import { backSteps } from './back-steps';
 import { enter } from '../ui/motion';
 import type { Toast, ToastMessage } from '../ui/toast';
-import { copyPrompt as copyPromptText, PasteFlow, RUSSIAN_COPY } from './paste-flow';
+import { copyPrompt as copyPromptText, PasteFlow, pasteFailed, RUSSIAN_COPY } from './paste-flow';
 import { logKeeper } from './keeper';
 import { pagesOverHome, type DeviceEnv } from './pages';
 import { startScreen, type Phone, type Platform, type StartScreen } from './start';
@@ -256,7 +256,10 @@ export function startApp(env: AppEnv): void {
     names: { accents: ACCENT_NAMES, accessibility: ACCESS_SHORT },
     copyText: env.copyText,
     say: (message) => toast.show(message),
-    show: () => showPasteResult(host, paste.view),
+    show: () => {
+      if (pasteFailed(paste.view)) clearPasteField(host);
+      showPasteResult(host, paste.view);
+    },
     save: startWith,
   });
   const startWithoutAi = () => keep(EXAMPLE_DIARY);

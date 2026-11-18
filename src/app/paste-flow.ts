@@ -21,6 +21,14 @@ export type PasteView =
 
 export type PasteAct = 'copy' | 'continue' | 'save' | 'cancel';
 
+/**
+ * The paste didn't go through as it was: the field is emptied, so the next
+ * answer from the AI goes in without selecting and deleting the old one
+ * (Olesia, 2026-11-18). The flow keeps what «скопіювати для ШІ» and
+ * «продовжити без цього» need, so nothing is lost.
+ */
+export const pasteFailed = (view: PasteView): boolean => view.kind === 'refused' || view.kind === 'unknown';
+
 export interface PasteDeps {
   /** The settings on screen now, to compare with; null on the first screen. */
   current(): JsonObject | null;

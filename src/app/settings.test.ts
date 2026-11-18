@@ -609,6 +609,10 @@ describe('settings: «налаштування через ШІ»', () => {
   it('refuses an error, a part and russian; unknown keys can be left out', async () => {
     await pasteText({ ...CHANGED, theme: { accent: 'red' } });
     expect(title()).toBe('щось не так у налаштуваннях >_<');
+    // a refusal empties the field, so the next answer goes in at once (Olesia, 2026-11-18)
+    const field = host.querySelector<HTMLTextAreaElement>('[data-input="paste"]')!;
+    expect(field.value).toBe('');
+    expect(button('застосувати').disabled).toBe(true);
     await tap('скопіювати для ШІ');
     await settle();
     expect(device.copied.at(-1)).toContain('[theme.accent]');
