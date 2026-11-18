@@ -8,7 +8,11 @@ describe('the prompt file', () => {
   it('has its own version and is marked as a draft for now', () => {
     expect(PROMPT.version).toBe('0.1');
     expect(PROMPT.draft).toBe(true);
-    expect(PROMPT.text.startsWith('[ЧЕРНЕТКА ПРОМПТУ 0.1')).toBe(true);
+    expect(PROMPT.text.startsWith('You are helping a person set up body.log')).toBe(true);
+  });
+
+  it('names every accent value the format allows, so the AI maps the colour names right', () => {
+    for (const accent of schema.properties.theme.properties.accent.enum) expect(PROMPT.text).toContain(`(${accent})`);
   });
 
   it('carries the same schema and example the paste check reads, with no placeholder left', () => {
