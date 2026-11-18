@@ -1,6 +1,7 @@
 import { formatShort, type DayKey } from '../domain/dates';
 import type { SearchHit } from '../domain/journal';
 import { esc } from '../ui/html';
+import { emoticonsHtml } from '../ui/emoticons';
 import { iconSvg } from '../ui/icons';
 import { circleOver, EASE, middleOf, MS, STAGGER_MS, play } from '../ui/motion';
 import { part } from './parts';
@@ -37,7 +38,7 @@ const hit = ({ date, before, match, after }: SearchHit) => `
 
 function results(query: string, hits: readonly SearchHit[]): string {
   if (!query.trim()) return '';
-  if (hits.length === 0) return '<p class="search__none t-h6">нічого не знайшлося :( спробуй інше слово</p>';
+  if (hits.length === 0) return `<p class="search__none t-h6">${emoticonsHtml('нічого не знайшлося :( спробуй інше слово')}</p>`;
   return `<p class="search__count t-3rd-regular muted">знайдено: ${hits.length}</p>${hits.map(hit).join('')}`;
 }
 

@@ -42,7 +42,7 @@ export interface PasteDeps {
 }
 
 const COPIED: ToastMessage = { message: 'скопійовано — встав у чат зі своїм ШІ', showIcon: true };
-const NOT_COPIED: ToastMessage = { message: 'не вдалося скопіювати', emoticon: '>_<', error: true };
+const NOT_COPIED: ToastMessage = { message: 'не вдалося скопіювати >_<', error: true };
 /** «відновити з копії» refuses a copy whose settings are russian (D-05). Serious: no emoticon. Нитка's draft. */
 export const RUSSIAN_COPY: ToastMessage = { message: 'копію не відновлено: налаштування в ній російською мовою.', error: true };
 

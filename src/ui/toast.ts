@@ -1,11 +1,11 @@
 import { announce } from './announce';
+import { emoticonsHtml, withoutEmoticons } from './emoticons';
 import { iconSvg } from './icons';
 import { EASE, glyphs, MS, play, typeIn, whenDone } from './motion';
 
 export interface ToastMessage {
+  /** An emoticon inside it («збережено :)») is shown in the accent colour and not heard (E-17). */
   readonly message: string;
-  /** Shown in the accent colour after the message, e.g. «:)» (COPY.md rules). */
-  readonly emoticon?: string;
   /** ✓ only when a process has a result: збережено, видалено, скасовано… */
   readonly showIcon?: boolean;
   /** One text button, e.g. «скасувати» (deleting always offers it) or «оновити». */
@@ -47,7 +47,10 @@ export function undo(run: () => void): ToastAction {
 }
 
 /** What a screen reader hears: the message whole, then the button's name. */
-const spoken = (next: ToastMessage) => (next.action ? `${next.message}. ${next.action.label}` : next.message);
+function spoken(next: ToastMessage): string {
+  const message = withoutEmoticons(next.message);
+  return next.action ? `${message}. ${next.action.label}` : message;
+}
 
 /** A focus that comes this soon after a finger or the mouse went down on the toast is the tap's own. */
 const TAP_FOCUS_MS = 1000;
@@ -117,13 +120,8 @@ export function mountToast(host: HTMLElement): Toast {
   const timed = (message: ToastMessage) => !keepAll && !message.action && !message.error;
 
   function write(next: ToastMessage): void {
-    text.textContent = next.message;
-    if (!next.emoticon) return;
-    // the toast's own document, not the global one: the settle timer can fire after a test file's page is gone (it broke two deploys)
-    const emoticon = text.ownerDocument.createElement('span');
-    emoticon.className = 'toast__emoticon';
-    emoticon.textContent = next.emoticon;
-    text.append(' ', emoticon);
+    // innerHTML on the toast's own element, never a global document: the settle timer can fire after a test file's page is gone (it broke two deploys)
+    text.innerHTML = emoticonsHtml(next.message);
   }
 
   /** Counts what is left of the 4 s, unless something holds the toast. */

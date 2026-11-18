@@ -101,7 +101,7 @@ leaveLoading(document, host, performance.now());
 // offline copy and «є нова версія :)»; only in the built app, never in development
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   void watchForUpdates(navigator.serviceWorker, import.meta.env.BASE_URL, {
-    offer: (apply) => toast.show({ message: 'є нова версія', emoticon: ':)', action: { label: 'оновити', run: apply } }),
+    offer: (apply) => toast.show({ message: 'є нова версія :)', action: { label: 'оновити', run: apply } }),
     reload: () => location.reload(),
     onReturn: (check) => document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible') check();

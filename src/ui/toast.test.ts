@@ -23,10 +23,22 @@ describe('toast', () => {
   });
 
   it('shows the message with the emoticon in its own accent span', () => {
-    toast.show({ message: 'збережено', emoticon: ':)' });
+    toast.show({ message: 'збережено :)' });
     expect(box().hidden).toBe(false);
     expect(text().textContent).toBe('збережено :)');
-    expect(text().querySelector('.toast__emoticon')!.textContent).toBe(':)');
+    expect(text().querySelector('.emoticon')!.textContent).toBe(':)');
+  });
+
+  it('E-17: an emoticon inside the message is in the accent span too', () => {
+    toast.show({ message: 'не вдалося зберегти :( спробуй ще раз.', error: true });
+    expect(text().textContent).toBe('не вдалося зберегти :( спробуй ще раз.');
+    expect(text().querySelector('.emoticon')!.textContent).toBe(':(');
+  });
+
+  it('writes the message as text, never as HTML', () => {
+    toast.show({ message: '<b>а</b> <3' });
+    expect(text().querySelector('b')).toBeNull();
+    expect(text().textContent).toBe('<b>а</b> <3');
   });
 
   it('shows ✓ only when a process has a result', () => {
@@ -62,7 +74,7 @@ describe('toast', () => {
 
   it('runs another action under its own label and closes when it has nothing more to say', () => {
     const update = vi.fn();
-    toast.show({ message: 'є нова версія', emoticon: ':)', action: { label: 'оновити', run: update } });
+    toast.show({ message: 'є нова версія :)', action: { label: 'оновити', run: update } });
     expect(action().textContent).toBe('оновити');
     action().click();
     expect(update).toHaveBeenCalledTimes(1);
@@ -153,7 +165,7 @@ describe('how long a toast stays (ACCESSIBILITY.md rule 7)', () => {
   });
 
   it('keeps «є нова версія» until × or «оновити»: a change does not close it', async () => {
-    toast.show({ message: 'є нова версія', emoticon: ':)', action: { label: 'оновити', run: () => {} } });
+    toast.show({ message: 'є нова версія :)', action: { label: 'оновити', run: () => {} } });
     wait(600_000);
     toast.changed();
     await tick();
@@ -163,7 +175,7 @@ describe('how long a toast stays (ACCESSIBILITY.md rule 7)', () => {
   });
 
   it('keeps an error until ×', () => {
-    toast.show({ message: 'не вдалося зберегти файл', emoticon: '>_<', error: true });
+    toast.show({ message: 'не вдалося зберегти файл >_<', error: true });
     expect(life().hidden).toBe(true);
     wait(600_000);
     expect(box().hidden).toBe(false);
@@ -284,8 +296,13 @@ describe('what a screen reader hears from a toast (B-09)', () => {
   });
 
   it('hears the button after the message, and not the emoticon', () => {
-    toast.show({ message: 'збережено', emoticon: ':)', action: undo(() => {}) });
+    toast.show({ message: 'збережено :)', action: undo(() => {}) });
     expect(mountAnnouncer().textContent).toBe('збережено. скасувати');
+  });
+
+  it('E-17: does not hear an emoticon in the middle either', () => {
+    toast.show({ message: 'не вдалося зберегти :( спробуй ще раз.', error: true });
+    expect(mountAnnouncer().textContent).toBe('не вдалося зберегти спробуй ще раз.');
   });
 });
 
@@ -315,19 +332,19 @@ describe('toast in motion (MICROINTERACTIONS.md)', () => {
   });
 
   it('types the message in letter by letter, the emoticon as one', () => {
-    toast.show({ message: 'ок', emoticon: ':)' });
+    toast.show({ message: 'ок :)' });
     expect(host.querySelector('.toast__message')!.textContent).toBe('ок :)');
-    expect(fake.on(host.querySelector('.toast__emoticon'))).toHaveLength(1);
+    expect(fake.on(host.querySelector('.emoticon'))).toHaveLength(1);
     expect(fake.played.filter((run) => run.el.classList.contains('fx-ch'))).toHaveLength(3);
   });
 
   it('B-09: leaves the typed letters as plain text once they are in', () => {
-    toast.show({ message: 'ок', emoticon: ':)' });
+    toast.show({ message: 'ок :)' });
     vi.advanceTimersByTime(600);
     const message = host.querySelector('.toast__message')!;
     expect(message.querySelector('.fx-ch')).toBeNull();
     expect(message.textContent).toBe('ок :)');
-    expect(message.querySelector('.toast__emoticon')!.textContent).toBe(':)');
+    expect(message.querySelector('.emoticon')!.textContent).toBe(':)');
   });
 
   it('assembles ✓ out of characters', () => {

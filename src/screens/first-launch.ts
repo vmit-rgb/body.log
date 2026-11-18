@@ -1,6 +1,7 @@
 import type { PasteAct } from '../app/paste-flow';
 import { pasteActOf, pasteResultBox, showPasteResult } from './paste-result';
 import { FOOTER, LANGUAGE_SWITCH, part, TAB_NOTE, wireRestore } from './parts';
+import { emoticonsHtml } from '../ui/emoticons';
 import { withGrip } from '../ui/grip';
 
 export interface FirstLaunchActions {
@@ -27,7 +28,7 @@ const WARNINGS: readonly (readonly [marker: string, kind: string, label: string,
 const consoleRows = WARNINGS.map(([marker, kind, label, text]) => `
   <li class="console__row">
     <span class="console__marker console__marker--${kind}" aria-label="${label}">${marker}</span>
-    <span class="t-2nd-regular">${text.replace('<3', '&lt;3')}</span>
+    <span class="t-2nd-regular">${emoticonsHtml(text)}</span>
   </li>`).join('');
 
 /* wave 7a (Olesia, 2026-11-18): no «маю андроїд / маю айфон» here, the field shows at once;
@@ -38,7 +39,7 @@ const MARKUP = `
   <div class="screen screen--framed">
     ${LANGUAGE_SWITCH}
     <section class="screen__section" aria-labelledby="intro-title">
-      <h1 id="intro-title" class="t-h3">привіт! почнімо з налаштувань :)</h1>
+      <h1 id="intro-title" class="t-h3">${emoticonsHtml('привіт! почнімо з налаштувань :)')}</h1>
       <ol class="steps t-1st-regular">
         <li>скопіюй промпт і встав у чат зі своїм ШІ.</li>
         <li>відповідай на його питання — він складе налаштування.</li>

@@ -75,14 +75,14 @@ export interface SettingsPage {
 }
 
 /* COPY.md, Toasts and Settings; Нитка's drafts marked. */
-const SAVED: ToastMessage = { message: 'збережено', emoticon: ':)', showIcon: true };
+const SAVED: ToastMessage = { message: 'збережено :)', showIcon: true };
 const COPIED: ToastMessage = { message: 'скопійовано — встав у чат зі своїм ШІ', showIcon: true };
-const NOT_COPIED: ToastMessage = { message: 'не вдалося скопіювати', emoticon: '>_<', error: true }; // draft
+const NOT_COPIED: ToastMessage = { message: 'не вдалося скопіювати >_<', error: true }; // draft
 const FILE_SAVED: ToastMessage = { message: 'збережено', showIcon: true };
-const FILE_NOT_SAVED: ToastMessage = { message: 'не вдалося зберегти файл', emoticon: '>_<', error: true };
-const NOT_A_COPY: ToastMessage = { message: 'цей файл не схожий на копію з трекера', emoticon: '>_<', error: true };
-const RESTORED: ToastMessage = { message: 'відновлено з файлу', emoticon: ':)', showIcon: true };
-const PDF_NOT_MADE: ToastMessage = { message: 'не вдалося зібрати PDF', emoticon: '>_<', error: true }; // «бета 0.81»
+const FILE_NOT_SAVED: ToastMessage = { message: 'не вдалося зберегти файл >_<', error: true };
+const NOT_A_COPY: ToastMessage = { message: 'цей файл не схожий на копію з трекера >_<', error: true };
+const RESTORED: ToastMessage = { message: 'відновлено з файлу :)', showIcon: true };
+const PDF_NOT_MADE: ToastMessage = { message: 'не вдалося зібрати PDF >_<', error: true }; // «бета 0.81»
 const PDF_FOOTER = `body.log · ${VERSION_LABEL}`; // Olesia, 2026-11-10; the name body.log since 2026-11-17
 const PHRASE_MAX = 80;
 const DAYS = ['день', 'дні', 'днів'] as const;

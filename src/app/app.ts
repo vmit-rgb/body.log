@@ -46,15 +46,15 @@ export interface AppEnv extends DeviceEnv {
 }
 
 /* Texts: COPY.md. */
-const SAVED: ToastMessage = { message: 'збережено', emoticon: ':)', showIcon: true };
+const SAVED: ToastMessage = { message: 'збережено :)', showIcon: true };
 const UNDONE: ToastMessage = { message: 'скасовано', showIcon: true };
 /* Нитка's draft. */
 const HAS_RECORDS: ToastMessage = { message: 'уже є записи, тож скасувати не вийде. налаштування можна змінити в меню', error: true };
-const NOT_A_COPY: ToastMessage = { message: 'цей файл не схожий на копію з трекера', emoticon: '>_<', error: true };
-const RESTORED: ToastMessage = { message: 'відновлено з файлу', emoticon: ':)', showIcon: true };
+const NOT_A_COPY: ToastMessage = { message: 'цей файл не схожий на копію з трекера >_<', error: true };
+const RESTORED: ToastMessage = { message: 'відновлено з файлу :)', showIcon: true };
 const FILE_SAVED: ToastMessage = { message: 'збережено', showIcon: true };
-const FILE_NOT_SAVED: ToastMessage = { message: 'не вдалося зберегти файл', emoticon: '>_<', error: true };
-const NOT_SAVED: ToastMessage = { message: 'не вдалося зберегти: схоже, на телефоні забракло місця', emoticon: '>_<', error: true };
+const FILE_NOT_SAVED: ToastMessage = { message: 'не вдалося зберегти файл >_<', error: true };
+const NOT_SAVED: ToastMessage = { message: 'не вдалося зберегти: схоже, на телефоні забракло місця >_<', error: true };
 
 /** Stores the diary; false and the «no space» toast when the phone refuses. */
 function saved(store: DiaryStore, next: Diary, toast: Toast): boolean {

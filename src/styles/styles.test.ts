@@ -288,7 +288,7 @@ describe('wave 5: sections (Olesia, MY-FIXES)', () => {
     const settings = read('./settings.css');
     expect(block(settings, '.st-actions')).toContain('position: absolute;');
     expect(block(settings, '.st-actions')).not.toContain('clip-path');
-    expect(block(read('./sections.css'), '.good-job__heart')).toContain('color: var(--accent);');
+    expect(block(read('./components.css'), '.emoticon')).toContain('color: var(--accent);');
     expect(block(read('./sections.css'), '.home-section__end')).toContain('justify-content: flex-end;');
   });
 });

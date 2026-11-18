@@ -88,7 +88,8 @@ describe('home: «хороша робота <3» and «згорнути секц
     expect(collapse('mw').hidden).toBe(true);
     await tap('позначити весь рівень');
     expect(leads('mw')).toEqual(['хороша робота <3', 'хороша робота <3']);
-    expect(section('mw').querySelector('.good-job__heart')!.textContent).toBe('<3');
+    expect(section('mw').querySelector('.emoticon')!.textContent).toBe('<3');
+    expect(section('dw').querySelector('.emoticon')!.textContent).toBe('<3');
     expect(collapse('mw').hidden).toBe(false);
     expect(collapse('mw').querySelector('button')!.getAttribute('aria-label')).toBe('згорнути секцію: ранкова розминка');
     // other sections are untouched

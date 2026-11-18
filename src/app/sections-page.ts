@@ -38,14 +38,14 @@ type Obj = Record<string, unknown>;
 const obj = (value: unknown): Obj => (typeof value === 'object' && value !== null && !Array.isArray(value) ? value as Obj : {});
 
 /* COPY.md «Settings», accepted 2026-10-30; the rest Нитка's drafts. */
-const GROUPED: ToastMessage = { message: 'групу зібрано', emoticon: ':)', showIcon: true };
+const GROUPED: ToastMessage = { message: 'групу зібрано :)', showIcon: true };
 const LEFT: ToastMessage = { message: 'вправу винесено з групи', showIcon: true };
 const MOVED: ToastMessage = { message: 'переміщено', showIcon: true };
 const REMOVED: ToastMessage = { message: 'видалено', showIcon: true }; // «бета 0.81»
-const FULL: ToastMessage = { message: 'у групі вже 3 вправи — більше не влізе', emoticon: '>_<', error: true };
-const NOT_A_NUMBER: ToastMessage = { message: 'тут потрібне число', emoticon: '>_<', error: true }; // draft
-const NEGATIVE: ToastMessage = { message: NUMBER_ERRORS.negative, emoticon: '>_<', error: true }; // draft
-const ONE_FIELD: ToastMessage = { message: 'хоч одне поле має лишитися', emoticon: '>_<', error: true }; // draft
+const FULL: ToastMessage = { message: 'у групі вже 3 вправи — більше не влізе >_<', error: true };
+const NOT_A_NUMBER: ToastMessage = { message: 'тут потрібне число >_<', error: true }; // draft
+const NEGATIVE: ToastMessage = { message: `${NUMBER_ERRORS.negative} >_<`, error: true }; // draft
+const ONE_FIELD: ToastMessage = { message: 'хоч одне поле має лишитися >_<', error: true }; // draft
 
 const MAX: Record<EditKind, number> = { text: 120, long: 500, url: 500, number: 12, rx: 60 };
 const FIELD_ORDER = { wfield: ['weight', 'reps', 'seconds'], mfield: ['km', 'minutes', 'steps'] } as const;

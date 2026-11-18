@@ -175,6 +175,14 @@ describe('accent tokens', () => {
     }
   });
 
+  // E-17: the header scene is dark in both themes, so an emoticon in its phrase keeps the dark accent there.
+  it.each(ACCENTS)('gives the header scene the dark %s in the light theme, at 4.5:1 on the scene', (accent) => {
+    const found = /--scene-accent-rgb: (\d{1,3}) (\d{1,3}) (\d{1,3});/.exec(shades(`:root[data-theme='light'][data-accent='${accent}']`))!;
+    const scene: Rgb = [Number(found[1]), Number(found[2]), Number(found[3])];
+    expect(scene).toEqual(rgbOf('dark', accent));
+    expect(contrast(scene, hexOf('dark', 'scene-bg')!)).toBeGreaterThanOrEqual(4.5);
+  });
+
   it('needs nothing newer than iOS 15.4 for colours', () => {
     const code = tokens.replace(/\/\*[\s\S]*?\*\//g, '');
     expect(code).not.toMatch(/light-dark\(|color-mix\(/);

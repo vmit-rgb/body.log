@@ -1,5 +1,6 @@
 import type { DayKey } from '../domain/dates';
 import type { ThemeChoice } from '../storage/store';
+import { emoticonsHtml } from '../ui/emoticons';
 import { hideFlight } from '../ui/flight';
 import { iconSvg } from '../ui/icons';
 import { barMarkup, fillBar, wireDateNav, type BarState } from './bar';
@@ -43,7 +44,7 @@ const LINK = 'btn--primary menu__link';
 const HELP = 'btn--secondary menu__help';
 
 // menu/backup warning: one bold line in place of the status (Olesia, 2026-11-11)
-const REMINDER = '<p class="t-2nd-bold" data-backup-reminder>давненько не було копії. збережи, поки все на місці :)</p>';
+const REMINDER = `<p class="t-2nd-bold" data-backup-reminder>${emoticonsHtml('давненько не було копії. збережи, поки все на місці :)')}</p>`;
 
 function markup(state: MenuState): string {
   return `
