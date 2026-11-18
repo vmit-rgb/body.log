@@ -334,6 +334,13 @@
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
 }
+/* the swipe turns the month (home/month-swipe.ts): the page keeps the vertical scroll; while turning, the days leave at the calendar's edge */
+.cal__scroll--turning {
+  overflow-x: clip;
+}
+:root:not([data-larger-targets]) .cal__grid {
+  touch-action: pan-y;
+}
 :root[data-larger-targets] .cal__scroll {
   overflow-x: auto;
   overscroll-behavior-x: contain;

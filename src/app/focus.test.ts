@@ -6,7 +6,7 @@ import { EXAMPLE_DIARY } from '../domain/examples';
 import { browserChoice, diaryStore, sectionMemory } from '../storage/store';
 import { mountToast } from '../ui/toast';
 import { startApp } from './app';
-import { fakeDevice } from './test-env';
+import { fakeDevice, swipeAcross } from './test-env';
 
 /* Wave 3 (`app/fix-focus`): «назад», the focus and the page's title. Invented data only. */
 
@@ -95,6 +95,25 @@ describe('A-05: the calendar sheet is a step of «назад»', () => {
     expect(shownDay()).toBe('четвер, 05.11.2026');
     expect(document.activeElement).toBe(dateButton());
     expect(device.depth()).toBe(0);
+  });
+});
+
+describe('the swipe on the calendar (Olesia, 2026-11-18)', () => {
+  beforeEach(() => start());
+  /** The month shown, from its first day (the name re-forms letter by letter). */
+  const month = (root: ParentNode) => (root.querySelector('[data-cal="day"]')!.getAttribute('data-day') ?? '').slice(0, 7);
+
+  it('turns the month on home and keeps the day shown', () => {
+    swipeAcross(host.querySelector('.home [data-cal="day"][data-day="2026-11-05"]')!, 200);
+    expect(month(host.querySelector('.home')!)).toBe('2026-10');
+    expect(shownDay()).toContain('09.11.2026');
+  });
+
+  it('turns the month in the sheet and leaves it open', () => {
+    dateButton().click();
+    swipeAcross(sheet()!.querySelector('[data-cal="day"]')!, 200);
+    expect(sheet()).not.toBeNull();
+    expect(month(sheet()!)).toBe('2026-10');
   });
 });
 

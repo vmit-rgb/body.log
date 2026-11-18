@@ -7,7 +7,7 @@ import { EXAMPLE_DIARY } from '../domain/examples';
 import { browserChoice, diaryStore, sectionMemory, tipMemory } from '../storage/store';
 import { mountToast } from '../ui/toast';
 import { startApp } from './app';
-import { fakeDevice } from './test-env';
+import { fakeDevice, swipeAcross } from './test-env';
 
 // Invented data only.
 const TODAY = '2026-11-09' as DayKey;
@@ -184,6 +184,17 @@ describe('«історія» (Figma screen/log-history 165:2758)', () => {
     calDay('2026-11-02').click();
     expect(toastSays()).toBe('за цей день записів немає');
     expect(heading()).toBe('історія');
+  });
+
+  it('a swipe on the days turns the month, and opens no day', () => {
+    swipeAcross(calDay('2026-11-05'), 200);
+    expect(host.querySelector('.history__summary')!.textContent).toBe('жовтень: 0 днів з розминкою, 0 тренувань');
+    expect(cards().map(cardTitle)).toEqual(['вівторок, 20.10.2026']);
+    swipeAcross(calDay('2026-10-20'), -200);
+    expect(calDay('2026-11-05')).not.toBeNull();
+    // never past this month
+    swipeAcross(calDay('2026-11-05'), -200);
+    expect(calDay('2026-11-05')).not.toBeNull();
   });
 
   it('shows the month chosen with the arrows: its line, averages and days', () => {

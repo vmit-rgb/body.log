@@ -85,3 +85,12 @@ export function fakeDevice() {
 
 /** Home sections that are all open (they start closed since 2026-11-11), for tests that log inside them. */
 export const openSections = { open: () => true, remember: () => {} };
+
+/** A finger swipes sideways across `el` (the calendar's days): `dx` px in 600 ms. */
+export function swipeAcross(el: Element, dx: number): void {
+  const at = (x: number, type: string) => el.dispatchEvent(new PointerEvent(type, { bubbles: true, pointerId: 7, isPrimary: true, pointerType: 'touch', clientX: x, clientY: 300 }));
+  at(150, 'pointerdown');
+  at(150 + dx / 2, 'pointermove');
+  at(150 + dx, 'pointermove');
+  at(150 + dx, 'pointerup');
+}
