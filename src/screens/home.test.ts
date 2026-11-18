@@ -96,14 +96,13 @@ describe('home', () => {
     expect(closed.has('dw')).toBe(true);
   });
 
-  it('gives a long phrase the largest header that fits in 3 lines', () => {
-    const lineHeights: Record<string, number> = { 't-h1': 60, 't-h2': 50, 't-h3': 42, 't-h4': 38 };
-    const linesTaken: Record<string, number> = { 't-h1': 5, 't-h2': 4, 't-h3': 3, 't-h4': 3 };
-    const style = (element: Element) => Object.keys(lineHeights).find((name) => element.classList.contains(name)) ?? 't-h1';
+  it('gives a long phrase the largest header that fits in the 90 px under the scene', () => {
+    const heights: Record<string, number> = { 't-h1': 120, 't-h2': 101, 't-h3': 42, 't-h4': 38 };
+    const style = (element: Element) => Object.keys(heights).find((name) => element.classList.contains(name)) ?? '';
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
-      return { height: lineHeights[style(this)]! * linesTaken[style(this)]! } as DOMRect;
+      return { width: 0, height: this.classList.contains('hero__words') ? 90 : heights[style(this)] ?? 0 } as DOMRect;
     });
-    vi.spyOn(window, 'getComputedStyle').mockImplementation((element) => ({ lineHeight: `${lineHeights[style(element)]}px` }) as CSSStyleDeclaration);
+    vi.spyOn(window, 'getComputedStyle').mockImplementation(() => ({ paddingBottom: '12px', getPropertyValue: () => '' }) as unknown as CSSStyleDeclaration);
     show();
     vi.restoreAllMocks();
     expect(host.querySelector('.hero__text')!.className).toBe('hero__text t-h3');

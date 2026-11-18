@@ -1,43 +1,67 @@
 /*
- * The month's ASCII scene in the hero (Olesia, 2026-11-17: «задній фон
- * постійно один, в залежності від місяця змінюється тільки шапка»). One
- * scene per month; a month without one keeps the hero empty over «Політ
- * символів». The scene is picked by today's month, not by the day shown.
+ * The month's ASCII scene in the header of home (Olesia, 2026-11-17: «задній
+ * фон постійно один, в залежності від місяця змінюється тільки шапка»;
+ * 2026-11-18: a scene for every month, header-animations/ in the workspace).
+ * The scene is picked by today's month, not by the day shown.
  *
  * Home is drawn anew on every change, so the scene lives here, outside the
  * screen: a new canvas takes over the running scene and its leaves don't
- * start again. Moves only while the hero is on screen and the app is shown;
- * one still frame with the phone's «reduce motion», «вимкнути всі анімації»
- * or «вимкнути фонові анімації (ASCII)». Decor: hidden from screen readers.
+ * start again. Moves only while the header is on screen and the app is shown,
+ * at most 30 frames a second; one still frame with the phone's «reduce
+ * motion», «вимкнути всі анімації» or «вимкнути фонові анімації (ASCII)».
+ * Decor: hidden from screen readers.
  */
 
 import type { DayKey } from '../domain/dates';
 import { flightMoves } from './flight';
-import { november } from './november';
+import { heroScene, type HeroScene, type SceneMaker } from './hero/engine';
+import { scene as sichen } from './hero/scenes/01-sichen.js';
+import { scene as lyutyi } from './hero/scenes/02-lyutyi.js';
+import { scene as berezen } from './hero/scenes/03-berezen.js';
+import { scene as kviten } from './hero/scenes/04-kviten.js';
+import { scene as traven } from './hero/scenes/05-traven.js';
+import { scene as cherven } from './hero/scenes/06-cherven.js';
+import { scene as lypen } from './hero/scenes/07-lypen.js';
+import { scene as serpen } from './hero/scenes/08-serpen.js';
+import { scene as veresen } from './hero/scenes/09-veresen.js';
+import { scene as zhovten } from './hero/scenes/10-zhovten.js';
+import { scene as lystopad } from './hero/scenes/11-lystopad.js';
+import { scene as hruden } from './hero/scenes/12-hruden.js';
 
-export interface HeroScene {
-  resize(ctx: CanvasRenderingContext2D, w: number, h: number): void;
-  render(ctx: CanvasRenderingContext2D, t: number, dt: number): void;
-  /** leaves in the air, for the tests */
-  leaves(): number;
+interface Month {
+  readonly make: SceneMaker;
+  /** 40 when the scene fills the top band too (branches, icicles, the rainbow) */
+  readonly band: number;
 }
 
 /** Scenes by month number (1–12). */
-const SCENES: Readonly<Record<number, (family: string) => HeroScene>> = {
-  11: november,
+export const SCENES: Readonly<Record<number, Month>> = {
+  1: { make: sichen, band: 40 },
+  2: { make: lyutyi, band: 40 },
+  3: { make: berezen, band: 40 },
+  4: { make: kviten, band: 0 },
+  5: { make: traven, band: 0 },
+  6: { make: cherven, band: 40 },
+  7: { make: lypen, band: 0 },
+  8: { make: serpen, band: 0 },
+  9: { make: veresen, band: 0 },
+  10: { make: zhovten, band: 0 },
+  11: { make: lystopad, band: 0 },
+  12: { make: hruden, band: 0 },
 };
 
-/** Whether the month of `today` has a scene. */
-export function hasScene(today: DayKey): boolean {
-  return monthOf(today) in SCENES;
-}
-
 const monthOf = (day: DayKey) => Number(day.slice(5, 7));
+
+/** The scene of the month of `today`, drawn in `family` on `bg`. */
+export function sceneFor(today: DayKey, family: string, bg: string): HeroScene {
+  const month = SCENES[monthOf(today)] ?? SCENES[1]!;
+  return heroScene(month.make, month.band, family, bg);
+}
 
 /** At most 30 frames a second: the scene is calm, the battery is not. */
 const FRAME = 1 / 30;
 
-let running: { month: number; scene: HeroScene; w: number; h: number; t: number } | null = null;
+let running: { month: number; scene: HeroScene; w: number; h: number; dpr: number; t: number } | null = null;
 
 export interface SceneHost {
   readonly root: HTMLElement;
@@ -48,12 +72,14 @@ export interface SceneHost {
 
 /** Starts today's scene on `canvas`; returns what stops it. */
 export function mountHeroScene({ root, canvas, today, reducedMotion }: SceneHost): () => void {
-  const make = SCENES[monthOf(today)];
-  const ctx = make ? canvas.getContext('2d', { alpha: false }) : null;
-  if (!make || !ctx) return () => {};
-  const family = getComputedStyle(root).getPropertyValue('--font').trim() || 'monospace';
+  const ctx = canvas.getContext('2d', { alpha: false });
+  if (!ctx) return () => {};
+  const style = getComputedStyle(root);
+  const family = style.getPropertyValue('--font').trim() || 'monospace';
+  // the dark theme's page colour, in both themes (Olesia, 2026-11-18)
+  const bg = style.getPropertyValue('--scene-bg').trim() || '#161616';
   const month = monthOf(today);
-  if (running?.month !== month) running = { month, scene: make(family), w: 0, h: 0, t: 0 };
+  if (running?.month !== month) running = { month, scene: sceneFor(today, family, bg), w: 0, h: 0, dpr: 0, t: 0 };
   const scene = running;
   const stop = new AbortController();
   let frame = 0;
@@ -66,11 +92,11 @@ export function mountHeroScene({ root, canvas, today, reducedMotion }: SceneHost
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     canvas.width = Math.round(width * dpr);
     canvas.height = Math.round(height * dpr);
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    if (scene.w !== width || scene.h !== height) {
+    if (scene.w !== width || scene.h !== height || scene.dpr !== dpr) {
       scene.w = width;
       scene.h = height;
-      scene.scene.resize(ctx, width, height);
+      scene.dpr = dpr;
+      scene.scene.resize(ctx, width, height, dpr);
     }
   };
   const moves = () => onScreen && flightMoves(root, reducedMotion.matches) && document.visibilityState !== 'hidden';

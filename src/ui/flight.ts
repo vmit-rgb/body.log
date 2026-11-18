@@ -1,11 +1,16 @@
 /*
- * «Політ символів», the ASCII background of the tracker (Олеся + Нитка / AI;
- * from the artifact «Політ символів · фон трекера», 2026-11-17, preview
- * controls left out). Glyphs fly left → right on three planes: far = small,
- * slow, the accent's quiet shade; mid = its mid shade; near = big, faster,
- * muted text. About one run in five is lit in the accent, its tail fading to
- * mid and quiet. The colours are read from tokens.css, so the theme, the
- * accent and the accent flicker reach the background by themselves.
+ * «Політ символів», the ASCII background of the tracker (Олеся + Нитка / AI).
+ * The small version for the app (background-animations/flight-small-app.html
+ * in the workspace, 2026-11-18, preview controls left out); the big one stays
+ * on the landing. Glyphs fly left → right on three planes of one size, 9 px
+ * like the header scenes: far = slow, the accent's quiet shade; mid = its mid
+ * shade; near = faster, muted text. Depth comes from colour, brightness and
+ * speed. About one run in five is lit in the accent, its tail fading to mid
+ * and quiet. The colours are read from tokens.css, so the theme, the accent
+ * and the accent flicker reach the background by themselves.
+ *
+ * Where (Olesia, 2026-11-18): behind the tracker screens, history and
+ * settings; the menu has no background (data-no-flight on the root).
  *
  * Stands still (one frame) with the phone's «reduce motion», «вимкнути всі
  * анімації» or «вимкнути фонові анімації (ASCII)»; pauses while the app is
@@ -31,13 +36,18 @@ export interface Plane {
   readonly len: readonly [number, number];
   readonly tone: Tone;
   readonly litChance: number;
+  /** a run's brightness, lowest and highest */
+  readonly alpha: readonly [number, number];
 }
 
 export const PLANES: readonly Plane[] = [
-  { size: 11, speed: 16, dens: 1.1, len: [1, 5], tone: 'quiet', litChance: 0.12 },
-  { size: 15, speed: 34, dens: 0.55, len: [2, 7], tone: 'mid', litChance: 0.2 },
-  { size: 22, speed: 70, dens: 0.17, len: [3, 10], tone: 'muted', litChance: 0.25 },
+  { size: 9, speed: 14, dens: 3.2, len: [2, 6], tone: 'quiet', litChance: 0.1, alpha: [0.5, 0.9] },
+  { size: 9, speed: 30, dens: 1.6, len: [3, 9], tone: 'mid', litChance: 0.18, alpha: [0.55, 0.95] },
+  { size: 9, speed: 58, dens: 0.6, len: [4, 13], tone: 'muted', litChance: 0.24, alpha: [0.7, 1] },
 ];
+
+/** One row: 9 px × 1.05, as the header scenes. */
+const LH = 9 * 1.05;
 
 export interface Run {
   readonly p: number;
@@ -73,7 +83,7 @@ export function makeRun(p: number, anywhere: boolean, w: number, h: number, othe
   const rand = (a: number, b: number) => a + random() * (b - a);
   const pick = (from: readonly string[]) => from[Math.floor(random() * from.length)]!;
   const cw = plane.size * ADVANCE;
-  const lh = Math.round(plane.size * 1.5);
+  const lh = LH;
   const rows = Math.max(1, Math.floor(h / lh));
   const n = Math.max(1, Math.round(rand(plane.len[0], plane.len[1] + 1) - 0.5));
   const lit = random() < plane.litChance;
@@ -91,7 +101,7 @@ export function makeRun(p: number, anywhere: boolean, w: number, h: number, othe
     if (free) break;
   }
   const rowHash = (((Math.sin(row * 12.9898 + p * 78.233) * 43758.5453) % 1) + 1) % 1;
-  return { p, chars, lit, cw, row, size: plane.size, y: (row + 0.8) * lh, x, v: plane.speed * (0.8 + 0.45 * rowHash), alpha: rand(0.55, 1) };
+  return { p, chars, lit, cw, row, size: plane.size, y: (row + 0.85) * lh, x, v: plane.speed * (0.8 + 0.45 * rowHash), alpha: rand(plane.alpha[0], plane.alpha[1]) };
 }
 
 /** Fills a screen of `w` × `h` px with runs on every plane. */
@@ -131,13 +141,18 @@ export function flightMoves(root: Element, reducedMotion: boolean): boolean {
   return !reducedMotion && !root.hasAttribute('data-no-motion') && !root.hasAttribute('data-no-background-motion');
 }
 
+/** A screen without the background (the menu, Olesia 2026-11-18): hidden and still while it is shown. */
+export function hideFlight(hidden: boolean, root: Element = document.documentElement): void {
+  root.toggleAttribute('data-no-flight', hidden);
+}
+
 export function drawFlight(ctx: CanvasRenderingContext2D, runs: readonly Run[], c: Colours, w: number, h: number, font: string): void {
   ctx.globalAlpha = 1;
   ctx.fillStyle = c.bg;
   ctx.fillRect(0, 0, w, h);
   ctx.textBaseline = 'alphabetic';
   PLANES.forEach((plane, p) => {
-    ctx.font = `${p === 2 ? 500 : 400} ${plane.size}px ${font}`;
+    ctx.font = `400 ${plane.size}px ${font}`;
     const base = c[plane.tone];
     for (const run of runs) {
       if (run.p !== p) continue;
@@ -157,7 +172,7 @@ export function drawFlight(ctx: CanvasRenderingContext2D, runs: readonly Run[], 
           // nearer planes cut a cell out of what is behind them, so overlap reads as depth
           ctx.globalAlpha = 1;
           ctx.fillStyle = c.bg;
-          ctx.fillRect(x - 1, run.y - run.size, run.cw + 2, run.size * 1.3);
+          ctx.fillRect(x, run.y - LH * 0.85, run.cw, LH);
         }
         ctx.globalAlpha = alpha;
         ctx.fillStyle = colour;
@@ -188,7 +203,7 @@ export function startFlight({ root, canvas, reducedMotion }: FlightHost): void {
   let last = 0;
 
   const draw = () => drawFlight(ctx, runs, colours, w, h, font);
-  const moves = () => flightMoves(root, reducedMotion.matches) && document.visibilityState !== 'hidden';
+  const moves = () => flightMoves(root, reducedMotion.matches) && !root.hasAttribute('data-no-flight') && document.visibilityState !== 'hidden';
   const tick = (now: number) => {
     const dt = Math.min(0.05, (now - last) / 1000);
     last = now;
@@ -218,11 +233,11 @@ export function startFlight({ root, canvas, reducedMotion }: FlightHost): void {
     draw();
   };
 
-  // theme, accent (also its flicker, which writes --accent-rgb on the root) and the two «вимкнути … анімації»
+  // theme, accent (also its flicker, which writes --accent-rgb on the root), the two «вимкнути … анімації» and the menu
   new MutationObserver(() => {
     colours = readColours(root);
     run();
-  }).observe(root, { attributes: true, attributeFilter: ['data-theme', 'data-accent', 'data-no-motion', 'data-no-background-motion', 'style'] });
+  }).observe(root, { attributes: true, attributeFilter: ['data-theme', 'data-accent', 'data-no-motion', 'data-no-background-motion', 'data-no-flight', 'style'] });
   reducedMotion.addEventListener('change', run);
   document.addEventListener('visibilitychange', run);
   addEventListener('resize', resize);
@@ -232,6 +247,6 @@ export function startFlight({ root, canvas, reducedMotion }: FlightHost): void {
     run();
   };
   const fonts = document.fonts;
-  if (fonts) void fonts.load(`22px ${font}`).catch(() => undefined).finally(begin);
+  if (fonts) void fonts.load(`9px ${font}`).catch(() => undefined).finally(begin);
   else begin();
 }
