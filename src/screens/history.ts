@@ -4,8 +4,11 @@ import type { Diary } from '../domain/diary';
 import { dayBlocks, dayMeta, monthDays, monthSummary, searchNotes, type DayBlock, type ValueRow } from '../domain/journal';
 import { weekGoal } from '../domain/progress';
 import type { Settings } from '../domain/settings';
-import { averages, monthCells, monthOf, shiftMonth, type MonthKey } from '../domain/stats';
-import { averagesList, calendarMarkup } from '../home/calendar';
+import { monthOf, shiftMonth, type MonthKey } from '../domain/stats';
+import { calendarMarkup, PERIOD_TIP, periodName, type Period, type Picking } from '../home/calendar';
+import { mountCarousels, wireCarousels, type CarouselMemory } from '../home/carousel';
+import type { TipMemory } from '../storage/store';
+import { announce } from '../ui/announce';
 import { goalLine } from '../home/home-view';
 import { wireAccordions } from '../ui/accordion';
 import { esc } from '../ui/html';
@@ -18,8 +21,9 @@ import { openSearch } from './search';
 
 /*
  * «історія» (Figma screen/log-history 165:2758): the week line and the month
- * line (history/period-summary 233:4769), the calendar block as on home, the
- * month's averages (history/period-averages 234:4881), the day cards
+ * line (history/period-summary 233:4769), the calendar block as on home, but
+ * counting the month open or the period chosen (wave 9: the cards and the
+ * carousel of averages, which took the place of «середнє за період»), the day cards
  * (history/day-card 234:4872), the footer and the bar ≡ 🔍 ✕. 🔍 opens the
  * search panel over the bar. Behaviour as in «бета 0.81»; texts: COPY.md «History».
  */
@@ -40,6 +44,8 @@ export interface HistoryActions {
   /** Home on that day. */
   goTo(date: DayKey): void;
   toast(message: ToastMessage): void;
+  /** Tips for newcomers: the long tap that chooses a period (wave 9). */
+  tips?: TipMemory | undefined;
 }
 
 /* «бета 0.81»'s words for a calendar day with nothing in it. */
@@ -93,6 +99,12 @@ interface View {
   date: DayKey;
   month: MonthKey;
   open: Set<DayKey>;
+  /** Wave 9: the period chosen, and the choosing under way. */
+  period: Period | null;
+  picking: Picking | null;
+  readonly carousel: CarouselMemory;
+  /** The tip was hidden by a tap; it comes back when the history is opened again. */
+  tipQuiet: boolean;
 }
 
 /**
@@ -107,14 +119,15 @@ export interface HistoryMemory {
 /** The first card of a month is open (0.81). */
 const firstOpen = (state: HistoryState, month: MonthKey) => new Set(monthDays(state.days, month, state.today).slice(0, 1));
 
-function content(state: HistoryState, view: View): string {
+function content(state: HistoryState, view: View, tips: TipMemory | undefined): string {
   const dayAt = (key: DayKey): Day => state.days[key] ?? emptyDay(key);
   const goal = goalLine(weekGoal(view.date, state.today, dayAt, state.settings));
   const summary = monthSummary(view.month, state.today, Object.values(state.days), state.settings);
-  const monthKeys = monthCells(view.month).filter((cell) => cell.inMonth && cell.key <= state.today).map((cell) => cell.key);
-  const rows = averages(monthKeys, dayAt, state.settings);
   const keys = monthDays(state.days, view.month, state.today);
-  const calendar = calendarMarkup({ settings: state.settings, date: view.date, today: state.today, month: view.month, dayAt, place: 'history' });
+  const calendar = calendarMarkup({
+    settings: state.settings, date: view.date, today: state.today, month: view.month, dayAt, place: 'history',
+    card: view.carousel.card, period: view.period, picking: view.picking, periodTip: !view.tipQuiet && (tips?.open(PERIOD_TIP) ?? false),
+  });
   return `
     <section class="screen__section history__period" aria-label="період">
       <div class="history__lines">
@@ -123,11 +136,6 @@ function content(state: HistoryState, view: View): string {
       </div>
     </section>
     <section class="cal-block" data-place="history" aria-label="календар">${calendar}</section>
-    <section class="screen__section history__averages" aria-labelledby="history-averages">
-      <h2 class="t-h4" id="history-averages">середнє за період</h2>
-      <p class="t-3rd-regular muted">за місяць, який відкрито в календарі</p>
-      ${rows.length ? averagesList(rows, true) : '<p class="t-2nd-regular muted">ще немає значень за цей місяць</p>'}
-    </section>
     <section class="history__days" aria-label="дні">
       ${keys.length
     ? keys.map((key) => card(dayAt(key), view.open.has(key), state)).join('')
@@ -137,7 +145,10 @@ function content(state: HistoryState, view: View): string {
 
 /** Shows the history; returns what to undo when another screen takes its place. */
 export function showHistory(host: HTMLElement, state: HistoryState, actions: HistoryActions, memory: HistoryMemory = {}): () => void {
-  const view: View = memory.view ?? { date: state.date, month: monthOf(state.date), open: firstOpen(state, monthOf(state.date)) };
+  const view: View = memory.view ?? {
+    date: state.date, month: monthOf(state.date), open: firstOpen(state, monthOf(state.date)), period: null, picking: null, carousel: { card: 0 }, tipQuiet: false,
+  };
+  const listeners = new AbortController();
   host.innerHTML = `
     <div class="screen page history">
       <section class="screen__section" aria-labelledby="page-title">
@@ -149,7 +160,8 @@ export function showHistory(host: HTMLElement, state: HistoryState, actions: His
     ${pagesBarMarkup(false)}${TO_TOP}`;
   const root = part<HTMLElement>(host, '.history__content');
   const render = () => {
-    root.innerHTML = content(state, view);
+    root.innerHTML = content(state, view, actions.tips);
+    mountCarousels(root, view.carousel);
   };
   const focus = (selector: string) => root.querySelector<HTMLElement>(selector)!.focus({ preventScroll: true });
 
@@ -174,7 +186,68 @@ export function showHistory(host: HTMLElement, state: HistoryState, actions: His
     focus(`[data-cal="month"][data-by="${by}"]`);
   }
 
-  root.addEventListener('click', onTap(actions.goTo, showDay, showMonth));
+  /* ---- «обрати період» (wave 9): the button or a long tap on the first day, then a tap on the last ---- */
+
+  function choose(date: DayKey): void {
+    view.picking = { from: date };
+    render();
+    focus(`[data-cal="day"][data-day="${date}"]`);
+  }
+
+  function finish(date: DayKey): void {
+    const [from, to] = [view.picking?.from ?? date, date].sort() as [DayKey, DayKey];
+    view.period = { from, to };
+    view.picking = null;
+    actions.tips?.succeed?.(PERIOD_TIP);
+    render();
+    focus('[data-cal="period-reset"]');
+    announce(`обрано період ${periodName(view.period)}`);
+  }
+
+  function tapDay(date: DayKey): void {
+    if (!view.picking) showDay(date);
+    else if (view.picking.from === null) choose(date);
+    else finish(date);
+  }
+
+  function holdDay(date: DayKey): void {
+    if (view.picking?.from) finish(date);
+    else choose(date);
+  }
+
+  function periodButton(action: string): void {
+    if (action === 'period-pick') {
+      view.picking = { from: null };
+      render();
+      (root.querySelector<HTMLElement>('[data-cal="day"][aria-current="date"]') ?? root.querySelector<HTMLElement>('[data-cal="day"]'))?.focus({ preventScroll: true });
+      return;
+    }
+    view.picking = null;
+    if (action === 'period-reset') {
+      view.period = null;
+      announce('період скинуто');
+    }
+    render();
+    focus('[data-cal="period-pick"]');
+  }
+
+  const held = holdOnDays(root, holdDay, listeners.signal);
+  root.addEventListener('click', (event) => {
+    if (held()) return;
+    onTap(actions.goTo, tapDay, showMonth, periodButton)(event);
+  });
+  wireCarousels(root, view.carousel, listeners.signal);
+  // the tip is a bubble that a tap anywhere hides (as on home, wave 5c)
+  const hush = () => {
+    const bubble = root.querySelector('.tip');
+    if (!bubble) return;
+    view.tipQuiet = true;
+    bubble.closest('.tip-anchor')?.remove();
+  };
+  document.addEventListener('pointerdown', hush, { capture: true, signal: listeners.signal });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') hush();
+  }, { signal: listeners.signal });
   wireAccordions(root, (trigger, open) => {
     const date = trigger.dataset.card as DayKey;
     if (open) view.open.add(date);
@@ -184,7 +257,6 @@ export function showHistory(host: HTMLElement, state: HistoryState, actions: His
   const search = searchSwitch(host, state, actions.goTo);
   wirePagesBar(host, { menu: actions.menu, close: actions.close, search: search.toggle });
 
-  const listeners = new AbortController();
   wireScroll(host, listeners.signal, search.isOpen);
   render();
   if (state.search) search.toggle();
@@ -195,14 +267,56 @@ export function showHistory(host: HTMLElement, state: HistoryState, actions: His
   };
 }
 
-/** Days and arrows of the calendar, «редагувати цей день». */
-function onTap(edit: (date: DayKey) => void, day: (date: DayKey) => void, month: (by: string) => void) {
+/** Days and arrows of the calendar, the period's buttons, «редагувати цей день». */
+function onTap(edit: (date: DayKey) => void, day: (date: DayKey) => void, month: (by: string) => void, period: (action: string) => void) {
   return (event: Event) => {
     const target = (event.target as Element).closest<HTMLElement>('[data-cal], [data-edit]');
     if (!target) return;
     if (target.dataset.edit) edit(target.dataset.edit as DayKey);
     else if (target.dataset.cal === 'day') day(target.dataset.day as DayKey);
-    else month(String(target.dataset.by));
+    else if (target.dataset.cal === 'month') month(String(target.dataset.by));
+    else period(String(target.dataset.cal));
+  };
+}
+
+/** How long a finger stays on a day before it starts a period. */
+export const HOLD_MS = 500;
+
+/**
+ * A long tap on a day (wave 9): the finger stays still for HOLD_MS. The
+ * phone's own long-press menu doesn't open on the days. Returns whether the
+ * click that follows a long tap is to be swallowed.
+ */
+function holdOnDays(root: HTMLElement, hold: (date: DayKey) => void, signal: AbortSignal): () => boolean {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let start: { x: number; y: number } | null = null;
+  let fired = false;
+  const stop = () => {
+    clearTimeout(timer);
+    start = null;
+  };
+  root.addEventListener('pointerdown', (event) => {
+    const day = (event.target as Element).closest<HTMLElement>('[data-cal="day"]');
+    fired = false;
+    if (!day) return;
+    start = { x: event.clientX, y: event.clientY };
+    timer = setTimeout(() => {
+      start = null;
+      fired = true;
+      hold(day.dataset.day as DayKey);
+    }, HOLD_MS);
+  }, { signal });
+  root.addEventListener('pointermove', (event) => {
+    if (start && Math.hypot(event.clientX - start.x, event.clientY - start.y) > 8) stop();
+  }, { signal });
+  for (const type of ['pointerup', 'pointercancel', 'pointerleave']) root.addEventListener(type, stop, { signal });
+  root.addEventListener('contextmenu', (event) => {
+    if ((event.target as Element).closest('[data-cal="day"]')) event.preventDefault();
+  }, { signal });
+  return () => {
+    const was = fired;
+    fired = false;
+    return was;
   };
 }
 

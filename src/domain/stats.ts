@@ -7,8 +7,9 @@ import { ACTIVITY_KINDS, MOMENTS, type ActivityKind, type Moment, type Settings 
 /*
  * The calendar block (Figma `calendar/month` 131:2314): «цей тиждень»,
  * «середнє за 7 днів» and the month. Rules from «бета 0.81»: each kind counts
- * on its own, Monday to today; averages of sliders only; a day shows the
- * highest warm-up level done (up to 3) and markers for workout and movement.
+ * on its own, Monday to today. Since wave 9 (Olesia, 2026-11-18) a day shows
+ * dots for warm-ups and markers for workout and movement, and the averages
+ * are a carousel of cards (domain/cards.ts).
  */
 
 export interface WeekStat {
@@ -71,12 +72,49 @@ export function averages(keys: readonly DayKey[], dayAt: (key: DayKey) => Day, s
   }));
 }
 
-export interface DayMarks { readonly level: number; readonly workout: boolean; readonly movement: boolean }
+export interface DayMarks {
+  /** Morning warm-up levels done that day: dots under the number, a number from 6 on (wave 9). */
+  readonly morning: number;
+  /** Daytime warm-up groups («для чого») done: dots above the number. */
+  readonly daytime: number;
+  readonly workout: boolean;
+  readonly movement: boolean;
+}
 
-/** The last level done, counted from 1; the calendar has three shades, so 3 at most. */
+/**
+ * What a calendar day shows (wave 9, Olesia 2026-11-18): every mark is a
+ * shape, not a colour. Levels are counted, not the highest one; daytime
+ * groups count once each.
+ */
 export function dayMarks(day: Day, settings: Settings): DayMarks {
-  const level = settings.morningWarmup.levels.reduce((reached, level, i) => (levelDone(day, level) ? i + 1 : reached), 0);
-  return { level: Math.min(3, level), workout: kindDone(day, 'workout', settings), movement: kindDone(day, 'movement', settings) };
+  const morning = settings.morningWarmup.enabled ? settings.morningWarmup.levels.filter((level) => levelDone(day, level)).length : 0;
+  const daytime = settings.daytimeWarmup.enabled ? new Set(day.dw).size : 0;
+  return { morning, daytime, workout: kindDone(day, 'workout', settings), movement: kindDone(day, 'movement', settings) };
+}
+
+/** Up to 5 the marks are dots; from 6 a number stands instead (Olesia, 2026-11-18). */
+export const MAX_DOTS = 5;
+
+/**
+ * The cards of «цей тиждень» counted over any run of days (wave 9): the
+ * history counts the month open in the calendar or the period chosen, so
+ * there is no weekly target to show.
+ */
+export function periodStats(keys: readonly DayKey[], dayAt: (key: DayKey) => Day, settings: Settings): WeekStat[] {
+  const period = keys.map(dayAt);
+  return ACTIVITY_KINDS.filter((kind) => settings[kind].enabled).map((kind) => ({
+    kind,
+    label: kindLabel(kind, settings),
+    done: period.filter((day) => kindDone(day, kind, settings)).length,
+    target: 0,
+  }));
+}
+
+/** Every day from `from` to `to`, both included, oldest first. */
+export function daysFrom(from: DayKey, to: DayKey): DayKey[] {
+  const out: DayKey[] = [];
+  for (let key = from; key <= to; key = addDays(key, 1)) out.push(key);
+  return out;
 }
 
 /** A month as `YYYY-MM`. */

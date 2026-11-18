@@ -21,16 +21,6 @@
 .history__lines p {
   margin: 0;
 }
-.history__averages .avgs {
-  width: 100%;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.history__averages p {
-  margin: 0;
-}
-
 /* ---- history/day-card: edge to edge between accent lines ---- */
 /* one thin line between cards, no gap (history/day-card, п. 23) */
 .history__days {
@@ -40,10 +30,6 @@
 }
 .day-card + .day-card {
   border-top: 0;
-}
-/* «середнє за період»: one column (history/period-averages, п. 24) */
-.avgs--column {
-  grid-template-columns: minmax(0, 1fr);
 }
 .history__empty {
   margin: 0;

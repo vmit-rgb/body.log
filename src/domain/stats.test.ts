@@ -3,7 +3,7 @@ import type { DayKey } from './dates';
 import { emptyDay, readDay, type Day } from './day';
 import { readSettings } from './settings';
 import {
-  averages, beatsLine, bpm, dayMarks, lastSevenDays, monthCells, monthName, monthOf, shiftMonth, weekStats, type MonthKey,
+  averages, beatsLine, bpm, dayMarks, daysFrom, lastSevenDays, MAX_DOTS, monthCells, monthName, monthOf, periodStats, shiftMonth, weekStats, type MonthKey,
 } from './stats';
 
 // Invented data only: nothing from a real log.
@@ -90,15 +90,39 @@ describe('averages', () => {
 });
 
 describe('dayMarks', () => {
-  it('shows the highest level done, up to 3, and the workout and movement markers', () => {
-    expect(dayMarks(dayAt(key('2026-11-09')), settings)).toEqual({ level: 2, workout: false, movement: false });
-    expect(dayMarks(dayAt(key('2026-11-10')), settings)).toEqual({ level: 0, workout: true, movement: true });
+  it('counts the levels done, not the highest one, with no cap (wave 9)', () => {
+    expect(dayMarks(dayAt(key('2026-11-09')), settings)).toEqual({ morning: 2, daytime: 0, workout: false, movement: false });
+    expect(dayMarks(dayAt(key('2026-11-10')), settings)).toEqual({ morning: 0, daytime: 0, workout: true, movement: true });
     const all = readDay({ mw: { ticks: ['a', 'b', 'c', 'd'] } }, TODAY);
-    expect(dayMarks(all, settings).level).toBe(3);
+    expect(dayMarks(all, settings).morning).toBe(4);
+    expect(MAX_DOTS).toBe(5);
+  });
+
+  it('counts each daytime group once, and only when the daytime warm-up is on', () => {
+    const day = readDay({ dw: ['neck', 'back', 'neck', 'eyes'] }, TODAY);
+    expect(dayMarks(day, settings).daytime).toBe(0);
+    const daytime = readSettings({ daytimeWarmup: { enabled: true, groups: [{ id: 'neck' }, { id: 'back' }, { id: 'eyes' }] } });
+    expect(dayMarks(day, daytime).daytime).toBe(3);
   });
 
   it('marks a workout only when a set has something in it', () => {
     expect(dayMarks(dayAt(TODAY), settings).workout).toBe(false);
+  });
+});
+
+describe('periods (wave 9)', () => {
+  it('lists every day of a period, both ends included, across months', () => {
+    expect(daysFrom(key('2026-10-30'), key('2026-11-02'))).toEqual(['2026-10-30', '2026-10-31', '2026-11-01', '2026-11-02']);
+    expect(daysFrom(TODAY, TODAY)).toEqual([TODAY]);
+  });
+
+  it('counts each kind over the period, without a weekly target', () => {
+    const keys = daysFrom(key('2026-11-02'), TODAY);
+    expect(periodStats(keys, dayAt, settings)).toEqual([
+      { kind: 'morningWarmup', label: 'розминка', done: 2, target: 0 },
+      { kind: 'workout', label: 'тренування', done: 1, target: 0 },
+      { kind: 'movement', label: 'рух', done: 1, target: 0 },
+    ]);
   });
 });
 

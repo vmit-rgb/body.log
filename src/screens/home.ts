@@ -13,6 +13,7 @@ import {
 } from '../home/sections';
 import { PULSE_SAYS, pulseQuestion, pulseRunning, pulseTime, schedulePulse, stopwatchTime, type HomeSession } from '../home/session';
 import { calendarMarkup, type CalendarView } from '../home/calendar';
+import { mountCarousels, wireCarousels } from '../home/carousel';
 import { endSignal, startSignal } from '../home/signal';
 import { monthOf, shiftMonth, type MonthKey } from '../domain/stats';
 import { wireAccordions } from '../ui/accordion';
@@ -224,6 +225,7 @@ function calendarView(state: HomeState, place: string): CalendarView {
     month: state.session.month ?? monthOf(state.date),
     dayAt: (key) => state.days[key] ?? emptyDay(key),
     place,
+    card: state.session.carousel.card,
   };
 }
 
@@ -285,6 +287,7 @@ function wireCalendar(host: HTMLElement, state: HomeState, go: (date: DayKey) =>
     turned(state.session.month);
     swapMonth(container, () => {
       container.innerHTML = calendarMarkup(calendarView(current, container.dataset.place ?? 'home'));
+      mountCarousels(container, state.session.carousel);
       container.querySelector<HTMLElement>(`[data-cal="month"][data-by="${by}"]`)!.focus();
     });
   }
@@ -303,6 +306,9 @@ function wireCalendar(host: HTMLElement, state: HomeState, go: (date: DayKey) =>
     part(opened, '.cal-sheet__scrim').addEventListener('click', closeSheet);
     for (const element of host.querySelectorAll<HTMLElement>(UNDER_SHEET)) element.setAttribute('inert', '');
     const keys = new AbortController();
+    const panel = part<HTMLElement>(opened, '.cal-sheet__panel');
+    wireCarousels(panel, state.session.carousel, keys.signal);
+    mountCarousels(panel, state.session.carousel);
     // B-03: Escape closes it wherever the focus is; A-05: so does «назад»
     document.addEventListener('keydown', (event) => {
       if (event.key === 'Escape') closeSheet();
@@ -314,6 +320,8 @@ function wireCalendar(host: HTMLElement, state: HomeState, go: (date: DayKey) =>
   }
 
   part(host, '.home .cal-block').addEventListener('click', onTap);
+  wireCarousels(part(host, '.home .cal-block'), state.session.carousel, signal);
+  mountCarousels(part(host, '.home .cal-block'), state.session.carousel);
   dateButton.addEventListener('click', () => (sheet() ? closeSheet() : openSheet()), { signal });
   // home drawn anew under an open sheet takes the sheet away: its step goes too
   signal.addEventListener('abort', letGo);
@@ -321,6 +329,7 @@ function wireCalendar(host: HTMLElement, state: HomeState, go: (date: DayKey) =>
     refresh(next) {
       current = next;
       part(host, '.home .cal-block').innerHTML = calendarMarkup(calendarView(next, 'home'));
+      mountCarousels(part(host, '.home .cal-block'), state.session.carousel);
     },
     closeSheet,
   };
