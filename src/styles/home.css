@@ -24,6 +24,7 @@
  */
 .home {
   --hero-h: 400px;
+  --hero-fade: 112px;
   position: relative;
   container-type: inline-size;
 }
@@ -37,6 +38,15 @@
   isolation: isolate;
   height: calc(var(--hero-h) + env(safe-area-inset-top, 0px));
   background: var(--scene-bg);
+}
+/*
+ * In the light theme the fade gets room of its own: what comes after the
+ * header (the tab note, the first section) starts 96 px down (72 + the 24 px
+ * gap), where the fade is down to ~5 %, and not on the dark part of it. In the
+ * dark theme the fade is dark on dark, so nothing moves there.
+ */
+:root[data-theme='light'] .hero {
+  margin-bottom: calc(var(--hero-fade) - 40px);
 }
 .hero__scene {
   position: absolute;
@@ -70,8 +80,26 @@
   right: 0;
   left: 0;
   z-index: -1;
-  height: 80px;
-  background: linear-gradient(to bottom, var(--scene-bg), transparent);
+  /*
+   * Wave 11, item 5 (Olesia, 2026-11-18: a smoother fade than the 80 px one).
+   * 112 px along an S-curve (smoothstep: alpha = 1 − (3t² − 2t³), stops every
+   * 10 %), so neither the header's edge nor the end of the fade shows as a line.
+   */
+  height: var(--hero-fade);
+  background: linear-gradient(
+    to bottom,
+    rgb(var(--scene-rgb) / 100%) 0%,
+    rgb(var(--scene-rgb) / 97.2%) 10%,
+    rgb(var(--scene-rgb) / 89.6%) 20%,
+    rgb(var(--scene-rgb) / 78.4%) 30%,
+    rgb(var(--scene-rgb) / 64.8%) 40%,
+    rgb(var(--scene-rgb) / 50%) 50%,
+    rgb(var(--scene-rgb) / 35.2%) 60%,
+    rgb(var(--scene-rgb) / 21.6%) 70%,
+    rgb(var(--scene-rgb) / 10.4%) 80%,
+    rgb(var(--scene-rgb) / 2.8%) 90%,
+    rgb(var(--scene-rgb) / 0%) 100%
+  );
   pointer-events: none;
 }
 

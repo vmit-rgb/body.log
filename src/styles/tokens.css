@@ -15,6 +15,8 @@
   --bg: #161616;
   /* the header's ASCII scene: the dark page colour in both themes (Olesia, 2026-11-18) */
   --scene-bg: #161616;
+  /* the same colour as channels, for the fade under the header (home.css) */
+  --scene-rgb: 22 22 22;
   --ink: #e9e9e9;
   --on-accent: #161d1b;
   /* text on the section title bar: dark in both themes (Olesia, 2026-11-09) */
