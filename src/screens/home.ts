@@ -27,6 +27,7 @@ import { mountHeroScene } from '../ui/hero-scene';
 import type { ToastMessage } from '../ui/toast';
 import { barMarkup, fillBar, goalText, TO_TOP, wireDateNav, wireScroll } from './bar';
 import { FOOTER, part, TAB_NOTE } from './parts';
+import { wireTabNote } from './install-how';
 
 /*
  * Home (Figma `screen/home-default` 73:2601 open, 338:16522 closed;
@@ -485,6 +486,7 @@ export function showHome(host: HTMLElement, state: HomeState, actions: HomeActio
   wireCollapse(home);
   state.session.pulseStep = pulseStep(host, state, controls);
   part(host, '.bar__menu').addEventListener('click', () => actions.openMenu());
+  wireTabNote(host);
 
   wireTips(host, state, listeners.signal);
   tickStopwatches(host, state, listeners.signal);

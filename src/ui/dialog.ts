@@ -31,7 +31,7 @@ export type ConfirmAnswer = 'confirm' | 'cancel' | 'extra';
  * where it was and removes the layer, `dissolve` too, but the layer fades
  * out first (and takes no taps meanwhile).
  */
-function layer(markup: string, cancel: () => void): { root: HTMLElement; close(): void; dissolve(): void } {
+export function layer(markup: string, cancel: () => void): { root: HTMLElement; close(): void; dissolve(): void } {
   const before = document.activeElement as HTMLElement | null;
   const screen = document.querySelector<HTMLElement>('#app');
   const wasInert = screen?.hasAttribute('inert') ?? false;

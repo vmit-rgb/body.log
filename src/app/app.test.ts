@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fakeDevice, openSections } from './test-env';
 import type { DayKey } from '../domain/dates';
 import { readDay } from '../domain/day';
@@ -332,7 +332,31 @@ describe('coming back', () => {
 
 describe('in a browser tab the app says that records will not stay (A-04)', () => {
   const NOTE = 'це вкладка браузера: закриєш її — і записи зникнуть. встанови застосунок, щоб вони лишилися.';
-  const note = () => host.querySelector('.tab-note')?.textContent;
+  const note = () => host.querySelector('.tab-note p')?.textContent;
+  const popup = () => document.querySelector<HTMLElement>('.install-how');
+  const steps = () => [...popup()!.querySelectorAll('[data-steps] li')].map((li) => li.textContent);
+  afterEach(() => popup()?.remove());
+
+  it('«як?» opens the install steps with the android / iphone toggle, and they close', () => {
+    start({ platform: 'unknown', installed: false });
+    click('[data-install-how]');
+    expect(popup()?.getAttribute('role')).toBe('dialog');
+    expect(steps()[0]).toBe('відкрий цю сторінку в chrome.');
+    popup()!.querySelector<HTMLElement>('[data-platform="iphone"]')!.click();
+    expect(steps()[1]).toBe('«поділитися» → «на початковий екран».');
+    expect(popup()!.querySelector('[data-platform="iphone"]')!.getAttribute('aria-pressed')).toBe('true');
+    popup()!.querySelector<HTMLElement>('.btn[data-close]')!.click();
+    // gone, or fading out and taking no taps
+    expect(popup() === null || popup()!.inert).toBe(true);
+    expect(document.querySelector('#app')?.hasAttribute('inert') ?? false).toBe(false);
+  });
+
+  it('«як?» works on home too', () => {
+    start({ platform: 'unknown', installed: false });
+    click('[data-start-without-ai]');
+    click('[data-install-how]');
+    expect(steps()).toHaveLength(3);
+  });
 
   it('on the first screen, on a computer and on a phone that chose the browser', () => {
     start({ platform: 'unknown', installed: false });

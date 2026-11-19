@@ -1,24 +1,11 @@
 import type { Phone } from '../app/start';
-import { LANGUAGE_SWITCH, part, platformToggles, wirePlatformToggles } from './parts';
+import { LANGUAGE_SWITCH, part, platformToggles, wireInstallSteps } from './parts';
 
 /*
  * screen/install-first (390:9345): a phone opened the app in the browser.
- * Android steps: the landing page's; «подивитися тут» is Olesia's choice of
- * 2026-11-09, its wording Нитка's draft.
+ * Android steps: the landing page's (parts.ts, INSTALL_STEPS); «подивитися тут»
+ * is Olesia's choice of 2026-11-09, its wording Нитка's draft.
  */
-
-const STEPS: Record<Phone, readonly string[]> = {
-  android: [
-    'відкрий цю сторінку в chrome.',
-    'меню ⋮ → «встановити застосунок».',
-    'відкрий застосунок з головного екрана. налаштовуй уже в ньому.',
-  ],
-  iphone: [
-    'відкрий цю сторінку в safari.',
-    '«поділитися» → «на початковий екран».',
-    'відкрий застосунок з головного екрана. налаштовуй уже в ньому, не в safari: у них окремі сховища.',
-  ],
-};
 
 const MARKUP = `
   <div class="screen">
@@ -42,14 +29,6 @@ const MARKUP = `
 
 export function showInstallFirst(host: HTMLElement, phone: Phone, useBrowser: () => void): void {
   host.innerHTML = MARKUP;
-  const steps = part<HTMLOListElement>(host, '[data-steps]');
-  const choose = wirePlatformToggles(host, (chosen) => {
-    steps.replaceChildren(...STEPS[chosen].map((text) => {
-      const item = document.createElement('li');
-      item.textContent = text;
-      return item;
-    }));
-  });
-  choose(phone);
+  wireInstallSteps(host, phone);
   part(host, '[data-use-browser]').addEventListener('click', useBrowser);
 }

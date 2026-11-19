@@ -1,6 +1,7 @@
 import type { PasteAct } from '../app/paste-flow';
 import { pasteActOf, pasteResultBox, showPasteResult } from './paste-result';
 import { FOOTER, LANGUAGE_SWITCH, part, TAB_NOTE, wireRestore } from './parts';
+import { wireTabNote } from './install-how';
 import { emoticonsHtml } from '../ui/emoticons';
 import { withGrip } from '../ui/grip';
 
@@ -115,7 +116,10 @@ function wireOtherWays(host: HTMLElement, actions: FirstLaunchActions): void {
 /** `inTab`: the app runs in a browser tab, so the screen says that records won't stay (A-04). */
 export function showFirstLaunch(host: HTMLElement, actions: FirstLaunchActions, inTab = false): void {
   host.innerHTML = MARKUP;
-  if (inTab) part(host, '.lang').insertAdjacentHTML('afterend', TAB_NOTE);
+  if (inTab) {
+    part(host, '.lang').insertAdjacentHTML('afterend', TAB_NOTE);
+    wireTabNote(host);
+  }
   part(host, '[data-copy-prompt]').addEventListener('click', () => actions.copyPrompt());
   wirePaste(host, actions);
   wireOtherWays(host, actions);
