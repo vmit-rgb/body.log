@@ -192,6 +192,25 @@
   --weight-hover: 900;
   align-self: flex-end;
   font-size: inherit;
+  /*
+   * Lower plate (Olesia, 2026-11-19: «не подобається наскільки висока ця плашка. підніми
+   * кнопку вище»): the tap area keeps its full --tap height but reaches up into the text's
+   * row and down into the plate's padding, so only 4px of it shows above and below the word.
+   */
+  margin-block: calc((1.3em - var(--tap)) / 2 + 4px);
+}
+/*
+ * Keyboard focus: a square ring snug round «як?», not the button's tall box and not the pill
+ * («зроби кнопку квадратною при фокусі (без фокуса така сама текстова)»).
+ */
+.tab-note__how:focus-visible {
+  box-shadow: none;
+}
+.tab-note__how:focus-visible::after {
+  /* the button is --tap wide; the ring hugs the word, 3ch in the monospace font, plus 6px a side */
+  inset: calc((var(--tap) - 1.3em) / 2 - 4px) calc(50% - 1.5ch - 6px);
+  border-radius: 0;
+  box-shadow: var(--focus-ring);
 }
 
 /* the «як?» popup: the install steps in a dialog panel */
