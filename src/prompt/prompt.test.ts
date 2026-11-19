@@ -45,6 +45,16 @@ describe('the prompt file', () => {
     expect(texts.filter((text) => /^\p{Lu}|[.!?]\s+\p{Lu}/u.test(text))).toEqual([]);
   });
 
+  it('keeps the fixes from the AI tests of 2026-11-19 (russian word, button names, calques, step numbers, links)', () => {
+    expect(PROMPT.text).toContain('Never put the English word into a text in another language');
+    expect(PROMPT.text).not.toMatch(/translation in brackets|\((apply|settings|settings via AI|copy for AI|copy my settings for AI)\)/);
+    expect(PROMPT.text).toContain('quote them exactly as they are («…»).');
+    expect(PROMPT.text).toContain('«рачки», not «на четвереньках»');
+    expect(PROMPT.text).toContain('Never mention step numbers');
+    expect(PROMPT.text).toContain('Every link you give in the conversation also goes into that exercise\'s "source"');
+    expect(PROMPT.text).toContain('List every exercise by name.');
+  });
+
   it('gives an example the paste accepts as it is', () => {
     expect(readPaste(JSON.stringify(example, null, 1)).kind).toBe('accepted');
   });
