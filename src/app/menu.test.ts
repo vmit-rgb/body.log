@@ -213,7 +213,7 @@ describe('«поділитися застосунком»', () => {
     tap('поділитися застосунком');
     await vi.waitFor(() => expect(device.shared).toHaveLength(1));
     expect(device.shared[0]!.url).toBe('https://vmit-rgb.github.io/body.log-landing/');
-    expect(device.shared[0]!.text).toContain('щоденник руху й самопочуття');
+    expect(device.shared[0]!.text).toContain('підлаштовується під твоє тіло');
     expect(toastText()).toBeUndefined();
   });
 

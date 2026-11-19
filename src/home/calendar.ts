@@ -115,7 +115,7 @@ function legend(view: CalendarView): string {
   const { settings } = view;
   const sample = (where: string, n: number) => `<span class="legend__key legend__key--${where}" aria-hidden="true">${'<i></i>'.repeat(n)}</span>`;
   const items = [
-    ...(settings.morningWarmup.enabled ? [`<li>${sample('bottom', 3)}під числом: пройдені рівні ранкової розминки, з ${MAX_DOTS + 1} — число</li>`] : []),
+    ...(settings.morningWarmup.enabled ? [`<li>${sample('bottom', 3)}під числом: виконані рівні ранкової розминки, з ${MAX_DOTS + 1} — число</li>`] : []),
     ...(settings.daytimeWarmup.enabled ? [`<li>${sample('top', 2)}над числом: виконані групи денної розминки</li>`] : []),
     ...(settings.workout.enabled ? ['<li><span class="legend__key"><span class="marker marker--workout" aria-hidden="true"></span></span>тренування</li>'] : []),
     ...(settings.movement.enabled ? ['<li><span class="legend__key"><span class="marker marker--movement" aria-hidden="true"></span></span>рух</li>'] : []),

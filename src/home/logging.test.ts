@@ -114,7 +114,7 @@ describe('morning warm-up', () => {
     expect($('.sub').classList.contains('sub--done')).toBe(true);
     expect($('.sub .accordion__meta').textContent).toBe('5 хв · готово');
     expect($('.sub .accordion').getAttribute('aria-expanded')).toBe('false');
-    byText('зняти позначки з рівня').click();
+    byText('зняти позначку з рівня').click();
     expect(saved().mw.ticks).toEqual([]);
   });
 

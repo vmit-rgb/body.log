@@ -191,6 +191,7 @@ describe('tips that stop after three successes (Olesia, 2026-11-17)', () => {
       await tap('видалити коло 2');
       const shown = tipsIn('mv', 'remove');
       expect(shown).toHaveLength(1);
+      expect(shown[0]!.textContent).toBe('× не стирає коло одразу: натисни ✓, щоб видалити.');
       expect(shown[0]!.parentElement!.previousElementSibling!.querySelector('[data-act="rm"]')!.classList.contains('rm--armed')).toBe(true);
       await tap('точно видалити коло 2');
     }
@@ -208,6 +209,16 @@ describe('tips that stop after three successes (Olesia, 2026-11-17)', () => {
     await tap('точно видалити підхід 2');
     expect(localStorage.getItem('phys-activity-tracking-app/tip-done/sets')).toBe('1');
     expect(localStorage.getItem('phys-activity-tracking-app/tip-done/remove')).toBe('1');
+  });
+
+  it('× → ✓ on a set, once the tip about extra sets is done: the tip names the set', async () => {
+    localStorage.setItem('phys-activity-tracking-app/tip-done/sets', '3');
+    start(withSets());
+    await tap('тренування');
+    await tap('видалити підхід 2');
+    const shown = tipsIn('wo', 'remove');
+    expect(shown).toHaveLength(1);
+    expect(shown[0]!.textContent).toBe('× не стирає підхід одразу: натисни ✓, щоб видалити.');
   });
 
   it('«ще раз»: one tip under the first timed exercise; after three taps it never shows', async () => {

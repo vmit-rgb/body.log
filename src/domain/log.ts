@@ -26,7 +26,7 @@ const omit = <T>(table: Readonly<Record<string, T>>, key: string): Record<string
 
 export const toggleTick = (exercise: string): Edit => (day) => ({ ...day, mw: { ...day.mw, ticks: toggle(day.mw.ticks, exercise) } });
 
-/** «позначити весь рівень» / «зняти позначки з рівня» */
+/** «позначити весь рівень» / «зняти позначку з рівня» */
 export const markLevel = (level: Level, done: boolean): Edit => (day) => {
   const ids = level.items.map((item) => item.exercise);
   const ticks = done ? [...day.mw.ticks, ...ids.filter((id) => !day.mw.ticks.includes(id))] : day.mw.ticks.filter((id) => !ids.includes(id));
