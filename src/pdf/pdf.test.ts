@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import type { PdfLine } from '../domain/export';
+import type { PdfLine, PdfTable } from '../domain/pdf-records';
 import FONTS from './noto-sans-mono-pdf.json';
-import { buildPdf, wrapLine, type PdfFonts } from './pdf';
+import { buildPdf, columnWidths, wrapLine, type PdfFonts } from './pdf';
 
 const line = (text: string, more: Partial<PdfLine> = {}): PdfLine => ({ text, size: 10, bold: false, indent: 0, ...more });
 /** One character per byte (TextDecoder's «latin1» is windows-1252, which changes 0x80–0x9F). */
@@ -154,6 +154,58 @@ describe('buildPdf structure', () => {
     const rows = (l: PdfLine) => drawn(latin1(buildPdf([l], fonts))).map((d) => d.hex.length / 4);
     expect(rows(line('а'.repeat(170)))).toEqual([85, 85]);
     expect(rows(line('а'.repeat(100), { size: 9.5, indent: 12 }))).toEqual([87, 13]);
+  });
+});
+
+describe('bullets and tables', () => {
+  const table = (rows: string[][], more: Partial<PdfTable> = {}): PdfTable => ({ header: ['вправа', 'кг'], rows, size: 10, indent: 0, ...more });
+  const boxes = (pdf: string) => [...pdf.matchAll(/0\.5 w 0\.6 G ([\d.]+) ([\d.]+) ([\d.]+) ([\d.]+) re S/g)]
+    .map(([, x, y, w, h]) => ({ x: Number(x), y: Number(y), w: Number(w), h: Number(h) }));
+
+  it('wraps a bullet under its text, not under the bullet', () => {
+    const rows = drawn(latin1(buildPdf([line(`• ${'аааа '.repeat(30)}`, { indent: 8, hang: 12 })], fonts)));
+    expect(rows.map((r) => r.x)).toEqual([50, 62]);
+    expect(rows[0]!.hex.startsWith(gid('•'))).toBe(true);
+  });
+
+  it('makes each column as wide as its longest cell, plus padding', () => {
+    expect(columnWidths(table([['присід', '5']]))).toEqual([6 * 6 + 8, 2 * 6 + 8]);
+  });
+
+  it('narrows the first column when the page is too narrow, but not below ten letters', () => {
+    const wide = columnWidths(table([['а'.repeat(200), '5']]));
+    expect(wide[0]! + wide[1]!).toBeCloseTo(595.28 - 84, 2);
+    expect(columnWidths(table([['а'.repeat(20), 'б'.repeat(200)]]))[0]).toBe(10 * 6 + 8);
+    expect(columnWidths(table([['а', 'б'.repeat(200)]], { header: ['в', 'кг'] }))[0]).toBe(6 + 8);
+  });
+
+  it('draws a box per cell and the header in bold, the rows below it', () => {
+    const pdf = latin1(buildPdf([table([['присід', '5']], { indent: 8 })], fonts));
+    const [nameHead, kgHead, name, kg] = boxes(pdf);
+    expect(nameHead).toMatchObject({ x: 50, w: 44, h: 19.5 });
+    expect(kgHead!.x).toBe(94);
+    expect(name!.y).toBeCloseTo(nameHead!.y - 19.5, 2);
+    expect(kg!.x).toBe(94);
+    const text = drawn(pdf);
+    expect(text.map((t) => t.font)).toEqual([2, 2, 1, 1]);
+    expect(text[0]).toMatchObject({ x: 54, hex: [...'вправа'].map((ch) => gid(ch, 'B')).join('') });
+    expect(text[0]!.y).toBeCloseTo(799.89 - 3 - 13.5 + 3, 2);
+  });
+
+  it('wraps a long cell and makes its row taller', () => {
+    const pdf = latin1(buildPdf([table([['а'.repeat(200), '5']])], fonts));
+    const rowBox = boxes(pdf)[2]!;
+    const rows = drawn(pdf).filter((t) => t.font === 1 && t.hex.startsWith(gid('а')));
+    expect(rows.length).toBeGreaterThan(1);
+    expect(rowBox.h).toBeCloseTo(rows.length * 13.5 + 6, 2);
+  });
+
+  it('carries the table on to the next page with its header again', () => {
+    const pdf = latin1(buildPdf([table(Array.from({ length: 50 }, (_, i) => [`вправа ${i}`, '5']))], fonts));
+    expect(pdf).toContain('/Count 2');
+    const header = [...'вправа'].map((ch) => gid(ch, 'B')).join('');
+    expect(drawn(pdf).filter((t) => t.hex === header)).toHaveLength(2);
+    expect(Math.min(...boxes(pdf).map((b) => b.y))).toBeGreaterThanOrEqual(42);
   });
 });
 
