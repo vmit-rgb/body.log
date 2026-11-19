@@ -94,7 +94,7 @@ describe('settings: the page (Figma screen/edit-profile 186:3278)', () => {
     expect(button('тижнева ціль').getAttribute('aria-expanded')).toBe('false');
     expect(button('зберегти налаштування')).toBeTruthy();
     expect(button('закрити налаштування')).toBeTruthy();
-    expect(host.textContent).toContain('тапни на будь-який текст, щоб змінити його. коли закінчиш — збережи внизу.');
+    expect(host.textContent).toContain('натисни на будь-який текст, щоб змінити його. коли закінчиш — збережи внизу.');
   });
 
   it('E-14: puts the parts in three groups that never fold, a group titled for the screen reader', () => {
@@ -392,7 +392,7 @@ describe('settings: accent and «доступність»', () => {
     await openPart('акцентний колір');
     expect([...host.querySelectorAll('.swatch')].map((s) => s.getAttribute('aria-label'))).toEqual([
       'сірий', 'помаранчевий', 'рожевий', 'пурпуровий', 'фіолетовий', 'лавандовий',
-      'синій', 'блакитний', 'бірюзовий', 'м’ятний', 'зелений',
+      'синій', 'блакитний', 'бірюзовий', 'мʼятний', 'зелений',
     ]);
   });
 
@@ -410,8 +410,8 @@ describe('settings: accent and «доступність»', () => {
     await openPart('доступність');
     const labels = [...host.querySelectorAll('#st-access label.checkbox')].map((l) => l.textContent!.trim());
     expect(labels).toEqual([
-      'вимкнути всі анімації', 'вимкнути фонові анімації (ASCII)', 'вимкнути вібровідгук', 'вимкнути звук',
-      'збільшені зони тапу', 'збільшити розмір тексту', 'віддзеркалити нижню панель', 'вимкнути зникання повідомлень',
+      'вимкнути всі анімації', 'вимкнути фонові анімації (ASCII)', 'вимкнути вібрацію', 'вимкнути звук',
+      'збільшити зони натискання', 'збільшити розмір тексту', 'віддзеркалити нижню панель', 'вимкнути зникання повідомлень',
       'показувати ⋯ біля пунктів, що потребують затискання',
     ]);
     await tick('збільшити розмір тексту');
@@ -464,7 +464,7 @@ describe('settings: accent and «доступність»', () => {
     expect(checkbox('вимкнути всі анімації').checked).toBe(true);
     expect(checkbox('вимкнути всі анімації').disabled).toBe(true);
     expect(checkbox('вимкнути фонові анімації (ASCII)').disabled).toBe(true);
-    expect(checkbox('вимкнути вібровідгук').disabled).toBe(false);
+    expect(checkbox('вимкнути вібрацію').disabled).toBe(false);
     expect(host.textContent).toContain('на телефоні ввімкнено «зменшити рух», тож анімації вимкнені.');
   });
 });
@@ -548,7 +548,7 @@ describe('settings: «налаштування через ШІ»', () => {
     const groups = [...result().querySelectorAll('.paste-result__group')].map((g) => g.textContent!.replace(/\s+/g, ' ').trim());
     expect(groups).toEqual([
       'додановправа: місток',
-      'зміненоакцентний колір: м’ятнийвправа: присід',
+      'зміненоакцентний колір: мʼятнийвправа: присід',
       'прибранопитання про самопочуття: було важко?',
     ]);
     expect(result().textContent).toContain('записи лишаються як були');
@@ -726,7 +726,7 @@ describe('settings: copy and export', () => {
   });
 
   it('says that a copy holds health records (E-13)', () => {
-    expect(host.querySelector('#st-backup')!.textContent).toContain('у копії всі записи про здоров’я.');
+    expect(host.querySelector('#st-backup')!.textContent).toContain('у копії всі записи про здоровʼя.');
   });
 
   it('saves a copy and says how old it is', async () => {
@@ -738,7 +738,7 @@ describe('settings: copy and export', () => {
 
   it('exports the records with the health-data warning', async () => {
     expect(button('записи').getAttribute('aria-pressed')).toBe('true');
-    expect(host.textContent).toContain('записи — це дані про твоє здоров’я. надсилай їх лише тим, кому довіряєш; у чаті з ШІ вони потрапляють до стороннього сервісу.');
+    expect(host.textContent).toContain('записи — це дані про твоє здоровʼя. надсилай їх лише тим, кому довіряєш; у чаті з ШІ вони потрапляють до стороннього сервісу.');
     // E-13: the warning stands over all three buttons, not only the one for an AI
     const warning = [...host.querySelectorAll('.st-warning')].find((p) => p.textContent!.startsWith('записи —'))!;
     expect(warning.compareDocumentPosition(button('зберегти PDF')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
@@ -756,7 +756,7 @@ describe('settings: copy and export', () => {
   it('exports the exercises without the warning', async () => {
     await tap('вправи');
     expect(button('вправи').getAttribute('aria-pressed')).toBe('true');
-    expect(host.textContent).not.toContain('записи — це дані про твоє здоров’я');
+    expect(host.textContent).not.toContain('записи — це дані про твоє здоровʼя');
     await tap('скопіювати для ШІ');
     await Promise.resolve();
     await Promise.resolve();

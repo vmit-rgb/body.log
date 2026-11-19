@@ -49,7 +49,7 @@ const label = (what: string, entry: Entry) => `${what}: ${entry.name || entry.id
 const capped = (lines: string[]) => (lines.length > GROUP_LINES ? [...lines.slice(0, GROUP_LINES), `і ще ${lines.length - GROUP_LINES}`] : lines);
 
 /** With two or more sections in the goal, the line says how a day counts (Olesia, 2026-11-19: the AI promised «any» while the app counted «all»). */
-const goalMode = (settings: Settings) => (goalKinds(settings).length > 1 ? (settings.goal.any ? ', будь-яка активність' : ', усі розділи') : '');
+const goalMode = (settings: Settings) => (goalKinds(settings).length > 1 ? (settings.goal.any ? ', будь-яка активність' : ', усе обране') : '');
 const goalLine = (settings: Settings) => `тижнева ціль: днів на тиждень — ${settings.goal.days}${goalMode(settings)}`;
 const activityLine = (settings: Settings, kind: ActivityKind) =>
   `${KIND_NAMES[kind]}: ${settings[kind].enabled ? `показується, ціль днів на тиждень — ${settings[kind].weeklyTarget}` : 'вимкнено'}`;

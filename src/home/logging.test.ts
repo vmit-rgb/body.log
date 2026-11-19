@@ -415,7 +415,7 @@ describe('a number field with something that is not a number (D-01)', () => {
   it('does not take a number below zero', () => {
     type(km(), '-3');
     leave(km());
-    expect(errors()).toEqual(['число не може бути від’ємним']);
+    expect(errors()).toEqual(['число не може бути відʼємним']);
     expect(saved().mv.walk).toBeUndefined();
   });
 
@@ -472,7 +472,7 @@ describe('a number field with something that is not a number (D-01)', () => {
     const minutes = byLabel<HTMLInputElement>('ходьба, хв');
     type(minutes, '-3');
     leave(minutes);
-    expect(errors()).toEqual(['тут потрібне число, наприклад 10 або 1,5', 'число не може бути від’ємним']);
+    expect(errors()).toEqual(['тут потрібне число, наприклад 10 або 1,5', 'число не може бути відʼємним']);
   });
 
   it('removing a row forgets what was typed wrongly on that day', () => {

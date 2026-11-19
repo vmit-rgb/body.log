@@ -59,7 +59,7 @@ describe('endSignal', () => {
 });
 
 describe('endSignal with «доступність»', () => {
-  it('keeps quiet and still with «вимкнути звук» and «вимкнути вібровідгук», but still flashes', async () => {
+  it('keeps quiet and still with «вимкнути звук» and «вимкнути вібрацію», but still flashes', async () => {
     vi.stubGlobal('AudioContext', FakeAudio);
     const vibrate = vi.fn(() => true);
     Object.defineProperty(navigator, 'vibrate', { configurable: true, value: vibrate });

@@ -5,7 +5,7 @@ import type { Accessibility } from '../domain/settings';
  * a short buzz, the tone and a flash (F-06). The pulse timer's end:
  * vibration, a short sound and a flash of the
  * screen (ACCESSIBILITY.md: the person is counting with both hands busy).
- * «вимкнути вібровідгук» and «вимкнути звук» switch the first two off; the
+ * «вимкнути вібрацію» and «вимкнути звук» switch the first two off; the
  * flash always comes (with «вимкнути всі анімації» as a still layer, CSS), so
  * the end is never lost. Where a phone can't do one of them, the others still happen.
  */
@@ -62,7 +62,7 @@ export function endSignal(off: Pick<Accessibility, 'noVibration' | 'noSound'>): 
   flash();
 }
 
-/** A vibration, unless «вимкнути вібровідгук»; each one has a visible twin, so nothing is lost without it. */
+/** A vibration, unless «вимкнути вібрацію»; each one has a visible twin, so nothing is lost without it. */
 export function buzz(pattern: number | number[], off: Pick<Accessibility, 'noVibration'>): void {
   if (!off.noVibration) navigator.vibrate?.(pattern);
 }

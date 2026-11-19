@@ -407,12 +407,12 @@ export function daytimeBody(ctx: Ctx): string {
 function groupHint(ctx: Ctx): string {
   const { picking } = ctx.view;
   if (!picking) {
-    return `<p class="t-2nd-regular muted">група вправ — 2–3 вправи, які робиш разом. натисни «створити групу» й вибери вправи. або потягни вправу на іншу, як застосунки в папку на телефоні.</p>
+    return `<p class="t-2nd-regular muted">група вправ — 2–3 вправи, які робиш разом. натисни «створити групу» й обери вправи. або потягни вправу на іншу, як застосунки в папку на телефоні.</p>
         <div>${tertiary('створити групу', act('pick-start'))}</div>`;
   }
   const n = picking.chosen.length;
   return `<div class="st-row st-picking">
-          <p class="t-2nd-bold st-grow" aria-live="polite">вибери 2–3 вправи для групи</p>
+          <p class="t-2nd-bold st-grow" aria-live="polite">обери 2–3 вправи для групи</p>
           ${iconButton('check', 'зібрати групу', act('pick-done'), n < 2 || n > 3)}
           ${iconButton('close', 'скасувати групу', act('pick-cancel'))}
         </div>`;

@@ -171,7 +171,7 @@ describe('the action menu (Н)', () => {
     await openWorkout();
     await tap('дії: вправа 8');
     fake.played.length = 0;
-    await tap('об’єднати в групу з…');
+    await tap('обʼєднати в групу з…');
     const menu = host.querySelector('.st-menu')!;
     expect(fake.on(menu)).toEqual([]);
     expect([...menu.children].map((item) => fake.on(item)[0]?.options.delay)).toEqual([0, 40, 80]);
@@ -184,7 +184,7 @@ describe('the action menu (Н)', () => {
     expect(springs(entry('вправа 6')).some((run) => run.keyframes[0]!.transform === 'scale(1.03)')).toBe(true);
     fake.played.length = 0;
     await tap('дії: вправа 8');
-    await tap('об’єднати в групу з…');
+    await tap('обʼєднати в групу з…');
     await choose('вправа 7');
     expect(fake.on(host.querySelector('.st-group')).some((run) => run.options.duration === 360)).toBe(true);
   });
@@ -196,7 +196,7 @@ describe('the action menu: the other ways out', () => {
   it('settles an exercise taken out of its group in the list around it', async () => {
     await openWorkout();
     await tap('дії: вправа 8');
-    await tap('об’єднати в групу з…');
+    await tap('обʼєднати в групу з…');
     await choose('вправа 7');
     fake.played.length = 0;
     await tap('дії: вправа 8');

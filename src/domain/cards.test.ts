@@ -10,7 +10,7 @@ const key = (text: string) => text as DayKey;
 
 const settings = readSettings({
   trackers: [
-    { id: 'pain', name: 'біль у зап’ястках', kind: 'scale', min: 0, max: 10, ask: ['morning', 'afterMorningWarmup', 'evening'] },
+    { id: 'pain', name: 'біль у запʼястках', kind: 'scale', min: 0, max: 10, ask: ['morning', 'afterMorningWarmup', 'evening'] },
     { id: 'pulse', name: 'пульс', kind: 'number', units: ['уд/хв'], ask: ['morning'] },
     { id: 'bp', name: 'тиск', kind: 'numbers', units: ['мм', 'мм'], ask: ['morning', 'evening'] },
     { id: 'slept', name: 'спала добре?', kind: 'yesno', ask: ['morning'] },
@@ -29,7 +29,7 @@ const WEEK = weekTo(key('2026-11-18'));
 
 describe('trackerCards', () => {
   it('gives a card to every question but the notes, in the settings order', () => {
-    expect(trackerCards(WEEK, dayAt, settings).map((card) => card.name)).toEqual(['біль у зап’ястках', 'пульс', 'тиск', 'спала добре?', 'запаморочення']);
+    expect(trackerCards(WEEK, dayAt, settings).map((card) => card.name)).toEqual(['біль у запʼястках', 'пульс', 'тиск', 'спала добре?', 'запаморочення']);
   });
 
   it('averages a slider per moment, with «—» left for a moment without answers', () => {

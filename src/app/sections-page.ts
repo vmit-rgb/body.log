@@ -83,7 +83,7 @@ export class SectionsEditor {
     this.draft.redraw();
   }
 
-  /** A short vibration when an entry is lifted, unless «вимкнути вібровідгук». */
+  /** A short vibration when an entry is lifted, unless «вимкнути вібрацію». */
   lifted(): void {
     if (!this.draft.settings().accessibility.noVibration) navigator.vibrate?.(18);
   }
@@ -289,7 +289,7 @@ export class SectionsEditor {
   /** What the «дії» menu of an entry offers; nothing for the only entry of its list. */
   private moves(slot: Slot, family: string): { key: string; label: string }[] {
     const items: { key: string; label: string }[] = [];
-    if (this.partners(slot).length) items.push({ key: 'group', label: 'об’єднати в групу з…' });
+    if (this.partners(slot).length) items.push({ key: 'group', label: 'обʼєднати в групу з…' });
     if (inGroup(slot.list)) items.push({ key: 'leave', label: 'вийти з групи' });
     if (this.containers(slot).length) items.push({ key: 'move', label: 'перемістити в…' });
     if (this.step(slot, family, -1)) items.push({ key: 'up', label: 'вище' });

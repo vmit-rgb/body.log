@@ -335,7 +335,7 @@ describe('rewards: a warm-up level done, a day counted', () => {
     document.documentElement.style.removeProperty('--accent-rgb');
   });
 
-  it('shows the same with «вимкнути вібровідгук», without a buzz', () => {
+  it('shows the same with «вимкнути вібрацію», without a buzz', () => {
     start({}, { ...profile, accessibility: { noVibration: true } });
     tick('a');
     tick('t');

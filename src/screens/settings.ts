@@ -99,16 +99,16 @@ export interface SettingsActions {
 /* COPY.md: accent names; blue is «синій» since sky took «блакитний» (2026-11-12). */
 export const ACCENT_NAMES: Record<Accent, string> = {
   gray: 'сірий', orange: 'помаранчевий', pink: 'рожевий', magenta: 'пурпуровий', purple: 'фіолетовий',
-  violet: 'лавандовий', blue: 'синій', sky: 'блакитний', cyan: 'бірюзовий', mint: 'м’ятний', green: 'зелений',
+  violet: 'лавандовий', blue: 'синій', sky: 'блакитний', cyan: 'бірюзовий', mint: 'мʼятний', green: 'зелений',
 };
 
 /* ACCESSIBILITY.md and Figma section/accessibility; «вимкнути звук» added by Olesia 2026-11-10. */
 const ACCESS_LABELS: Record<AccessibilityKey, string> = {
   noMotion: 'вимкнути всі анімації',
   noBackgroundMotion: 'вимкнути фонові анімації (ASCII)',
-  noVibration: 'вимкнути вібровідгук',
+  noVibration: 'вимкнути вібрацію',
   noSound: 'вимкнути звук',
-  largerTargets: 'збільшені зони тапу',
+  largerTargets: 'збільшити зони натискання',
   largerText: 'збільшити розмір тексту',
   mirrored: 'віддзеркалити нижню панель',
   keepToasts: 'вимкнути зникання повідомлень',
@@ -118,13 +118,13 @@ const ACCESS_LABELS: Record<AccessibilityKey, string> = {
 const ACCESS_HINTS: Partial<Record<AccessibilityKey, string>> = {
   keepToasts: 'повідомлення внизу екрана лишаються, поки не натиснеш ×',
 };
-/* The closed part's line (Figma layer 347:9003: «без анімацій, більші зони тапу»); Нитка's words for the rest. */
+/* The closed part's line (Figma layer 347:9003: «без анімацій, більші зони натискання»); Нитка's words for the rest. */
 export const ACCESS_SHORT: Record<AccessibilityKey, string> = {
   noMotion: 'без анімацій',
   noBackgroundMotion: 'без фонових анімацій',
   noVibration: 'без вібрації',
   noSound: 'без звуку',
-  largerTargets: 'більші зони тапу',
+  largerTargets: 'більші зони натискання',
   largerText: 'більший текст',
   mirrored: 'дзеркальна панель',
   keepToasts: 'повідомлення не зникають',
@@ -218,7 +218,7 @@ function backupBody(state: SettingsState): string {
     `<button type="button" class="ctl tab" ${act('export-tab', `data-tab="${name}"`)} aria-pressed="${state.exportTab === name}">${label}</button>`;
   // E-13: a copy, a JSON and a PDF carry the same health data as the text for an AI, so the warning covers all three buttons
   const warning = state.exportTab === 'records'
-    ? '<p class="t-2nd-bold st-warning">записи — це дані про твоє здоров’я. надсилай їх лише тим, кому довіряєш; у чаті з ШІ вони потрапляють до стороннього сервісу.</p>' : '';
+    ? '<p class="t-2nd-bold st-warning">записи — це дані про твоє здоровʼя. надсилай їх лише тим, кому довіряєш; у чаті з ШІ вони потрапляють до стороннього сервісу.</p>' : '';
   // A-07: «відновити з копії» lives here, right under «зберегти копію», not in «налаштування через ШІ»
   return `
       <div class="st-backup">
@@ -228,7 +228,7 @@ function backupBody(state: SettingsState): string {
         <input type="file" accept=".json,application/json,text/plain" hidden data-restore-file />
       </div>
       <p class="t-2nd-regular muted">копія — один файл з усіма записами й налаштуваннями. з нього все відновиться на новому телефоні.</p>
-      <p class="t-2nd-bold st-warning">у копії всі записи про здоров’я.</p>
+      <p class="t-2nd-bold st-warning">у копії всі записи про здоровʼя.</p>
       <h4 class="t-2nd-bold">експорт</h4>
       <div class="segmented" role="group" aria-label="що експортувати">${tab('records', 'записи')}${tab('exercises', 'вправи')}</div>
       ${warning}
@@ -303,11 +303,11 @@ function markup(state: SettingsState): string {
     <div class="settings">
       <h1 class="visually-hidden">налаштування</h1>
       <div class="settings__intro">
-        <p class="t-2nd-regular">тапни на будь-який текст, щоб змінити його. коли закінчиш — збережи внизу.</p>
-        <p class="t-2nd-regular muted">усе всередині розділів можна перетягувати: вправи, рівні, трекери. затримай палець на записі й веди: так міняється порядок, а вправа може переїхати в інший рівень чи тренування.</p>
+        <p class="t-2nd-regular">натисни на будь-який текст, щоб змінити його. коли закінчиш — збережи внизу.</p>
+        <p class="t-2nd-regular muted">усе всередині розділів можна перетягувати: вправи, рівні, питання. затисни запис і веди: так міняється порядок, а вправа може переїхати в інший рівень чи тренування.</p>
         <p class="t-2nd-regular muted">${state.settings.accessibility.showDots
-    ? 'без перетягування: натисни ⋯ біля запису або затримай на ньому палець і відпусти.'
-    : 'без перетягування: затримай палець на записі й відпусти.'}</p>
+    ? 'без перетягування: натисни ⋯ біля запису або затисни запис.'
+    : 'без перетягування: затисни запис.'}</p>
       </div>
       <div class="settings__parts">${GROUPS.map(group).join('')}</div>
       ${FOOTER}
