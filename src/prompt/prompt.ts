@@ -38,7 +38,15 @@ export function readPrompt(source: string, parts: Readonly<Record<string, string
   return { version, draft: header.get('status') === 'чернетка', text: text.trim() };
 }
 
+/**
+ * Most characters a pasted prompt may have. Free Gemini silently cut a
+ * paste at about 32 100 characters (AI re-test, 2026-11-19), so the schema
+ * and the example go in without indentation and a test keeps the whole
+ * text under this.
+ */
+export const PROMPT_MAX_LENGTH = 30_000;
+
 export const PROMPT: Prompt = readPrompt(file, {
-  schema: JSON.stringify(schema, null, 1),
-  example: JSON.stringify(example, null, 1),
+  schema: JSON.stringify(schema),
+  example: JSON.stringify(example),
 });

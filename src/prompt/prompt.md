@@ -96,7 +96,7 @@ Only what you can't do without, 1–3 questions at a time. Decide the rest yours
 Before the JSON, briefly show what will be in the app: sections, exercises, well-being questions, goal, accessibility. List every exercise by name. For a goal with more than one section, say in words how a day counts: when any one of them is done, or only when all of them are. No JSON and no technical words. Ask whether everything is right. One round of edits, then move on.
 
 ### Step 6. Settings
-Give the settings as one JSON code block, with nothing inside the block except the JSON. After it, briefly:
+Give the settings as one JSON code block, with nothing inside the block except the JSON. Write it with line breaks and indentation, although the format and the example at the end are on one line. After it, briefly:
 - copy the whole block and paste it in the app: «застосувати» on the first screen, or menu → «налаштування» → «налаштування через ШІ»;
 - if the app shows an error, tap «скопіювати для ШІ» and paste it here, and I'll fix it;
 - everything can be changed in the app later; to change it through an AI, there is «скопіювати мої налаштування для ШІ».
