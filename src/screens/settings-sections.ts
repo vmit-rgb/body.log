@@ -60,7 +60,8 @@ export const KIND_NAMES: Record<ActivityKind, string> = {
 };
 
 const EXERCISES = ['вправа', 'вправи', 'вправ'] as const;
-const FIELDS = ['поле', 'поля', 'полів'] as const;
+/** E-07 / E-08 (Olesia, 2026-11-18): what «самопочуття» holds are «питання», not «поля». */
+export const QUESTIONS = ['питання', 'питання', 'питань'] as const;
 
 /* ---- pieces ---- */
 
@@ -238,7 +239,7 @@ function trackerKind(ctx: Ctx, [kind, title, hint, add, placeholder]: (typeof TR
   const body = () => `${hint ? `<p class="t-2nd-regular muted">${hint}</p>` : ''}
         ${list(`tk-${kind}`, TRACKERS, mine.map((index) => trackerMarkup(ctx, ctx.settings.trackers[index]!, index, placeholder)), end)}
         <div class="st-end">${tertiary(add, act('add', `data-what="tracker" data-kind="${kind}"`))}</div>`;
-  return `<div class="st-box">${box(`<h3 class="t-h6 st-grow">${title}</h3>`, open, toggle(id, title, open), count(mine.length, FIELDS), body)}</div>`;
+  return `<div class="st-box">${box(`<h4 class="t-h6 st-grow">${title}</h4>`, open, toggle(id, title, open), count(mine.length, QUESTIONS), body)}</div>`;
 }
 
 export function wellbeingBody(ctx: Ctx): string {

@@ -10,7 +10,7 @@ describe('glass: no text straight on «Політ символів» (Olesia, 20
     expect(tokens).toMatch(/--glass-blur: blur\(4px\);/);
     expect(components).toMatch(/\.accordion--section \{[^}]*backdrop-filter: var\(--glass-blur\)/);
     const blurred = /\*\/\n([^{]*)\{\s*-webkit-backdrop-filter: var\(--glass-blur\);/.exec(glass)?.[1] ?? '';
-    for (const block of ['.home-section__body', '.home-section__hint', '.home .cal-block', '.history .cal-block', '.screen__section', '.settings__intro', '.tab-note', '.footer', '.day-card', '.st-part']) {
+    for (const block of ['.home-section__body', '.home-section__hint', '.home .cal-block', '.history .cal-block', '.screen__section', '.settings__intro', '.tab-note', '.footer', '.day-card', '.settings__group']) {
       expect(blurred.split(/,\s*/).map((s) => s.trim()), block).toContain(block);
     }
   });
