@@ -171,19 +171,27 @@
   background: var(--tab-note-bg);
   box-shadow: 0 0 0 var(--stroke-focus) var(--tab-note-bg);
   color: var(--tab-note-ink);
+  display: flex;
+  flex-direction: column;
 }
 .tab-note p {
   margin: 0;
 }
-/* «як?»: a text button in the plate's black, not the accent; the hover pill and focus ring black too */
+/*
+ * «як?»: a text button in the plate's black, not the accent; the hover pill and focus ring black too.
+ * On the right and bolder than the plate's 720 text (Olesia, 2026-11-19: «перенеси кнопку
+ * праворуч і зроби жирною»): 900, the font's heaviest; .ctl draws its weight from --weight-0.
+ */
 .tab-note__how {
   --fg-0: var(--tab-note-ink);
   --fg-hover: var(--tab-note-ink);
   --fg-pressed: var(--tab-note-ink);
   --accent: var(--tab-note-ink);
   --focus-ring: 0 0 0 var(--stroke-focus) var(--tab-note-ink);
+  --weight-0: 900;
+  --weight-hover: 900;
+  align-self: flex-end;
   font-size: inherit;
-  font-weight: inherit;
 }
 
 /* the «як?» popup: the install steps in a dialog panel */

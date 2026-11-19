@@ -75,4 +75,13 @@ describe('«це вкладка браузера…»: a yellow plate, the same 
   it('uses the 14 px text, bold', () => {
     expect(TAB_NOTE).toContain('class="tab-note t-2nd-bold"');
   });
+
+  it('puts «як?» on the right, bolder than the text (Olesia, 2026-11-19)', () => {
+    expect(blockOf(screens, '.tab-note')).toMatch(/display: flex;[^}]*flex-direction: column;/);
+    const how = blockOf(screens, '.tab-note__how');
+    expect(how).toMatch(/align-self: flex-end;/);
+    // .ctl takes its weight from --weight-0; the plate's text is 720
+    expect(how).toMatch(/--weight-0: 900;/);
+    expect(how).not.toMatch(/font-weight/);
+  });
 });
