@@ -4,7 +4,7 @@ import { emoticonsHtml } from '../ui/emoticons';
 import { hideFlight } from '../ui/flight';
 import { iconSvg } from '../ui/icons';
 import { barMarkup, fillBar, wireDateNav, type BarState } from './bar';
-import { FOOTER, part } from './parts';
+import { FOOTER, LANGUAGE_SWITCH, part, wireLanguageSwitch } from './parts';
 import { t } from '../i18n/lang';
 
 /*
@@ -50,7 +50,7 @@ const REMINDER = `<p class="t-2nd-bold" data-backup-reminder>${emoticonsHtml(t('
 function markup(state: MenuState): string {
   return `
     <div class="menu">
-      <div class="menu__top">${THEME_SWITCH[state.theme]}</div>
+      <div class="menu__top">${THEME_SWITCH[state.theme]}${LANGUAGE_SWITCH}</div>
       <h1 class="visually-hidden">${t('меню')}</h1>
       <div class="menu__content">
         <nav class="menu__group menu__group--links" aria-label="${t('розділи')}">
@@ -89,6 +89,8 @@ export function showMenu(host: HTMLElement, state: MenuState, actions: MenuActio
     if (button) actions.choose(button.dataset.menu as MenuItem);
   });
   part(host, '.menu__theme').addEventListener('click', () => actions.switchTheme());
+  // «укр / eng» beside ☼ / ☾ (Olesia, 2026-11-19): the language can change after the first screen too
+  wireLanguageSwitch(host);
   part(host, '.bar__menu').addEventListener('click', () => actions.close());
 
   const listeners = new AbortController();

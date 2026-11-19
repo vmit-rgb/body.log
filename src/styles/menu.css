@@ -21,7 +21,16 @@
 /* menu/top-bar: ☼ / ☾ at the size of the bar's ≡ */
 .menu__top {
   display: flex;
+  align-items: center;
   padding: 8px var(--pad-screen-x);
+}
+/* «укр / eng» on the right of the same row; no glass of its own here (the first screens keep theirs) */
+.menu__top .lang {
+  margin-left: auto;
+  padding: 0;
+  background: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 .menu__theme {
   min-width: 75px;

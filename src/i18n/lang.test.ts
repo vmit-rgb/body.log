@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import schema from '../format/profile.schema.json';
 import { EN, EN_PLURALS } from './en';
-import { keepLangWith, LANG_KEY, lang, pickLang, switchLang, t, useLang } from './lang';
+import { keepLangWith, LANG_KEY, lang, phoneLang, pickLang, switchLang, t, useLang } from './lang';
 import { formatNumber, plural } from '../domain/numbers';
 import { LANGUAGE_SWITCH, wireLanguageSwitch } from '../screens/parts';
 
@@ -121,17 +121,28 @@ describe('numbers in English', () => {
 describe('pickLang', () => {
   const saved = (value: string | null) => ({ getItem: (key: string) => (key === LANG_KEY ? value : null) });
 
-  it('takes the link first, then the saved choice, then Ukrainian', () => {
-    expect(pickLang('?lang=en', saved('uk'))).toBe('en');
-    expect(pickLang('', saved('en'))).toBe('en');
-    expect(pickLang('', saved(null), saved('en'))).toBe('en');
-    expect(pickLang('', saved(null))).toBe('uk');
-    expect(pickLang('?lang=ru', saved('ru'))).toBe('uk');
+  it('takes the link first, then the saved choice, then the phone', () => {
+    expect(pickLang('?lang=en', ['uk'], saved('uk'))).toBe('en');
+    expect(pickLang('', ['uk'], saved('en'))).toBe('en');
+    expect(pickLang('', ['de'], saved('uk'))).toBe('uk');
+    expect(pickLang('', ['uk'], saved(null), saved('en'))).toBe('en');
+    expect(pickLang('', ['uk-UA'], saved(null))).toBe('uk');
+    expect(pickLang('?lang=ru', ['pl'], saved('ru'))).toBe('en');
   });
 
-  it('is Ukrainian when the storage refuses', () => {
+  it('is Ukrainian for a phone in Ukrainian or russian, English for any other', () => {
+    expect(phoneLang(['uk-UA', 'en-US'])).toBe('uk');
+    expect(phoneLang(['ru-RU'])).toBe('uk');
+    expect(phoneLang(['en-GB'])).toBe('en');
+    expect(phoneLang(['pl', 'uk'])).toBe('en');
+    expect(phoneLang(['be-BY'])).toBe('en');
+    expect(phoneLang([])).toBe('uk');
+  });
+
+  it('asks the phone when the storage refuses', () => {
     const blocked = { getItem: () => { throw new Error('blocked'); } };
-    expect(pickLang('', blocked)).toBe('uk');
+    expect(pickLang('', ['uk'], blocked)).toBe('uk');
+    expect(pickLang('', ['de'], blocked)).toBe('en');
   });
 });
 

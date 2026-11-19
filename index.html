@@ -90,11 +90,15 @@
        * when that code does not. If the app arrives later, it removes the layer as usual.
        */
       (function () {
-        /* the loading screen in the app's language, before its code arrives (i18n/lang.ts: the link, then the saved choice) */
+        /* the loading screen in the app's language, before its code arrives (i18n/lang.ts: the link, the saved choice, then the phone) */
         var lang = new URLSearchParams(location.search).get('lang');
         try {
           if (lang !== 'en' && lang !== 'uk') lang = sessionStorage.getItem('phys-activity-tracking-app/lang') || localStorage.getItem('phys-activity-tracking-app/lang');
         } catch (e) {}
+        if (lang !== 'en' && lang !== 'uk') {
+          var phone = ((navigator.languages && navigator.languages[0]) || navigator.language || '').toLowerCase().split(/[-_]/)[0];
+          lang = !phone || phone === 'uk' || phone === 'ru' ? 'uk' : 'en';
+        }
         if (lang === 'en') {
           document.documentElement.lang = 'en';
           document.documentElement.setAttribute('data-lang', 'en');

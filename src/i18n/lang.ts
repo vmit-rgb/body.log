@@ -16,8 +16,19 @@ interface Reader {
   getItem(key: string): string | null;
 }
 
-/** `?lang=en` in the link wins (for the landing page later), then the saved choice, then Ukrainian. */
-export function pickLang(search: string, ...storages: readonly (Reader | undefined)[]): Lang {
+/**
+ * The phone's own language when nothing was chosen (Olesia, 2026-11-19):
+ * Ukrainian for a phone in Ukrainian or russian, English for any other.
+ * No language known: Ukrainian.
+ */
+export function phoneLang(languages: readonly string[]): Lang {
+  const first = languages[0]?.toLowerCase().split(/[-_]/)[0];
+  if (!first) return 'uk';
+  return first === 'uk' || first === 'ru' ? 'uk' : 'en';
+}
+
+/** `?lang=en` in the link wins (for the landing page later), then the saved choice, then the phone's language. */
+export function pickLang(search: string, phone: readonly string[], ...storages: readonly (Reader | undefined)[]): Lang {
   const asked = new URLSearchParams(search).get('lang');
   if (asked === 'en' || asked === 'uk') return asked;
   for (const storage of storages) {
@@ -25,10 +36,10 @@ export function pickLang(search: string, ...storages: readonly (Reader | undefin
       const saved = storage?.getItem(LANG_KEY);
       if (saved === 'en' || saved === 'uk') return saved;
     } catch {
-      // storage blocked: Ukrainian
+      // storage blocked: the phone decides
     }
   }
-  return 'uk';
+  return phoneLang(phone);
 }
 
 function startLang(): Lang {
@@ -41,7 +52,8 @@ function startLang(): Lang {
     }
   };
   // a browser tab keeps its things in sessionStorage, the installed app in localStorage (storage/store.ts)
-  return pickLang(location.search, get('sessionStorage'), get('localStorage'));
+  const phone = typeof navigator === 'undefined' ? [] : navigator.languages?.length ? navigator.languages : [navigator.language];
+  return pickLang(location.search, phone, get('sessionStorage'), get('localStorage'));
 }
 
 let current: Lang = startLang();

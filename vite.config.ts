@@ -66,6 +66,8 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     include: ['src/**/*.test.ts'],
+    // the test phone speaks Ukrainian, so the app starts in Ukrainian (i18n/lang.ts reads the phone's language)
+    setupFiles: ['src/i18n/test-phone.ts'],
     // these stylesheets are read as text by tests; other CSS stays out of the tests
     css: { include: [/\/styles\/[\w-]+\.css/] },
     coverage: {
