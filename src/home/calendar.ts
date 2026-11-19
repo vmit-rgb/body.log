@@ -9,6 +9,7 @@ import type { Settings } from '../domain/settings';
 import { tip } from './sections';
 import { carouselMarkup, daysCount } from './carousel';
 import { iconSvg } from '../ui/icons';
+import { t } from '../i18n/lang';
 
 /*
  * The calendar block (Figma `calendar/month` 131:2314, `calendar/stat-card`,
@@ -54,10 +55,10 @@ const dayMonth = (key: DayKey) => `${key.slice(8)}.${key.slice(5, 7)}`;
 export const periodName = (period: Period) => `${dayMonth(period.from)}–${dayMonth(period.to)}`;
 
 /** «з 1 дня», «з 5 днів»: the genitive after «з». */
-const days = (n: number) => (n % 10 === 1 && n % 100 !== 11 ? 'дня' : 'днів');
+const days = (n: number) => (n % 10 === 1 && n % 100 !== 11 ? t('дня') : t('днів'));
 
 function statCard({ label, done, target }: WeekStat, of: string): string {
-  const goal = of ? ` <span class="stat__goal t-3rd-regular">${of}</span>` : target > 0 ? ` <span class="stat__goal t-3rd-regular">з ${target} ${days(target)}</span>` : '';
+  const goal = of ? ` <span class="stat__goal t-3rd-regular">${of}</span>` : target > 0 ? ` <span class="stat__goal t-3rd-regular">${t('з')} ${target} ${days(target)}</span>` : '';
   return `
     <li class="stat">
       <span class="stat__label t-3rd-semibold">${label}</span>
@@ -79,10 +80,10 @@ function scope(view: CalendarView): Scope {
   if (view.place !== 'history') {
     return {
       stats: weekStats(view.date, view.today, view.dayAt, view.settings),
-      statsHeading: 'цей тиждень',
+      statsHeading: t('цей тиждень'),
       of: '',
       keys: weekTo(view.date),
-      averagesHeading: 'середнє за 7 днів',
+      averagesHeading: t('середнє за 7 днів'),
     };
   }
   const keys = view.period
@@ -91,10 +92,10 @@ function scope(view: CalendarView): Scope {
   const name = view.period ? periodName(view.period) : monthName(view.month, view.today);
   return {
     stats: periodStats(keys, view.dayAt, view.settings),
-    statsHeading: `за ${name}`,
-    of: `за ${daysCount(keys.length)}`,
+    statsHeading: `${t('за')} ${name}`,
+    of: `${t('за')} ${daysCount(keys.length)}`,
     keys,
-    averagesHeading: `середнє за ${name}`,
+    averagesHeading: `${t('середнє за')} ${name}`,
   };
 }
 
@@ -115,13 +116,13 @@ function legend(view: CalendarView): string {
   const { settings } = view;
   const sample = (where: string, n: number) => `<span class="legend__key legend__key--${where}" aria-hidden="true">${'<i></i>'.repeat(n)}</span>`;
   const items = [
-    ...(settings.morningWarmup.enabled ? [`<li>${sample('bottom', 3)}під числом: виконані рівні ранкової розминки, з ${MAX_DOTS + 1} — число</li>`] : []),
-    ...(settings.daytimeWarmup.enabled ? [`<li>${sample('top', 2)}над числом: виконані групи денної розминки</li>`] : []),
-    ...(settings.workout.enabled ? ['<li><span class="legend__key"><span class="marker marker--workout" aria-hidden="true"></span></span>тренування</li>'] : []),
-    ...(settings.movement.enabled ? ['<li><span class="legend__key"><span class="marker marker--movement" aria-hidden="true"></span></span>рух</li>'] : []),
-    ...(view.period ? ['<li><span class="legend__key legend__key--period" aria-hidden="true"></span>обраний період</li>'] : []),
+    ...(settings.morningWarmup.enabled ? [`<li>${sample('bottom', 3)}${t('під числом: виконані рівні ранкової розминки, з')} ${MAX_DOTS + 1} ${t('— число')}</li>`] : []),
+    ...(settings.daytimeWarmup.enabled ? [`<li>${sample('top', 2)}${t('над числом: виконані групи денної розминки')}</li>`] : []),
+    ...(settings.workout.enabled ? [`<li><span class="legend__key"><span class="marker marker--workout" aria-hidden="true"></span></span>${t('тренування')}</li>`] : []),
+    ...(settings.movement.enabled ? [`<li><span class="legend__key"><span class="marker marker--movement" aria-hidden="true"></span></span>${t('рух')}</li>`] : []),
+    ...(view.period ? [`<li><span class="legend__key legend__key--period" aria-hidden="true"></span>${t('обраний період')}</li>`] : []),
   ];
-  return `<ul class="legend t-3rd-regular" role="list" aria-label="позначки">${items.join('')}</ul>`;
+  return `<ul class="legend t-3rd-regular" role="list" aria-label="${t('позначки')}">${items.join('')}</ul>`;
 }
 
 const LEVELS = ['рівень', 'рівні', 'рівнів'] as const;
@@ -130,11 +131,11 @@ const GROUPS = ['група', 'групи', 'груп'] as const;
 function dayLabel(key: DayKey, marks: DayMarks, inPeriod: boolean): string {
   return [
     formatLong(key),
-    ...(marks.morning ? [`ранкова розминка: ${marks.morning} ${plural(marks.morning, LEVELS)}`] : []),
-    ...(marks.daytime ? [`денна розминка: ${marks.daytime} ${plural(marks.daytime, GROUPS)}`] : []),
-    ...(marks.workout ? ['тренування'] : []),
-    ...(marks.movement ? ['рух'] : []),
-    ...(inPeriod ? ['у періоді'] : []),
+    ...(marks.morning ? [`${t('ранкова розминка:')} ${marks.morning} ${plural(marks.morning, LEVELS)}`] : []),
+    ...(marks.daytime ? [`${t('денна розминка:')} ${marks.daytime} ${plural(marks.daytime, GROUPS)}`] : []),
+    ...(marks.workout ? [t('тренування')] : []),
+    ...(marks.movement ? [t('рух')] : []),
+    ...(inPeriod ? [t('у періоді')] : []),
   ].join(', ');
 }
 
@@ -166,25 +167,25 @@ function dayCell(view: CalendarView, key: DayKey, inMonth: boolean): string {
     key === view.date ? ' aria-current="date"' : ''}>${inside}</button>`;
 }
 
-const WEEKDAYS = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'нд'];
+const WEEKDAYS = [t('пн'), t('вт'), t('ср'), t('чт'), t('пт'), t('сб'), t('нд')];
 /** The most weeks a month spans. */
 const WEEKS = 6;
 
 /** The tip about the long tap; it stops after three periods chosen. */
 export const PERIOD_TIP = 'period';
-const PERIOD_TIP_TEXT = 'швидше: затисни перший день періоду, а потім натисни останній.';
+const PERIOD_TIP_TEXT = t('швидше: затисни перший день періоду, а потім натисни останній.');
 
 /** History only: «обрати період», what to tap while choosing, the period and «скинути період». */
 function periodRow(view: CalendarView): string {
   if (view.place !== 'history') return '';
   if (view.picking) {
-    const says = view.picking.from ? `від ${dayMonth(view.picking.from)}: натисни останній день` : 'натисни перший день періоду';
-    return `<div class="cal__period"><p class="t-2nd-regular" role="status">${says}</p><button type="button" class="ctl btn btn--destructive" data-cal="period-cancel">скасувати</button></div>`;
+    const says = view.picking.from ? `${t('від')} ${dayMonth(view.picking.from)}${t(': натисни останній день')}` : t('натисни перший день періоду');
+    return `<div class="cal__period"><p class="t-2nd-regular" role="status">${says}</p><button type="button" class="ctl btn btn--destructive" data-cal="period-cancel">${t('скасувати')}</button></div>`;
   }
   if (view.period) {
-    return `<div class="cal__period"><p class="t-2nd-regular">період ${periodName(view.period)}</p><button type="button" class="ctl btn btn--tertiary" data-cal="period-reset">скинути період</button></div>`;
+    return `<div class="cal__period"><p class="t-2nd-regular">${t('період')} ${periodName(view.period)}</p><button type="button" class="ctl btn btn--tertiary" data-cal="period-reset">${t('скинути період')}</button></div>`;
   }
-  return `<div class="cal__period"><button type="button" class="ctl btn btn--tertiary" data-cal="period-pick">обрати період</button>${
+  return `<div class="cal__period"><button type="button" class="ctl btn btn--tertiary" data-cal="period-pick">${t('обрати період')}</button>${
     view.periodTip ? tip(PERIOD_TIP, PERIOD_TIP_TEXT) : ''}</div>`;
 }
 
@@ -204,8 +205,8 @@ function month(view: CalendarView): string {
           <div class="cal__grid" role="group" aria-labelledby="${heading}">${cells}</div>
         </div>
         <div class="cal__nav">
-          <button type="button" class="ctl icon-btn icon-btn--secondary" data-cal="month" data-by="-1" aria-label="попередній місяць">${iconSvg('chevron-left')}</button>
-          <button type="button" class="ctl icon-btn icon-btn--secondary" data-cal="month" data-by="1" aria-label="наступний місяць"${last ? ' disabled' : ''}>${iconSvg('chevron-right')}</button>
+          <button type="button" class="ctl icon-btn icon-btn--secondary" data-cal="month" data-by="-1" aria-label="${t('попередній місяць')}">${iconSvg('chevron-left')}</button>
+          <button type="button" class="ctl icon-btn icon-btn--secondary" data-cal="month" data-by="1" aria-label="${t('наступний місяць')}"${last ? ' disabled' : ''}>${iconSvg('chevron-right')}</button>
         </div>
       </div>
       <div class="cal__info">${legend(view)}</div>

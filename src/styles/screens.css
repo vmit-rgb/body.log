@@ -37,9 +37,9 @@
   color: var(--muted);
   font-size: calc(14px * var(--text-scale));
 }
-/* «eng» is not ready yet, but looks as drawn: an accent link */
-.lang .lang__soon.ctl {
-  --fg-disabled: var(--accent);
+/* the language on now is plain text colour; the other one stays an accent link to tap (Нитка, 2026-11-19) */
+.lang .ctl[aria-current='true'] {
+  color: var(--ink);
   cursor: default;
 }
 

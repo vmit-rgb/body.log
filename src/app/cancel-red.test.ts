@@ -16,18 +16,18 @@ import components from '../styles/components.css?raw';
 describe('red «скасувати»', () => {
   it('text buttons use the destructive look', () => {
     expect(sections).toContain('class="ctl btn btn--destructive" data-act="pulse-cancel"');
-    expect(calendar).toContain('class="ctl btn btn--destructive" data-cal="period-cancel">скасувати');
-    expect(dialog).toContain('class="ctl btn btn--destructive" data-answer="cancel">скасувати');
+    expect(calendar).toContain(`class="ctl btn btn--destructive" data-cal="period-cancel">\${t('скасувати')}`);
+    expect(dialog).toContain(`class="ctl btn btn--destructive" data-answer="cancel">\${t('скасувати')}`);
     expect(settingsSections).toContain("item.key === 'cancel' ? 'btn--destructive' : 'btn--tertiary'");
   });
 
   it('the framed one on the paste preview is red, frame and text', () => {
-    expect(pasteResult).toContain("button('secondary', 'cancel', 'скасувати', ' btn--cancel')");
+    expect(pasteResult).toContain("button('secondary', 'cancel', t('скасувати'), ' btn--cancel')");
     expect(components).toMatch(/\.btn--secondary\.btn--cancel \{[^}]*--fg-0: var\(--err\);[^}]*--ring-0: var\(--err\);/);
   });
 
   it('the toast turns only «скасувати» red', () => {
-    expect(toast).toContain("const cancels = next.action?.label === 'скасувати';");
+    expect(toast).toContain("const cancels = next.action?.label === t('скасувати');");
     expect(toast).toContain("button.classList.toggle('btn--destructive', cancels);");
   });
 

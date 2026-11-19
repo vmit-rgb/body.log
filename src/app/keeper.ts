@@ -5,12 +5,13 @@ import { rememberNames, type Edit } from '../domain/log';
 import { readSettings } from '../domain/settings';
 import type { DiaryStore } from '../storage/store';
 import type { Toast, ToastMessage } from '../ui/toast';
+import { t } from '../i18n/lang';
 
 /** Logging saves this long after the last change, so typing doesn't write on every key. */
 export const SAVE_DELAY_MS = 400;
 
 /* COPY.md, Home: «save error» */
-const LOG_NOT_SAVED: ToastMessage = { message: 'не вдалося зберегти :( спробуй ще раз. якщо повторюється — збережи копію в меню.', error: true };
+const LOG_NOT_SAVED: ToastMessage = { message: t('не вдалося зберегти :( спробуй ще раз. якщо повторюється — збережи копію в меню.'), error: true };
 
 export interface LogKeeper {
   /** The diary with the edit applied to one day; saved a moment later. */

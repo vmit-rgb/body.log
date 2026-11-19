@@ -2,6 +2,7 @@ import { announce } from './announce';
 import { emoticonsHtml, withoutEmoticons } from './emoticons';
 import { iconSvg } from './icons';
 import { EASE, glyphs, MS, play, typeIn, whenDone } from './motion';
+import { t } from '../i18n/lang';
 
 export interface ToastMessage {
   /** An emoticon inside it («збережено :)») is shown in the accent colour and not heard (E-17). */
@@ -39,11 +40,11 @@ export const TOAST_MS = 4000;
 /** The letters typed in become plain text again after this long. */
 const SETTLE_MS = 600;
 
-const UNDONE: ToastMessage = { message: 'скасовано', showIcon: true };
+const UNDONE: ToastMessage = { message: t('скасовано'), showIcon: true };
 
 /** «скасувати»: runs the undo, then says «скасовано». */
 export function undo(run: () => void): ToastAction {
-  return { label: 'скасувати', undo: true, run: () => { run(); return UNDONE; } };
+  return { label: t('скасувати'), undo: true, run: () => { run(); return UNDONE; } };
 }
 
 /** What a screen reader hears: the message whole, then the button's name. */
@@ -92,13 +93,13 @@ function slideUnderBar(box: HTMLElement): { rise(): void; hide(): void } {
  */
 export function mountToast(host: HTMLElement): Toast {
   host.insertAdjacentHTML('beforeend', `
-    <div class="toast" role="region" aria-label="повідомлення" hidden>
+    <div class="toast" role="region" aria-label="${t('повідомлення')}" hidden>
       <span class="toast__life" hidden></span>
       <div class="toast__inner">
         <span class="toast__check" hidden>${iconSvg('check')}</span>
         <p class="toast__message t-2nd-regular"></p>
         <button type="button" class="ctl btn btn--tertiary toast__action" hidden></button>
-        <button type="button" class="ctl icon-btn icon-btn--secondary toast__close" aria-label="закрити">${iconSvg('close')}</button>
+        <button type="button" class="ctl icon-btn icon-btn--secondary toast__close" aria-label="${t('закрити')}">${iconSvg('close')}</button>
       </div>
     </div>`);
   const box = host.querySelector<HTMLElement>('.toast:last-child')!;
@@ -169,7 +170,7 @@ export function mountToast(host: HTMLElement): Toast {
     button.textContent = next.action?.label ?? '';
     button.hidden = !next.action;
     // «скасувати» is red, «оновити» and the rest stay in the accent (Olesia, 2026-11-19)
-    const cancels = next.action?.label === 'скасувати';
+    const cancels = next.action?.label === t('скасувати');
     button.classList.toggle('btn--destructive', cancels);
     button.classList.toggle('btn--tertiary', !cancels);
     rise();

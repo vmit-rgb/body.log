@@ -69,7 +69,7 @@ describe('every emoticon in the code goes one way', () => {
       const marks = text.includes('emoticonsHtml(') || path in SHOWN_ELSEWHERE;
       text.split('\n').forEach((line, i) => {
         if (/^\s*(\/\/|\*|\/\*)/.test(line) || !QUOTED.test(line)) return;
-        if (/message: [`']/.test(line) || marks) return;
+        if (/message: (?:t\()?[`']/.test(line) || marks) return;
         loose.push(`${path}:${i + 1}`);
       });
     }

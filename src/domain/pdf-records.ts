@@ -4,6 +4,7 @@ import { formatLaps } from './history';
 import { MOMENT_TITLES, answerRow, exerciseName, sessionName, warmupGroups, zoneNames } from './journal';
 import { formatNumber } from './numbers';
 import { MOMENTS, type Moment, type Settings } from './settings';
+import { t } from '../i18n/lang';
 
 /*
  * The records PDF laid out for reading (Olesia, 2026-11-19): the date, then
@@ -66,7 +67,7 @@ function wellbeing(day: Day, settings: Settings): PdfBlock[] {
     })];
   }
   const ids = [...new Set(moments.flatMap((moment) => Object.keys(day.t[moment]!)))];
-  return [...heading('самопочуття'), ...ids.flatMap((id) => {
+  return [...heading(t('самопочуття')), ...ids.flatMap((id) => {
     const answered = moments.filter((moment) => day.t[moment]![id] !== undefined);
     return [bullet(answer(id, answered[0]!).label), ...answered.map((moment) => subBullet(`${momentName(moment)}: ${answer(id, moment).value}`))];
   })];
@@ -75,13 +76,13 @@ function wellbeing(day: Day, settings: Settings): PdfBlock[] {
 function morning(day: Day, days: readonly Day[], settings: Settings): PdfBlock[] {
   const groups = warmupGroups(day, days, settings);
   if (groups.length === 0) return [];
-  return [...heading('ранкова розминка'), ...groups.map((group) =>
+  return [...heading(t('ранкова розминка')), ...groups.map((group) =>
     bullet(`${group.title} (${group.items.map((item) => (item.times ? `${item.name} ${item.times}` : item.name)).join(', ')})`))];
 }
 
 function daytime(day: Day, settings: Settings): PdfBlock[] {
   const zones = zoneNames(day, settings);
-  return zones.length ? [...heading('денна розминка'), ...zones.map(bullet)] : [];
+  return zones.length ? [...heading(t('денна розминка')), ...zones.map(bullet)] : [];
 }
 
 /** One value per set, written once when every set has the same. */
@@ -92,7 +93,7 @@ function column(sets: readonly SetLog[], key: keyof SetLog): string {
   return texts.every((x) => x === texts[0]) ? texts[0]! : texts.join(', ');
 }
 
-const SET_COLUMNS: readonly [string, keyof SetLog][] = [['повт.', 'r'], ['кг', 'w'], ['с', 's']];
+const SET_COLUMNS: readonly [string, keyof SetLog][] = [[t('повт.'), 'r'], [t('кг'), 'w'], [t('с'), 's']];
 
 /** «вправа · підходи · повт. · кг · с»; a column nobody filled is left out. */
 function workoutTable(day: Day, days: readonly Day[], settings: Settings): PdfTable | null {
@@ -100,7 +101,7 @@ function workoutTable(day: Day, days: readonly Day[], settings: Settings): PdfTa
   if (done.length === 0) return null;
   const used = SET_COLUMNS.filter(([, key]) => done.some(([, sets]) => column(sets, key)));
   return {
-    header: ['вправа', 'підходи', ...used.map(([title]) => title)],
+    header: [t('вправа'), t('підходи'), ...used.map(([title]) => title)],
     rows: done.map(([id, sets]) => [exerciseName(settings, days, id), String(sets.length), ...used.map(([, key]) => column(sets, key))]),
     size: BODY,
     indent: 8,
@@ -112,25 +113,25 @@ function workout(day: Day, days: readonly Day[], settings: Settings): PdfBlock[]
   const table = workoutTable(day, days, settings);
   if (!table) return [];
   const session = settings.workout.sessions.find((s) => s.id === day.wo!.session);
-  return [...heading(session ? sessionName(session.name) : 'тренування'), gap(2), table];
+  return [...heading(session ? sessionName(session.name) : t('тренування')), gap(2), table];
 }
 
 /** A kind with one lap on one line; with several, each lap one level down. */
 function movement(day: Day, settings: Settings): PdfBlock[] {
   const kinds = Object.entries(day.mv).map(([id, laps]) => {
     const kind = settings.movement.kinds.find((k) => k.id === id);
-    const label = kind ? kind.name || 'без назви' : 'рух, якого вже немає';
+    const label = kind ? kind.name || t('без назви') : t('рух, якого вже немає');
     const filled = laps.filter(hasLap);
     return filled.length === 1
       ? [bullet(`${label}: ${formatLaps(filled)}`)]
-      : [bullet(label), ...filled.map((lap, i) => subBullet(`коло ${i + 1}: ${formatLaps([lap])}`))];
+      : [bullet(label), ...filled.map((lap, i) => subBullet(`${t('коло')} ${i + 1}: ${formatLaps([lap])}`))];
   });
-  return kinds.length ? [...heading('рух'), ...kinds.flat()] : [];
+  return kinds.length ? [...heading(t('рух')), ...kinds.flat()] : [];
 }
 
 function note(day: Day): PdfBlock[] {
   if (!day.note) return [];
-  return [...heading('нотатка'), ...day.note.split('\n').map((text) => pdfLine(text.trim(), BODY, false, 8))];
+  return [...heading(t('нотатка')), ...day.note.split('\n').map((text) => pdfLine(text.trim(), BODY, false, 8))];
 }
 
 /** A day under its date: wellbeing first, then the day as it was lived, the note last. */

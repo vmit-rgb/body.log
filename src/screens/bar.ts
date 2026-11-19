@@ -8,6 +8,7 @@ import { goalLine } from '../home/home-view';
 import { iconSvg } from '../ui/icons';
 import { fadeShown, moving } from '../ui/motion';
 import { part } from './parts';
+import { t } from '../i18n/lang';
 
 /*
  * The bottom bar (Figma `navigation` 189:6748): ≡ on home, ✕ in the menu
@@ -23,20 +24,20 @@ export interface BarState {
 }
 
 const LEFT = {
-  menu: `<button type="button" class="ctl icon-btn icon-btn--secondary bar__menu" aria-label="меню">${iconSvg('menu')}</button>`,
-  close: `<button type="button" class="ctl icon-btn icon-btn--secondary bar__menu" aria-label="закрити меню">${iconSvg('close')}</button>`,
+  menu: `<button type="button" class="ctl icon-btn icon-btn--secondary bar__menu" aria-label="${t('меню')}">${iconSvg('menu')}</button>`,
+  close: `<button type="button" class="ctl icon-btn icon-btn--secondary bar__menu" aria-label="${t('закрити меню')}">${iconSvg('close')}</button>`,
 };
 
 export function barMarkup(left: keyof typeof LEFT): string {
   return `
-  <nav class="bar" aria-label="навігація">
+  <nav class="bar" aria-label="${t('навігація')}">
     ${LEFT[left]}
     <div class="bar__right">
       <p class="bar__goal t-3rd-semibold"></p>
       <div class="date-nav">
-        <button type="button" class="ctl icon-btn icon-btn--secondary date-nav__step" data-step="-1" aria-label="попередній день">${iconSvg('chevron-left')}</button>
+        <button type="button" class="ctl icon-btn icon-btn--secondary date-nav__step" data-step="-1" aria-label="${t('попередній день')}">${iconSvg('chevron-left')}</button>
         <button type="button" class="ctl date-nav__date" aria-haspopup="dialog" aria-expanded="false"><span aria-hidden="true"></span><span class="visually-hidden"></span></button>
-        <button type="button" class="ctl icon-btn icon-btn--secondary date-nav__step" data-step="1" aria-label="наступний день">${iconSvg('chevron-right')}</button>
+        <button type="button" class="ctl icon-btn icon-btn--secondary date-nav__step" data-step="1" aria-label="${t('наступний день')}">${iconSvg('chevron-right')}</button>
       </div>
     </div>
   </nav>`;
@@ -49,10 +50,10 @@ export function barMarkup(left: keyof typeof LEFT): string {
 export function pagesBarMarkup(searchOpen?: boolean): string {
   const pressed = searchOpen === undefined ? '' : ` aria-pressed="${searchOpen}"`;
   return `
-  <nav class="bar bar--pages" aria-label="навігація">
-    <button type="button" class="ctl icon-btn icon-btn--secondary bar__menu" data-page="menu" aria-label="меню">${iconSvg('menu')}</button>
-    <button type="button" class="ctl icon-btn icon-btn--secondary bar__menu bar__search" data-page="search" aria-label="пошук у нотатках"${pressed}>${iconSvg('search')}</button>
-    <button type="button" class="ctl icon-btn icon-btn--secondary bar__menu" data-page="close" aria-label="закрити">${iconSvg('close')}</button>
+  <nav class="bar bar--pages" aria-label="${t('навігація')}">
+    <button type="button" class="ctl icon-btn icon-btn--secondary bar__menu" data-page="menu" aria-label="${t('меню')}">${iconSvg('menu')}</button>
+    <button type="button" class="ctl icon-btn icon-btn--secondary bar__menu bar__search" data-page="search" aria-label="${t('пошук у нотатках')}"${pressed}>${iconSvg('search')}</button>
+    <button type="button" class="ctl icon-btn icon-btn--secondary bar__menu" data-page="close" aria-label="${t('закрити')}">${iconSvg('close')}</button>
   </nav>`;
 }
 
@@ -89,7 +90,7 @@ export function fillBar(host: HTMLElement, state: BarState): void {
 
 /** «вгору» (Figma button/to-top 288:10620), on home and in the history. */
 export const TO_TOP = `
-  <button type="button" class="ctl icon-btn icon-btn--primary to-top" aria-label="вгору" hidden>${iconSvg('arrow-up')}</button>`;
+  <button type="button" class="ctl icon-btn icon-btn--primary to-top" aria-label="${t('вгору')}" hidden>${iconSvg('arrow-up')}</button>`;
 
 /**
  * The bar hides on scroll down; «вгору» shows once scrolled. `pinned` keeps the

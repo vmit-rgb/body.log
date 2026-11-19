@@ -90,14 +90,29 @@
        * when that code does not. If the app arrives later, it removes the layer as usual.
        */
       (function () {
+        /* the loading screen in the app's language, before its code arrives (i18n/lang.ts: the link, then the saved choice) */
+        var lang = new URLSearchParams(location.search).get('lang');
+        try {
+          if (lang !== 'en' && lang !== 'uk') lang = sessionStorage.getItem('phys-activity-tracking-app/lang') || localStorage.getItem('phys-activity-tracking-app/lang');
+        } catch (e) {}
+        if (lang === 'en') {
+          document.documentElement.lang = 'en';
+          document.documentElement.setAttribute('data-lang', 'en');
+          var text = document.querySelector('#loading .ld-t');
+          if (text) text.textContent = 'loading…';
+        }
         setTimeout(function () {
           var layer = document.getElementById('loading');
           if (!layer || layer.hasAttribute('data-leaving')) return;
           layer.setAttribute('data-stuck', '');
           layer.setAttribute('role', 'alert');
-          layer.innerHTML = '<p class="ld-h">щось пішло не так: застосунок не може дочекатися даних &gt;_&lt;</p>'
-            + '<p class="ld-b">онови сторінку. якщо повторюється — перевір, чи браузер не блокує збереження даних для цього сайту.</p>'
-            + '<button type="button">оновити</button>';
+          layer.innerHTML = document.documentElement.getAttribute('data-lang') === 'en'
+            ? '<p class="ld-h">something went wrong: the app can\'t get its data &gt;_&lt;</p>'
+              + '<p class="ld-b">reload the page. if it keeps happening, check that the browser doesn\'t block storing data for this site.</p>'
+              + '<button type="button">reload</button>'
+            : '<p class="ld-h">щось пішло не так: застосунок не може дочекатися даних &gt;_&lt;</p>'
+              + '<p class="ld-b">онови сторінку. якщо повторюється — перевір, чи браузер не блокує збереження даних для цього сайту.</p>'
+              + '<button type="button">оновити</button>';
           layer.querySelector('button').addEventListener('click', function () { location.reload(); });
         }, 7000);
       })();

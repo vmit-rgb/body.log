@@ -1,5 +1,6 @@
 import type { Moment } from '../domain/settings';
 import type { MonthKey } from '../domain/stats';
+import { t } from '../i18n/lang';
 
 /**
  * What the home screen keeps while the app is open but never stores:
@@ -58,10 +59,10 @@ export interface PulseRun {
  * What the pulse timer says in each phase: on screen, and to a screen reader
  * through the announcer (B-02: the lines themselves are drawn anew each time).
  */
-export const PULSE_SAYS = { ready: 'приготуйся', counting: 'рахуй удари' } as const;
-export const pulseQuestion = (seconds: number) => `скільки ударів за ${seconds} с?`;
+export const PULSE_SAYS = { ready: t('приготуйся'), counting: t('рахуй удари') } as const;
+export const pulseQuestion = (seconds: number) => `${t('скільки ударів за')} ${seconds} ${t('с?')}`;
 /** What a screen reader hears when a stopwatch starts counting after «3 · 2 · 1» (F-05; Нитка's draft). */
-export const STOPWATCH_GO = 'почали';
+export const STOPWATCH_GO = t('почали');
 
 /** Time to find the pulse before the count starts (Olesia, 2026-11-12); the same «3 · 2 · 1» before a stopwatch (F-05, 2026-11-15). */
 export const PULSE_READY_MS = 3000;

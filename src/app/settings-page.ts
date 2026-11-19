@@ -22,6 +22,7 @@ import { fillThrough, spinWhile } from '../ui/motion';
 import { undo, type Toast, type ToastMessage } from '../ui/toast';
 import type { TipMemory } from '../storage/store';
 import { HOLD_TIP } from '../screens/settings-sections';
+import { t } from '../i18n/lang';
 
 /*
  * The settings page's working copy (Figma screen/edit-profile; «бета 0.81»
@@ -75,14 +76,14 @@ export interface SettingsPage {
 }
 
 /* COPY.md, Toasts and Settings; Нитка's drafts marked. */
-const SAVED: ToastMessage = { message: 'збережено :)', showIcon: true };
-const COPIED: ToastMessage = { message: 'скопійовано — встав у чат зі своїм ШІ', showIcon: true };
-const NOT_COPIED: ToastMessage = { message: 'не вдалося скопіювати >_<', error: true }; // draft
-const FILE_SAVED: ToastMessage = { message: 'збережено', showIcon: true };
-const FILE_NOT_SAVED: ToastMessage = { message: 'не вдалося зберегти файл >_<', error: true };
-const NOT_A_COPY: ToastMessage = { message: 'цей файл не схожий на копію з body.log >_<', error: true };
-const RESTORED: ToastMessage = { message: 'відновлено з файлу :)', showIcon: true };
-const PDF_NOT_MADE: ToastMessage = { message: 'не вдалося зібрати PDF >_<', error: true }; // «бета 0.81»
+const SAVED: ToastMessage = { message: t('збережено :)'), showIcon: true };
+const COPIED: ToastMessage = { message: t('скопійовано — встав у чат зі своїм ШІ'), showIcon: true };
+const NOT_COPIED: ToastMessage = { message: `${t('не вдалося скопіювати')} >_<`, error: true }; // draft
+const FILE_SAVED: ToastMessage = { message: t('збережено'), showIcon: true };
+const FILE_NOT_SAVED: ToastMessage = { message: `${t('не вдалося зберегти файл')} >_<`, error: true };
+const NOT_A_COPY: ToastMessage = { message: `${t('цей файл не схожий на копію з body.log')} >_<`, error: true };
+const RESTORED: ToastMessage = { message: t('відновлено з файлу :)'), showIcon: true };
+const PDF_NOT_MADE: ToastMessage = { message: `${t('не вдалося зібрати PDF')} >_<`, error: true }; // «бета 0.81»
 const PDF_FOOTER = `body.log · ${VERSION_LABEL}`; // Olesia, 2026-11-10; the name body.log since 2026-11-17
 const PHRASE_MAX = 80;
 const DAYS = ['день', 'дні', 'днів'] as const;
@@ -241,7 +242,7 @@ class Draft implements SettingsPage {
   mayLeave = async (): Promise<boolean> => {
     if (this.hasChanges()) {
       const answer = await confirmDialog({
-        title: 'вийти без збереження?', body: 'зміни на цій сторінці пропадуть.', confirm: 'вийти', cancel: 'залишитися',
+        title: t('вийти без збереження?'), body: t('зміни на цій сторінці пропадуть.'), confirm: t('вийти'), cancel: t('залишитися'),
       });
       if (answer !== 'confirm') return false;
     }
@@ -263,14 +264,14 @@ class Draft implements SettingsPage {
 
   async editPhrase(index: number, adding: boolean): Promise<void> {
     const phrases = this.settings().encouragement;
-    const typed = await editText({ label: 'підбадьорлива фраза', value: phrases[index] ?? '', maxLength: PHRASE_MAX });
+    const typed = await editText({ label: t('підбадьорлива фраза'), value: phrases[index] ?? '', maxLength: PHRASE_MAX });
     if (typed) this.change(withEncouragement(phrases.map((p, i) => (i === index ? typed : p)).concat(adding ? [typed] : [])));
   }
 
   async removePhrase(index: number): Promise<void> {
     const phrases = this.settings().encouragement;
     const answer = await confirmDialog({
-      title: `видалити «${phrases[index]}»?`, body: 'її більше не буде в налаштуваннях.', confirm: 'видалити', cancel: 'скасувати',
+      title: t('видалити «{name}»?', { name: phrases[index]! }), body: t('її більше не буде в налаштуваннях.'), confirm: t('видалити'), cancel: t('скасувати'),
     });
     if (answer === 'confirm') this.change(withEncouragement(phrases.filter((_, i) => i !== index)));
   }
@@ -346,11 +347,11 @@ class Draft implements SettingsPage {
     const n = Object.keys(copied.days).length;
     // A-08 (Olesia, 2026-11-14): a copy of what is here now is offered before it is replaced
     const answer = await confirmDialog({
-      title: 'поточні дані буде замінено. спершу зберегти копію?',
-      body: `у файлі ${n} ${plural(n, DAYS)} записів і налаштування. вони замінять ті, що є зараз.`,
-      extra: 'зберегти й відновити',
-      confirm: 'відновити без збереження',
-      cancel: 'скасувати',
+      title: t('поточні дані буде замінено. спершу зберегти копію?'),
+      body: `${t('у файлі')} ${n} ${plural(n, DAYS)} ${t('записів і налаштування. вони замінять ті, що є зараз.')}`,
+      extra: t('зберегти й відновити'),
+      confirm: t('відновити без збереження'),
+      cancel: t('скасувати'),
     });
     if (answer === 'cancel') return;
     // the phone refused the file: nothing is replaced without the copy the person asked for
@@ -381,26 +382,26 @@ class Draft implements SettingsPage {
 
   async deleteRecords(): Promise<void> {
     // E-04: no «видалене не повернути»: the toast that follows offers «скасувати»
-    const answer = await confirmDialog({ title: 'видалити тільки записи?', confirm: 'видалити', cancel: 'скасувати' });
+    const answer = await confirmDialog({ title: t('видалити тільки записи?'), confirm: t('видалити'), cancel: t('скасувати') });
     if (answer !== 'confirm') return;
     const before = this.home.diary();
     if (!this.home.keep({ ...before, days: {} })) return;
-    this.say({ message: 'записи видалено', showIcon: true, action: undo(() => this.home.keep({ ...this.home.diary(), days: before.days })) });
+    this.say({ message: t('записи видалено'), showIcon: true, action: undo(() => this.home.keep({ ...this.home.diary(), days: before.days })) });
   }
 
   async deleteAll(): Promise<void> {
     const answer = await confirmDialog({
-      title: 'стерти все разом з налаштуваннями?',
-      body: 'спершу збережи копію.',
-      extra: 'зберегти копію',
-      confirm: 'стерти все',
-      cancel: 'скасувати',
+      title: t('стерти все разом з налаштуваннями?'),
+      body: t('спершу збережи копію.'),
+      extra: t('зберегти копію'),
+      confirm: t('стерти все'),
+      cancel: t('скасувати'),
     });
     if (answer === 'extra') return this.backup();
     if (answer !== 'confirm') return;
     const before = this.home.diary();
     this.forget();
-    this.home.erase({ message: 'усе видалено', showIcon: true, action: undo(() => this.home.restart(before)) });
+    this.home.erase({ message: t('усе видалено'), showIcon: true, action: undo(() => this.home.restart(before)) });
   }
 
   /* ---- the goal and the pulse timer ---- */

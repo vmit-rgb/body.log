@@ -1,4 +1,5 @@
 import { part, wireRestore } from './parts';
+import { t } from '../i18n/lang';
 
 /*
  * D-02 (Olesia, 2026-11-14): something is stored on the phone, but the app
@@ -20,16 +21,16 @@ export interface UnreadableActions {
 const MARKUP = `
   <div class="screen">
     <section class="screen__section" aria-labelledby="unreadable-title">
-      <h1 id="unreadable-title" class="t-h3">не вдалося прочитати щоденник</h1>
-      <p class="t-1st-regular">записи на місці, але застосунок не може їх відкрити. збережи їх як файл, щоб нічого не загубилося, або віднови з копії.</p>
-      <button type="button" class="ctl btn btn--primary btn--wide" data-save-file>зберегти як файл</button>
-      <button type="button" class="ctl btn btn--secondary btn--wide" data-restore>відновити з копії</button>
+      <h1 id="unreadable-title" class="t-h3">${t('не вдалося прочитати щоденник')}</h1>
+      <p class="t-1st-regular">${t('записи на місці, але застосунок не може їх відкрити. збережи їх як файл, щоб нічого не загубилося, або віднови з копії.')}</p>
+      <button type="button" class="ctl btn btn--primary btn--wide" data-save-file>${t('зберегти як файл')}</button>
+      <button type="button" class="ctl btn btn--secondary btn--wide" data-restore>${t('відновити з копії')}</button>
       <input type="file" accept=".json,application/json,text/plain" hidden data-restore-file />
     </section>
-    <section class="screen__section screen__section--tight" aria-label="без копії">
+    <section class="screen__section screen__section--tight" aria-label="${t('без копії')}">
       <div class="option">
-        <button type="button" class="ctl btn btn--tertiary" data-start-over>почати заново</button>
-        <p class="t-3rd-regular muted">якщо копії немає. спершу збережи записи як файл: його можна буде показати тому, хто допоможе їх дістати.</p>
+        <button type="button" class="ctl btn btn--tertiary" data-start-over>${t('почати заново')}</button>
+        <p class="t-3rd-regular muted">${t('якщо копії немає. спершу збережи записи як файл: його можна буде показати тому, хто допоможе їх дістати.')}</p>
       </div>
     </section>
   </div>`;

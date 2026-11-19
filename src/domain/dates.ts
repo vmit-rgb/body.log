@@ -1,3 +1,4 @@
+import { t } from '../i18n/lang';
 /**
  * Calendar days. A day is the date on the person's phone (local time),
  * written `YYYY-MM-DD`, the same keys «бета 0.81» uses in a copy.
@@ -34,8 +35,8 @@ export function mondayOf(key: DayKey): DayKey {
   return addDays(key, -((dateOf(key).getDay() + 6) % 7));
 }
 
-const WEEKDAYS_SHORT = ['нд', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
-const WEEKDAYS_LONG = ['неділя', 'понеділок', 'вівторок', 'середа', 'четвер', 'пʼятниця', 'субота'];
+const WEEKDAYS_SHORT = [t('нд'), t('пн'), t('вт'), t('ср'), t('чт'), t('пт'), t('сб')];
+const WEEKDAYS_LONG = [t('неділя'), t('понеділок'), t('вівторок'), t('середа'), t('четвер'), t('пʼятниця'), t('субота')];
 
 function withDots(key: DayKey): string {
   const [year, month, day] = key.split('-');

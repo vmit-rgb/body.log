@@ -1,4 +1,6 @@
 import { daysBetween, type DayKey } from './dates';
+import { t } from '../i18n/lang';
+import { plural } from './numbers';
 
 /*
  * The copy in the menu (COPY.md, Menu; «бета 0.81» `backupLine`, `needBackup`).
@@ -13,21 +15,15 @@ import { daysBetween, type DayKey } from './dates';
 export const REMIND_AFTER_DAYS = 1;
 
 /** «1 день», «3 дні», «5 днів», «21 день»… */
-function dayWord(n: number): string {
-  const last = n % 10;
-  const tens = n % 100;
-  if (last === 1 && tens !== 11) return 'день';
-  if (last >= 2 && last <= 4 && (tens < 12 || tens > 14)) return 'дні';
-  return 'днів';
-}
+const dayWord = (n: number): string => plural(n, ['день', 'дні', 'днів']);
 
 /** Days since the copy; a copy dated after today (the clock moved back) counts as today. */
 const daysSince = (saved: DayKey, today: DayKey) => Math.max(0, daysBetween(saved, today));
 
 export function backupLine(saved: DayKey | null, today: DayKey): string {
-  if (saved === null) return 'копії ще немає';
+  if (saved === null) return t('копії ще немає');
   const n = daysSince(saved, today);
-  return n === 0 ? 'остання копія — сьогодні' : `остання копія — ${n} ${dayWord(n)} тому`;
+  return n === 0 ? t('остання копія — сьогодні') : t('остання копія — {n} {days} тому', { n, days: dayWord(n) });
 }
 
 /** Remind when there are records and no copy, or the copy is from yesterday or older. */

@@ -2,6 +2,7 @@ import { formatShort, type DayKey } from '../domain/dates';
 import type { Day } from '../domain/day';
 import { kindDone, type WeekGoal } from '../domain/progress';
 import type { Moment, Settings } from '../domain/settings';
+import { t } from '../i18n/lang';
 
 /*
  * What the home screen shows, decided without the DOM. Texts: COPY.md
@@ -16,21 +17,21 @@ export interface SectionSpec {
   readonly description: string;
 }
 
-const CHECK_IN = 'відміть, як ти зараз. правильних відповідей тут немає.';
-const LISTEN_TO_BODY = 'слухай тіло. якщо щось не так — зупинись <3';
+const CHECK_IN = t('відміть, як ти зараз. правильних відповідей тут немає.');
+const LISTEN_TO_BODY = `${t('слухай тіло. якщо щось не так — зупинись')} <3`;
 
 const asked = (settings: Settings, moment: Moment) => settings.trackers.some((tracker) => tracker.ask.includes(moment));
 
 /** Sections in their fixed order; a section shows when it is switched on or has questions. */
 export function homeSections(settings: Settings): SectionSpec[] {
   const all: [boolean, SectionSpec][] = [
-    [asked(settings, 'morning'), { id: 'ck-morning', title: 'самопочуття зранку', description: CHECK_IN }],
-    [settings.morningWarmup.enabled, { id: 'mw', title: 'ранкова розминка', description: LISTEN_TO_BODY }],
-    [settings.daytimeWarmup.enabled, { id: 'dw', title: 'денна розминка', description: LISTEN_TO_BODY }],
-    [settings.workout.enabled, { id: 'wo', title: 'тренування', description: LISTEN_TO_BODY }],
-    [settings.movement.enabled, { id: 'mv', title: 'рух', description: 'запиши, скільки вийшло.' }],
-    [asked(settings, 'evening'), { id: 'ck-evening', title: 'самопочуття ввечері', description: CHECK_IN }],
-    [true, { id: 'note', title: 'нотатка', description: 'усе, що хочеш запамʼятати про цей день.' }],
+    [asked(settings, 'morning'), { id: 'ck-morning', title: t('самопочуття зранку'), description: CHECK_IN }],
+    [settings.morningWarmup.enabled, { id: 'mw', title: t('ранкова розминка'), description: LISTEN_TO_BODY }],
+    [settings.daytimeWarmup.enabled, { id: 'dw', title: t('денна розминка'), description: LISTEN_TO_BODY }],
+    [settings.workout.enabled, { id: 'wo', title: t('тренування'), description: LISTEN_TO_BODY }],
+    [settings.movement.enabled, { id: 'mv', title: t('рух'), description: t('запиши, скільки вийшло.') }],
+    [asked(settings, 'evening'), { id: 'ck-evening', title: t('самопочуття ввечері'), description: CHECK_IN }],
+    [true, { id: 'note', title: t('нотатка'), description: t('усе, що хочеш запамʼятати про цей день.') }],
   ];
   return all.filter(([shown]) => shown).map(([, section]) => section);
 }
@@ -74,16 +75,16 @@ export function phraseFor(date: DayKey, phrases: readonly string[]): string {
 export function heroFor(date: DayKey, today: DayKey, settings: Settings): Hero {
   if (date < today) {
     const shown = formatShort(date);
-    return { kind: 'past', text: `це запис за ${shown}.\nзміни збережуться в цей день.`, bold: shown };
+    return { kind: 'past', text: `${t('це запис за')} ${shown}${t('.\nзміни збережуться в цей день.')}`, bold: shown };
   }
   return { kind: 'phrase', text: phraseFor(date, settings.encouragement) };
 }
 
 /** «з 1 дня», «з 5 днів»: the genitive after «з». */
 function days(n: number): string {
-  return n % 10 === 1 && n % 100 !== 11 ? 'дня' : 'днів';
+  return n % 10 === 1 && n % 100 !== 11 ? t('дня') : t('днів');
 }
 
 export function goalLine(goal: WeekGoal | null): string | null {
-  return goal && `цей тиждень: ${goal.done} з ${goal.target} ${days(goal.target)}`;
+  return goal && `${t('цей тиждень:')} ${goal.done} ${t('з')} ${goal.target} ${days(goal.target)}`;
 }

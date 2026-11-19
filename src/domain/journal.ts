@@ -5,6 +5,7 @@ import { formatNumber, plural } from './numbers';
 import { kindDone, levelDone } from './progress';
 import { MOMENTS, type Moment, type Settings, type Tracker } from './settings';
 import { monthName, monthOf, type MonthKey } from './stats';
+import { t } from '../i18n/lang';
 
 /*
  * The diary read back (stage 6b): what a day card in «історія» shows
@@ -14,38 +15,38 @@ import { monthName, monthOf, type MonthKey } from './stats';
  */
 
 export const MOMENT_TITLES: Record<Moment, string> = {
-  morning: 'самопочуття зранку',
-  afterMorningWarmup: 'самопочуття після ранкової розминки',
-  beforeDaytimeWarmup: 'самопочуття до денної розминки',
-  afterDaytimeWarmup: 'самопочуття після денної розминки',
-  beforeWorkout: 'самопочуття до тренування',
-  afterWorkout: 'самопочуття після тренування',
-  beforeMovement: 'самопочуття до руху',
-  afterMovement: 'самопочуття після руху',
-  evening: 'самопочуття ввечері',
+  morning: t('самопочуття зранку'),
+  afterMorningWarmup: t('самопочуття після ранкової розминки'),
+  beforeDaytimeWarmup: t('самопочуття до денної розминки'),
+  afterDaytimeWarmup: t('самопочуття після денної розминки'),
+  beforeWorkout: t('самопочуття до тренування'),
+  afterWorkout: t('самопочуття після тренування'),
+  beforeMovement: t('самопочуття до руху'),
+  afterMovement: t('самопочуття після руху'),
+  evening: t('самопочуття ввечері'),
 };
 
 /** From the settings, else a name kept with any of `days` (as 0.81 did). */
 export function exerciseName(settings: Settings, days: Iterable<Day>, id: string): string {
   const exercise = settings.exercises.find((x) => x.id === id);
-  if (exercise) return exercise.name || 'вправа без назви';
+  if (exercise) return exercise.name || t('вправа без назви');
   for (const day of days) {
     const kept = day.names[id];
     if (kept !== undefined) return kept;
   }
-  return 'вправа, якої вже немає';
+  return t('вправа, якої вже немає');
 }
 
 export function sessionName(name: string): string {
-  return /^тренування/i.test(name) ? name : `тренування ${name.toUpperCase()}`;
+  return /^тренування/i.test(name) ? name : `${t('тренування')} ${name.toUpperCase()}`;
 }
 
 /* ---- sets: «3 × 12 повт. · 10 кг» (COPY.md History) ---- */
 
 const setText = (set: SetLog) => [
-  ...(set.r === null ? [] : [`${formatNumber(set.r)} повт.`]),
-  ...(set.w === null ? [] : [`${formatNumber(set.w)} кг`]),
-  ...(set.s === null ? [] : [`${formatNumber(set.s)} с`]),
+  ...(set.r === null ? [] : [`${formatNumber(set.r)} ${t('повт.')}`]),
+  ...(set.w === null ? [] : [`${formatNumber(set.w)} ${t('кг')}`]),
+  ...(set.s === null ? [] : [`${formatNumber(set.s)} ${t('с')}`]),
 ].join(' · ');
 
 /** The same set done several times in a row is written once, with «n ×». */
@@ -66,22 +67,22 @@ const levelReached = (day: Day, settings: Settings) =>
 function warmupMeta(day: Day, settings: Settings): string[] {
   if (!settings.morningWarmup.enabled) return [];
   // «розминка» alone only when it is the one warm-up, as in the stat cards (stats.ts)
-  const name = settings.daytimeWarmup.enabled ? 'ранкова розминка' : 'розминка';
+  const name = settings.daytimeWarmup.enabled ? t('ранкова розминка') : t('розминка');
   const level = levelReached(day, settings);
-  if (level) return [`${name}: рівень ${level}`];
-  return day.mw.ticks.length ? [`${name}: частково`] : [];
+  if (level) return [`${name}${t(': рівень')} ${level}`];
+  return day.mw.ticks.length ? [`${name}${t(': частково')}`] : [];
 }
 
 /** «розминка: рівень 2 · тренування · нотатка» */
 export function dayMeta(day: Day, settings: Settings): string {
   const parts = [
     ...warmupMeta(day, settings),
-    ...(day.dw.length ? ['денна розминка'] : []),
-    ...(kindDone(day, 'workout', settings) ? ['тренування'] : []),
-    ...(kindDone(day, 'movement', settings) ? ['рух'] : []),
-    ...(day.note ? ['нотатка'] : []),
+    ...(day.dw.length ? [t('денна розминка')] : []),
+    ...(kindDone(day, 'workout', settings) ? [t('тренування')] : []),
+    ...(kindDone(day, 'movement', settings) ? [t('рух')] : []),
+    ...(day.note ? [t('нотатка')] : []),
   ];
-  if (parts.length === 0 && Object.keys(day.t).length > 0) parts.push('самопочуття');
+  if (parts.length === 0 && Object.keys(day.t).length > 0) parts.push(t('самопочуття'));
   return parts.join(' · ');
 }
 
@@ -106,7 +107,7 @@ export type DayBlock =
   | { readonly kind: 'checklist'; readonly title: string; readonly groups: readonly CheckGroup[] }
   | { readonly kind: 'text'; readonly title: string; readonly text: string };
 
-const GONE_QUESTION = 'питання, якого вже немає';
+const GONE_QUESTION = t('питання, якого вже немає');
 
 const numbers = (values: readonly (number | null)[]) => values.map((x) => (x === null ? '—' : formatNumber(x))).join('/');
 
@@ -118,11 +119,11 @@ function unitOf(tracker: Tracker | undefined): string {
 }
 
 export function answerRow(tracker: Tracker | undefined, answer: Answer): ValueRow {
-  const label = tracker ? tracker.name || 'без назви' : GONE_QUESTION;
+  const label = tracker ? tracker.name || t('без назви') : GONE_QUESTION;
   const unit = unitOf(tracker);
   if (Array.isArray(answer)) return { label, value: numbers(answer), unit, text: false };
   if (typeof answer === 'number') return { label, value: formatNumber(answer), unit, text: false };
-  if (tracker?.kind === 'yesno') return { label, value: answer === 'yes' ? 'так' : 'ні', unit, text: false };
+  if (tracker?.kind === 'yesno') return { label, value: answer === 'yes' ? t('так') : t('ні'), unit, text: false };
   return { label, value: String(answer), unit, text: true };
 }
 
@@ -134,7 +135,7 @@ function checkIn(day: Day, settings: Settings, moment: Moment): DayBlock[] {
 }
 
 const seconds = (times: readonly (number | null)[] = []) =>
-  times.filter((x) => x !== null).map((x) => `${formatNumber(x)} с`).join(', ');
+  times.filter((x) => x !== null).map((x) => `${formatNumber(x)} ${t('с')}`).join(', ');
 
 /** The ticked warm-up exercises, by level, then those no level has any more. */
 export function warmupGroups(day: Day, days: readonly Day[], settings: Settings): CheckGroup[] {
@@ -142,31 +143,31 @@ export function warmupGroups(day: Day, days: readonly Day[], settings: Settings)
   const item = (id: string) => ({ name: exerciseName(settings, days, id), times: seconds(day.mw.times[id]) });
   const groups: CheckGroup[] = settings.morningWarmup.levels.flatMap((level, i) => {
     const items = level.items.filter((x) => ticked(x.exercise)).map((x) => item(x.exercise));
-    const title = `${level.name || `рівень ${i + 1}`}${levelDone(day, level) ? ' · готово' : ''}`;
+    const title = `${level.name || `${t('рівень')} ${i + 1}`}${levelDone(day, level) ? t(' · готово') : ''}`;
     return items.length ? [{ title, items }] : [];
   });
   const inLevels = new Set(settings.morningWarmup.levels.flatMap((level) => level.items.map((x) => x.exercise)));
   const other = day.mw.ticks.filter((id) => !inLevels.has(id)).map(item);
-  if (other.length) groups.push({ title: 'інші вправи', items: other });
+  if (other.length) groups.push({ title: t('інші вправи'), items: other });
   return groups;
 }
 
 function morningWarmup(day: Day, days: readonly Day[], settings: Settings): DayBlock[] {
   const groups = warmupGroups(day, days, settings);
-  return groups.length ? [{ kind: 'checklist', title: 'ранкова розминка', groups }] : [];
+  return groups.length ? [{ kind: 'checklist', title: t('ранкова розминка'), groups }] : [];
 }
 
 /** The daytime warm-up zones done, by name. */
 export function zoneNames(day: Day, settings: Settings): string[] {
   return day.dw.map((id) => {
     const group = settings.daytimeWarmup.groups.find((g) => g.id === id);
-    return group ? group.name || 'без назви' : 'зона, якої вже немає';
+    return group ? group.name || t('без назви') : t('зона, якої вже немає');
   });
 }
 
 function daytimeWarmup(day: Day, settings: Settings): DayBlock[] {
   if (day.dw.length === 0) return [];
-  return [{ kind: 'text', title: 'денна розминка', text: zoneNames(day, settings).join(', ') }];
+  return [{ kind: 'text', title: t('денна розминка'), text: zoneNames(day, settings).join(', ') }];
 }
 
 function workout(day: Day, days: readonly Day[], settings: Settings): DayBlock[] {
@@ -177,17 +178,17 @@ function workout(day: Day, days: readonly Day[], settings: Settings): DayBlock[]
   });
   if (rows.length === 0) return [];
   const session = settings.workout.sessions.find((s) => s.id === day.wo!.session);
-  return [{ kind: 'values', title: session ? sessionName(session.name) : 'тренування', rows }];
+  return [{ kind: 'values', title: session ? sessionName(session.name) : t('тренування'), rows }];
 }
 
 function movement(day: Day, settings: Settings): DayBlock[] {
   // a stored kind always has a filled lap (readDay drops the rest)
   const rows = Object.entries(day.mv).map(([id, laps]) => {
     const kind = settings.movement.kinds.find((k) => k.id === id);
-    const label = kind ? kind.name || 'без назви' : 'рух, якого вже немає';
+    const label = kind ? kind.name || t('без назви') : t('рух, якого вже немає');
     return { label, value: formatLaps(laps.filter(hasLap)), unit: '', text: false };
   });
-  return rows.length ? [{ kind: 'values', title: 'рух', rows }] : [];
+  return rows.length ? [{ kind: 'values', title: t('рух'), rows }] : [];
 }
 
 /** Every block of the day in the order it was lived; `days` holds names of deleted exercises. */
@@ -208,7 +209,7 @@ export function dayBlocks(day: Day, days: Readonly<Record<DayKey, Day>>, setting
     ...movement(day, settings),
     ...at('afterMovement'),
     ...at('evening'),
-    ...(day.note ? [{ kind: 'text' as const, title: 'нотатка', text: day.note }] : []),
+    ...(day.note ? [{ kind: 'text' as const, title: t('нотатка'), text: day.note }] : []),
   ];
 }
 
@@ -233,7 +234,7 @@ export function monthSummary(month: MonthKey, today: DayKey, days: readonly Day[
   const warmups = count('morningWarmup');
   const workouts = count('workout');
   const parts = [
-    ...(settings.morningWarmup.enabled ? [`${warmups} ${plural(warmups, DAYS)} з розминкою`] : []),
+    ...(settings.morningWarmup.enabled ? [`${warmups} ${plural(warmups, DAYS)} ${t('з розминкою')}`] : []),
     ...(settings.workout.enabled ? [`${workouts} ${plural(workouts, WORKOUTS)}`] : []),
   ];
   return parts.length ? `${monthName(month, today)}: ${parts.join(', ')}` : null;

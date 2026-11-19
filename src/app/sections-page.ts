@@ -13,6 +13,7 @@ import { THINGS, type ActionMenu, type EditKind, type Picking, type SectionsView
 import { closesOnBack } from '../ui/back';
 import { confirmDialog, editText } from '../ui/dialog';
 import { undo, type ToastMessage } from '../ui/toast';
+import { t } from '../i18n/lang';
 
 /*
  * Stage 6d: what the settings do inside the sections, on the page's draft
@@ -38,21 +39,21 @@ type Obj = Record<string, unknown>;
 const obj = (value: unknown): Obj => (typeof value === 'object' && value !== null && !Array.isArray(value) ? value as Obj : {});
 
 /* COPY.md «Settings», accepted 2026-10-30; the rest Нитка's drafts. */
-const GROUPED: ToastMessage = { message: 'групу зібрано :)', showIcon: true };
-const LEFT: ToastMessage = { message: 'вправу винесено з групи', showIcon: true };
-const MOVED: ToastMessage = { message: 'переміщено', showIcon: true };
-const REMOVED: ToastMessage = { message: 'видалено', showIcon: true }; // «бета 0.81»
-const FULL: ToastMessage = { message: 'у групі вже 3 вправи — більше не влізе >_<', error: true };
-const NOT_A_NUMBER: ToastMessage = { message: 'тут потрібне число >_<', error: true }; // draft
+const GROUPED: ToastMessage = { message: t('групу зібрано :)'), showIcon: true };
+const LEFT: ToastMessage = { message: t('вправу винесено з групи'), showIcon: true };
+const MOVED: ToastMessage = { message: t('переміщено'), showIcon: true };
+const REMOVED: ToastMessage = { message: t('видалено'), showIcon: true }; // «бета 0.81»
+const FULL: ToastMessage = { message: `${t('у групі вже 3 вправи — більше не влізе')} >_<`, error: true };
+const NOT_A_NUMBER: ToastMessage = { message: `${t('тут потрібне число')} >_<`, error: true }; // draft
 const NEGATIVE: ToastMessage = { message: `${NUMBER_ERRORS.negative} >_<`, error: true }; // draft
-const ONE_FIELD: ToastMessage = { message: 'хоч одне поле має лишитися >_<', error: true }; // draft
+const ONE_FIELD: ToastMessage = { message: `${t('хоч одне поле має лишитися')} >_<`, error: true }; // draft
 
 const MAX: Record<EditKind, number> = { text: 120, long: 500, url: 500, number: 12, rx: 60 };
 const FIELD_ORDER = { wfield: ['weight', 'reps', 'seconds'], mfield: ['km', 'minutes', 'steps'] } as const;
 const FIELD_DEFAULT = { wfield: 'reps', mfield: 'minutes' } as const;
 
 const ADD_LABELS: Record<AddWhat, string> = {
-  tracker: 'назва', level: 'назва рівня', zone: 'для чого', session: 'назва тренування', movement: 'що саме', exercise: 'назва вправи',
+  tracker: t('назва'), level: t('назва рівня'), zone: t('для чого'), session: t('назва тренування'), movement: t('що саме'), exercise: t('назва вправи'),
 };
 
 const LIST_THING: Readonly<Record<string, Thing>> = {
@@ -111,14 +112,14 @@ export class SectionsEditor {
   /** What an entry is called, for dialogs and menus. */
   private nameOf(slot: Slot): string {
     const found = this.entry(slot);
-    if (Array.isArray(found.set)) return `група: ${found.set.map((item) => this.exerciseName(obj(item).exercise)).join(' + ')}`;
+    if (Array.isArray(found.set)) return `${t('група:')} ${found.set.map((item) => this.exerciseName(obj(item).exercise)).join(' + ')}`;
     if (typeof found.exercise === 'string') return this.exerciseName(found.exercise);
     const name = typeof found.name === 'string' ? found.name.trim() : '';
-    return name && slot.list === LIST_OF.workout ? sessionName(name) : name || 'без назви';
+    return name && slot.list === LIST_OF.workout ? sessionName(name) : name || t('без назви');
   }
 
   private exerciseName(id: unknown): string {
-    return this.draft.settings().exercises.find((exercise) => exercise.id === id)?.name.trim() || 'вправа';
+    return this.draft.settings().exercises.find((exercise) => exercise.id === id)?.name.trim() || t('вправа');
   }
 
   /* ---- values ---- */
@@ -225,7 +226,7 @@ export class SectionsEditor {
   async remove(slot: Slot): Promise<void> {
     const it = THINGS[this.thingOf(slot)][1];
     const answer = await confirmDialog({
-      title: `видалити «${this.nameOf(slot)}»?`, body: `${it} більше не буде в налаштуваннях.`, confirm: 'видалити', cancel: 'скасувати',
+      title: t('видалити «{name}»?', { name: this.nameOf(slot) }), body: `${it} ${t('більше не буде в налаштуваннях.')}`, confirm: t('видалити'), cancel: t('скасувати'),
     });
     if (answer === 'confirm') this.undoable(withRemoved(slot), REMOVED);
   }
@@ -272,7 +273,7 @@ export class SectionsEditor {
     const boxes = kind === 'morningWarmup' ? settings.morningWarmup.levels : kind === 'daytimeWarmup' ? settings.daytimeWarmup.groups : settings.workout.sessions;
     return boxes.flatMap((box, i) => {
       const list = `${LIST_OF[kind]}.${i}.items`;
-      const label = kind === 'workout' ? sessionName(box.name || String(i + 1)) : box.name.trim() || (kind === 'morningWarmup' ? `рівень ${i + 1}` : 'без назви');
+      const label = kind === 'workout' ? sessionName(box.name || String(i + 1)) : box.name.trim() || (kind === 'morningWarmup' ? `${t('рівень')} ${i + 1}` : t('без назви'));
       return list === home ? [] : [{ key: `m:${list}`, label }];
     });
   }
@@ -289,11 +290,11 @@ export class SectionsEditor {
   /** What the «дії» menu of an entry offers; nothing for the only entry of its list. */
   private moves(slot: Slot, family: string): { key: string; label: string }[] {
     const items: { key: string; label: string }[] = [];
-    if (this.partners(slot).length) items.push({ key: 'group', label: 'обʼєднати в групу з…' });
-    if (inGroup(slot.list)) items.push({ key: 'leave', label: 'вийти з групи' });
-    if (this.containers(slot).length) items.push({ key: 'move', label: 'перемістити в…' });
-    if (this.step(slot, family, -1)) items.push({ key: 'up', label: 'вище' });
-    if (this.step(slot, family, 1)) items.push({ key: 'down', label: 'нижче' });
+    if (this.partners(slot).length) items.push({ key: 'group', label: t('обʼєднати в групу з…') });
+    if (inGroup(slot.list)) items.push({ key: 'leave', label: t('вийти з групи') });
+    if (this.containers(slot).length) items.push({ key: 'move', label: t('перемістити в…') });
+    if (this.step(slot, family, -1)) items.push({ key: 'up', label: t('вище') });
+    if (this.step(slot, family, 1)) items.push({ key: 'down', label: t('нижче') });
     return items;
   }
 
@@ -302,7 +303,7 @@ export class SectionsEditor {
     if (toggle && this.menu && this.menu.slot.list === slot.list && this.menu.slot.index === slot.index) return this.menuItem('cancel');
     const items = this.moves(slot, family);
     if (!items.length) return;
-    items.push({ key: 'cancel', label: 'скасувати' });
+    items.push({ key: 'cancel', label: t('скасувати') });
     this.menu = { slot, items };
     this.family = family;
     // A-05: «назад» closes the menu as «скасувати» does, not the settings under it
@@ -319,7 +320,7 @@ export class SectionsEditor {
     const { slot } = this.menu!;
     if (key === 'group' || key === 'move') {
       const options = key === 'group' ? this.partners(slot) : this.containers(slot);
-      this.menu = { slot, items: [...options, { key: 'cancel', label: 'скасувати' }] };
+      this.menu = { slot, items: [...options, { key: 'cancel', label: t('скасувати') }] };
       return this.draft.redraw();
     }
     this.menu = null;

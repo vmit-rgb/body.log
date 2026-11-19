@@ -18,9 +18,10 @@ import {
   daytimeBody, KIND_NAMES, morningBody, movementBody, QUESTIONS, sectionMetas, wellbeingBody, workoutBody, type EditKind, type SectionsView,
 } from './settings-sections';
 import { goalKinds } from '../domain/progress';
+import { t } from '../i18n/lang';
 
 /** Shown only with two or more sections ticked: with one, «any» and «all» are the same (Нитка, 2026-11-19). */
-export const GOAL_ANY = 'будь-яка активність зараховує день';
+export const GOAL_ANY = t('будь-яка активність зараховує день');
 
 /*
  * «налаштування» (Figma screen/edit-profile 186:3278): the parts goal,
@@ -98,37 +99,37 @@ export interface SettingsActions {
 
 /* COPY.md: accent names; blue is «синій» since sky took «блакитний» (2026-11-12). */
 export const ACCENT_NAMES: Record<Accent, string> = {
-  gray: 'сірий', orange: 'помаранчевий', pink: 'рожевий', magenta: 'пурпуровий', purple: 'фіолетовий',
-  violet: 'лавандовий', blue: 'синій', sky: 'блакитний', cyan: 'бірюзовий', mint: 'мʼятний', green: 'зелений',
+  gray: t('сірий'), orange: t('помаранчевий'), pink: t('рожевий'), magenta: t('пурпуровий'), purple: t('фіолетовий'),
+  violet: t('лавандовий'), blue: t('синій'), sky: t('блакитний'), cyan: t('бірюзовий'), mint: t('мʼятний'), green: t('зелений'),
 };
 
 /* ACCESSIBILITY.md and Figma section/accessibility; «вимкнути звук» added by Olesia 2026-11-10. */
 const ACCESS_LABELS: Record<AccessibilityKey, string> = {
-  noMotion: 'вимкнути всі анімації',
-  noBackgroundMotion: 'вимкнути фонові анімації (ASCII)',
-  noVibration: 'вимкнути вібрацію',
-  noSound: 'вимкнути звук',
-  largerTargets: 'збільшити зони натискання',
-  largerText: 'збільшити розмір тексту',
-  mirrored: 'віддзеркалити нижню панель',
-  keepToasts: 'вимкнути зникання повідомлень',
-  showDots: 'показувати ⋯ біля пунктів, що потребують затискання',
+  noMotion: t('вимкнути всі анімації'),
+  noBackgroundMotion: t('вимкнути фонові анімації (ASCII)'),
+  noVibration: t('вимкнути вібрацію'),
+  noSound: t('вимкнути звук'),
+  largerTargets: t('збільшити зони натискання'),
+  largerText: t('збільшити розмір тексту'),
+  mirrored: t('віддзеркалити нижню панель'),
+  keepToasts: t('вимкнути зникання повідомлень'),
+  showDots: t('показувати ⋯ біля пунктів, що потребують затискання'),
 };
 /* Small text under a checkbox whose name needs it (Olesia, 2026-11-15: words that work without «тост»). */
 const ACCESS_HINTS: Partial<Record<AccessibilityKey, string>> = {
-  keepToasts: 'повідомлення внизу екрана лишаються, поки не натиснеш ×',
+  keepToasts: t('повідомлення внизу екрана лишаються, поки не натиснеш ×'),
 };
 /* The closed part's line (Figma layer 347:9003: «без анімацій, більші зони натискання»); Нитка's words for the rest. */
 export const ACCESS_SHORT: Record<AccessibilityKey, string> = {
-  noMotion: 'без анімацій',
-  noBackgroundMotion: 'без фонових анімацій',
-  noVibration: 'без вібрації',
-  noSound: 'без звуку',
-  largerTargets: 'більші зони натискання',
-  largerText: 'більший текст',
-  mirrored: 'дзеркальна панель',
-  keepToasts: 'повідомлення не зникають',
-  showDots: 'видно ⋯',
+  noMotion: t('без анімацій'),
+  noBackgroundMotion: t('без фонових анімацій'),
+  noVibration: t('без вібрації'),
+  noSound: t('без звуку'),
+  largerTargets: t('більші зони натискання'),
+  largerText: t('більший текст'),
+  mirrored: t('дзеркальна панель'),
+  keepToasts: t('повідомлення не зникають'),
+  showDots: t('видно ⋯'),
 };
 const MOTION_KEYS: readonly AccessibilityKey[] = ['noMotion', 'noBackgroundMotion'];
 
@@ -141,9 +142,9 @@ const PHRASES = ['фраза', 'фрази', 'фраз'] as const;
  * what goes where: Нитка's proposal, Olesia may change them.
  */
 export const GROUPS: readonly (readonly [id: string, name: string, parts: readonly PartId[]])[] = [
-  ['tracked', 'що відстежую', ['wellbeing', 'morning', 'daytime', 'workout', 'movement', 'goal']],
-  ['look', 'вигляд і доступність', ['accent', 'phrase', 'access']],
-  ['data', 'дані', ['ai', 'backup', 'delete']],
+  ['tracked', t('що відстежую'), ['wellbeing', 'morning', 'daytime', 'workout', 'movement', 'goal']],
+  ['look', t('вигляд і доступність'), ['accent', 'phrase', 'access']],
+  ['data', t('дані'), ['ai', 'backup', 'delete']],
 ];
 
 /** One part: accordion/trigger (group) and its body; the line under the title only while closed. */
@@ -166,28 +167,28 @@ function goalBody({ goal, ...settings }: Settings): string {
   const on = ACTIVITY_KINDS.filter((kind) => settings[kind].enabled);
   const details = `
       <div class="st-indent">
-        <p class="t-2nd-bold">що треба виконати, щоб день був «зроблено»</p>
+        <p class="t-2nd-bold">${t('що треба виконати, щоб день був «зроблено»')}</p>
         ${on.map((kind) => checkbox(KIND_NAMES[kind], goal.done.includes(kind), `${act('goal-kind')} data-kind="${kind}"`)).join('')}
         ${goalKinds({ goal, ...settings }).length > 1 ? checkbox(GOAL_ANY, goal.any, act('goal-any')) : ''}
-        ${daysSlider({ label: 'ціль: днів на тиждень', value: goal.days, name: 'goal-days', spoken: 'днів на тиждень' })}
+        ${daysSlider({ label: t('ціль: днів на тиждень'), value: goal.days, name: 'goal-days', spoken: t('днів на тиждень') })}
       </div>`;
-  return `${checkbox('рахувати тижневу ціль', goal.enabled, act('goal-on'))}${goal.enabled ? details : ''}`;
+  return `${checkbox(t('рахувати тижневу ціль'), goal.enabled, act('goal-on'))}${goal.enabled ? details : ''}`;
 }
 
 function phraseBody(settings: Settings): string {
   const rows = settings.encouragement.map((phrase, i) => `
       <div class="st-row">
         <button type="button" class="ctl st-text t-1st-regular" ${act('phrase', `data-index="${i}"`)}>${esc(phrase)}</button>
-        <button type="button" class="ctl icon-btn icon-btn--secondary icon-btn--small" ${act('phrase-rm', `data-index="${i}"`)} aria-label="видалити: ${esc(phrase)}">${iconSvg('close')}</button>
+        <button type="button" class="ctl icon-btn icon-btn--secondary icon-btn--small" ${act('phrase-rm', `data-index="${i}"`)} aria-label="${t('видалити:')} ${esc(phrase)}">${iconSvg('close')}</button>
       </div>`);
-  return `${rows.join('')}<div class="st-end">${tertiary('додати фразу', act('phrase-add'))}</div>`;
+  return `${rows.join('')}<div class="st-end">${tertiary(t('додати фразу'), act('phrase-add'))}</div>`;
 }
 
 function accentBody(settings: Settings): string {
   const swatch = (accent: Accent) => `<button type="button" class="ctl swatch" data-swatch="${accent}" ${act('accent', `data-accent="${accent}"`)}
       aria-pressed="${settings.accent === accent}" aria-label="${ACCENT_NAMES[accent]}"><span class="swatch__dot"></span></button>`;
-  return `<p class="t-3rd-regular muted">гортай, щоб побачити всі</p>
-      <div class="swatches" role="group" aria-label="акцентний колір">${ACCENTS.map(swatch).join('')}</div>`;
+  return `<p class="t-3rd-regular muted">${t('гортай, щоб побачити всі')}</p>
+      <div class="swatches" role="group" aria-label="${t('акцентний колір')}">${ACCENTS.map(swatch).join('')}</div>`;
 }
 
 function accessBody(settings: Settings, reduced: boolean): string {
@@ -197,18 +198,18 @@ function accessBody(settings: Settings, reduced: boolean): string {
     const box = checkbox(ACCESS_LABELS[key], locked || settings.accessibility[key], `${act('access')} data-key="${key}"${hint ? ` aria-describedby="access-${key}-hint"` : ''}`, locked);
     return hint ? `${box}<p class="t-2nd-regular muted st-hint" id="access-${key}-hint">${hint}</p>` : box;
   };
-  const note = reduced ? '<p class="t-2nd-regular muted">на телефоні ввімкнено «зменшити рух», тож анімації вимкнені.</p>' : '';
+  const note = reduced ? `<p class="t-2nd-regular muted">${t('на телефоні ввімкнено «зменшити рух», тож анімації вимкнені.')}</p>` : '';
   return `${ACCESSIBILITY_KEYS.map(row).join('')}${note}`;
 }
 
 function aiBody(state: SettingsState): string {
   return `
-      <p class="t-2nd-regular muted">попроси свій ШІ змінити налаштування: скопіюй поточні, встав йому разом з промптом, а його відповідь — сюди. записи лишаться як були.</p>
-      ${secondary('скопіювати промпт', act('copy-prompt'))}
-      ${secondary('скопіювати мої налаштування для ШІ', act('copy-settings'))}
+      <p class="t-2nd-regular muted">${t('попроси свій ШІ змінити налаштування: скопіюй поточні, встав йому разом з промптом, а його відповідь — сюди. записи лишаться як були.')}</p>
+      ${secondary(t('скопіювати промпт'), act('copy-prompt'))}
+      ${secondary(t('скопіювати мої налаштування для ШІ'), act('copy-settings'))}
       <div class="paste">
-        ${withGrip(`<textarea class="field paste__field" rows="3" aria-label="відповідь ШІ" placeholder="встав сюди відповідь ШІ" data-input="paste">${esc(state.pasted)}</textarea>`)}
-        <button type="button" class="ctl btn btn--primary btn--wide" ${act('apply')}${state.pasted.trim() ? '' : ' disabled'}>застосувати</button>
+        ${withGrip(`<textarea class="field paste__field" rows="3" aria-label="${t('відповідь ШІ')}" placeholder="${t('встав сюди відповідь ШІ')}" data-input="paste">${esc(state.pasted)}</textarea>`)}
+        <button type="button" class="ctl btn btn--primary btn--wide" ${act('apply')}${state.pasted.trim() ? '' : ' disabled'}>${t('застосувати')}</button>
         ${pasteResultBox(state.pasteView)}
       </div>`;
 }
@@ -218,41 +219,41 @@ function backupBody(state: SettingsState): string {
     `<button type="button" class="ctl tab" ${act('export-tab', `data-tab="${name}"`)} aria-pressed="${state.exportTab === name}">${label}</button>`;
   // E-13: a copy, a JSON and a PDF carry the same health data as the text for an AI, so the warning covers all three buttons
   const warning = state.exportTab === 'records'
-    ? '<p class="t-2nd-bold st-warning">записи — це дані про твоє здоровʼя. надсилай їх лише тим, кому довіряєш; у чаті з ШІ вони потрапляють до стороннього сервісу.</p>' : '';
+    ? `<p class="t-2nd-bold st-warning">${t('записи — це дані про твоє здоровʼя. надсилай їх лише тим, кому довіряєш; у чаті з ШІ вони потрапляють до стороннього сервісу.')}</p>` : '';
   // A-07: «відновити з копії» lives here, right under «зберегти копію», not in «налаштування через ШІ»
   return `
       <div class="st-backup">
         <p class="t-3rd-regular muted" data-backup-line>${esc(state.backupLine)}</p>
-        <div>${tertiary('зберегти копію', act('backup'))}</div>
-        <div>${tertiary('відновити з копії', 'data-restore')}</div>
+        <div>${tertiary(t('зберегти копію'), act('backup'))}</div>
+        <div>${tertiary(t('відновити з копії'), 'data-restore')}</div>
         <input type="file" accept=".json,application/json,text/plain" hidden data-restore-file />
       </div>
-      <p class="t-2nd-regular muted">копія — один файл з усіма записами й налаштуваннями. з нього все відновиться на новому телефоні.</p>
-      <p class="t-2nd-bold st-warning">у копії всі записи про здоровʼя.</p>
-      <h4 class="t-2nd-bold">експорт</h4>
-      <div class="segmented" role="group" aria-label="що експортувати">${tab('records', 'записи')}${tab('exercises', 'вправи')}</div>
+      <p class="t-2nd-regular muted">${t('копія — один файл з усіма записами й налаштуваннями. з нього все відновиться на новому телефоні.')}</p>
+      <p class="t-2nd-bold st-warning">${t('у копії всі записи про здоровʼя.')}</p>
+      <h4 class="t-2nd-bold">${t('експорт')}</h4>
+      <div class="segmented" role="group" aria-label="${t('що експортувати')}">${tab('records', t('записи'))}${tab('exercises', t('вправи'))}</div>
       ${warning}
-      ${secondary('скопіювати для ШІ', act('export-ai'))}
-      ${secondary('зберегти JSON', act('export-json'))}
-      ${secondary('зберегти PDF', act('export-pdf'))}`;
+      ${secondary(t('скопіювати для ШІ'), act('export-ai'))}
+      ${secondary(t('зберегти JSON'), act('export-json'))}
+      ${secondary(t('зберегти PDF'), act('export-pdf'))}`;
 }
 
 function deleteBody(): string {
   return `
       <div class="st-backup">
-        <p class="t-2nd-bold">спершу збережи копію.</p>
-        <div>${tertiary('зберегти копію', act('backup'))}</div>
+        <p class="t-2nd-bold">${t('спершу збережи копію.')}</p>
+        <div>${tertiary(t('зберегти копію'), act('backup'))}</div>
       </div>
-      <div>${destructive('видалити тільки записи', act('delete-records'))}</div>
-      <div>${destructive('стерти все разом з налаштуваннями', act('delete-all'))}</div>
-      <p class="t-2nd-regular muted">після натискання зʼявиться вікно з підтвердженням. утримувати нічого не треба.</p>`;
+      <div>${destructive(t('видалити тільки записи'), act('delete-records'))}</div>
+      <div>${destructive(t('стерти все разом з налаштуваннями'), act('delete-all'))}</div>
+      <p class="t-2nd-regular muted">${t('після натискання зʼявиться вікно з підтвердженням. утримувати нічого не треба.')}</p>`;
 }
 
 /* ---- the lines of closed parts ---- */
 
 function accessMeta(settings: Settings, reduced: boolean): string {
   const on = ACCESSIBILITY_KEYS.filter((key) => settings.accessibility[key] || (reduced && MOTION_KEYS.includes(key)));
-  return on.length ? on.map((key) => ACCESS_SHORT[key]).join(', ') : 'стандартно';
+  return on.length ? on.map((key) => ACCESS_SHORT[key]).join(', ') : t('стандартно');
 }
 
 function metas(state: SettingsState): Record<PartId, string> {
@@ -261,7 +262,7 @@ function metas(state: SettingsState): Record<PartId, string> {
   const fields = settings.trackers.length;
   const sections = sectionMetas(settings);
   return {
-    goal: goal.enabled ? `${goal.days} ${plural(goal.days, DAYS)} на тиждень${goal.any && goalKinds(settings).length > 1 ? ', будь-яка активність' : ''}` : 'вимкнено',
+    goal: goal.enabled ? `${goal.days} ${plural(goal.days, DAYS)} ${t('на тиждень')}${goal.any && goalKinds(settings).length > 1 ? t(', будь-яка активність') : ''}` : t('вимкнено'),
     phrase: `${encouragement.length} ${plural(encouragement.length, PHRASES)}`,
     accent: ACCENT_NAMES[settings.accent],
     access: accessMeta(settings, state.motionReduced),
@@ -281,18 +282,18 @@ function markup(state: SettingsState): string {
   const ctx = { settings, view: state.sections };
   const meta = metas(state);
   const parts: Record<PartId, [string, () => string]> = {
-    goal: ['тижнева ціль', () => goalBody(settings)],
-    phrase: ['підбадьорлива фраза', () => phraseBody(settings)],
-    accent: ['акцентний колір', () => accentBody(settings)],
-    access: ['доступність', () => accessBody(settings, state.motionReduced)],
-    wellbeing: ['самопочуття', () => wellbeingBody(ctx)],
-    morning: ['ранкова розминка', () => morningBody(ctx)],
-    daytime: ['денна розминка', () => daytimeBody(ctx)],
-    workout: ['тренування', () => workoutBody(ctx)],
-    movement: ['рух', () => movementBody(ctx)],
-    ai: ['налаштування через ШІ', () => aiBody(state)],
-    backup: ['копія й експорт', () => backupBody(state)],
-    delete: ['видалення', deleteBody],
+    goal: [t('тижнева ціль'), () => goalBody(settings)],
+    phrase: [t('підбадьорлива фраза'), () => phraseBody(settings)],
+    accent: [t('акцентний колір'), () => accentBody(settings)],
+    access: [t('доступність'), () => accessBody(settings, state.motionReduced)],
+    wellbeing: [t('самопочуття'), () => wellbeingBody(ctx)],
+    morning: [t('ранкова розминка'), () => morningBody(ctx)],
+    daytime: [t('денна розминка'), () => daytimeBody(ctx)],
+    workout: [t('тренування'), () => workoutBody(ctx)],
+    movement: [t('рух'), () => movementBody(ctx)],
+    ai: [t('налаштування через ШІ'), () => aiBody(state)],
+    backup: [t('копія й експорт'), () => backupBody(state)],
+    delete: [t('видалення'), deleteBody],
   };
   const group = ([gid, name, ids]: (typeof GROUPS)[number]) => `
       <section class="settings__group" aria-labelledby="settings-group-${gid}">
@@ -301,20 +302,20 @@ function markup(state: SettingsState): string {
       </section>`;
   return `
     <div class="settings">
-      <h1 class="visually-hidden">налаштування</h1>
+      <h1 class="visually-hidden">${t('налаштування')}</h1>
       <div class="settings__intro">
-        <p class="t-2nd-regular">натисни на будь-який текст, щоб змінити його. коли закінчиш — збережи внизу.</p>
-        <p class="t-2nd-regular muted">усе всередині розділів можна перетягувати: вправи, рівні, питання. затисни запис і веди: так міняється порядок, а вправа може переїхати в інший рівень чи тренування.</p>
+        <p class="t-2nd-regular">${t('натисни на будь-який текст, щоб змінити його. коли закінчиш — збережи внизу.')}</p>
+        <p class="t-2nd-regular muted">${t('усе всередині розділів можна перетягувати: вправи, рівні, питання. затисни запис і веди: так міняється порядок, а вправа може переїхати в інший рівень чи тренування.')}</p>
         <p class="t-2nd-regular muted">${state.settings.accessibility.showDots
-    ? 'без перетягування: натисни ⋯ біля запису або затисни запис.'
-    : 'без перетягування: затисни запис.'}</p>
+    ? t('без перетягування: натисни ⋯ біля запису або затисни запис.')
+    : t('без перетягування: затисни запис.')}</p>
       </div>
       <div class="settings__parts">${GROUPS.map(group).join('')}</div>
       ${FOOTER}
     </div>
-    <nav class="bar bar--edit" aria-label="навігація">
+    <nav class="bar bar--edit" aria-label="${t('навігація')}">
       ${saveButton(state.unsaved)}
-      <button type="button" class="ctl icon-btn icon-btn--secondary bar__menu" ${act('close')} aria-label="закрити налаштування">${iconSvg('close')}</button>
+      <button type="button" class="ctl icon-btn icon-btn--secondary bar__menu" ${act('close')} aria-label="${t('закрити налаштування')}">${iconSvg('close')}</button>
     </nav>`;
 }
 
@@ -322,8 +323,8 @@ function markup(state: SettingsState): string {
 function saveButton(unsaved: boolean): string {
   const mark = unsaved ? ' bar__menu--unsaved' : '';
   const note = unsaved ? ' aria-describedby="unsaved-note"' : '';
-  return `<button type="button" class="ctl icon-btn icon-btn--secondary bar__menu${mark}" ${act('save')} aria-label="зберегти налаштування"${note}>${iconSvg('save')}</button>${
-    unsaved ? '<span class="visually-hidden" id="unsaved-note">є незбережені зміни</span>' : ''}`;
+  return `<button type="button" class="ctl icon-btn icon-btn--secondary bar__menu${mark}" ${act('save')} aria-label="${t('зберегти налаштування')}"${note}>${iconSvg('save')}</button>${
+    unsaved ? `<span class="visually-hidden" id="unsaved-note">${t('є незбережені зміни')}</span>` : ''}`;
 }
 
 /* ---- taps ---- */

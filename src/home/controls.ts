@@ -16,6 +16,7 @@ import { announce } from '../ui/announce';
 import { dropPulse, pulseRunning, PULSE_READY_MS, PULSE_SAYS, READY_MS, schedulePulse, STOPWATCH_GO, type HomeSession } from './session';
 import { prepareSound, startSignal } from './signal';
 import { REMOVE_TIP, ROUNDS_TIP, SETS_TIP, SLIDER_TIP, SLIDER_TIP_TEXT, SW_RUNNING_LABEL, tip } from './sections';
+import { t } from '../i18n/lang';
 
 /*
  * What a tap or a keystroke inside the sections does. The markup
@@ -44,7 +45,7 @@ export interface SectionControls {
   tipDone?(id: string): void;
 }
 
-const AI_LINK: ToastMessage = { message: 'це посилання дав ШІ. перевір його, перш ніж повторювати.' };
+const AI_LINK: ToastMessage = { message: t('це посилання дав ШІ. перевір його, перш ніж повторювати.') };
 
 const data = (element: HTMLElement, name: string) => String(element.dataset[name]);
 const asMoment = (value: string): Moment => MOMENTS.find((m) => m === value) ?? 'morning';
@@ -110,7 +111,7 @@ function forget(session: HomeSession, key: string): void {
 interface Removal { readonly edit: Edit; readonly message: string; readonly rowStays: boolean }
 
 const removed = (edit: Edit, message: string): Removal => ({ edit, message, rowStays: false });
-const reset = (edit: Edit): Removal => ({ edit, message: 'таймер скинуто', rowStays: true });
+const reset = (edit: Edit): Removal => ({ edit, message: t('таймер скинуто'), rowStays: true });
 
 /**
  * What × removes: a lap; a round, or the only round's time; a set, or the
@@ -121,16 +122,16 @@ type RemovalKind = 'lap' | 'round' | 'set';
 const removalKind = (kind: string): RemovalKind => (kind === 'lap' || kind === 'round' ? kind : 'set');
 
 const REMOVALS: Record<RemovalKind, (c: SectionControls, id: string, at: string) => Removal> = {
-  lap: (_c, id, at) => removed(removeLap(id, Number(at)), 'коло видалено'),
+  lap: (_c, id, at) => removed(removeLap(id, Number(at)), t('коло видалено')),
   round: (c, id, at) => {
     const i = Number(at);
-    return roundRows(c.day(), id) > 1 ? removed(removeRound(id, i), 'таймер видалено') : reset(setRound(id, i, null));
+    return roundRows(c.day(), id) > 1 ? removed(removeRound(id, i), t('таймер видалено')) : reset(setRound(id, i, null));
   },
   set: (c, id, at) => {
     const i = Number(at);
     const timed = workoutItem(c, id)?.fields.includes('seconds') ?? false;
-    if (!timed) return removed(removeSet(id, i, planned(c, id)), 'підхід видалено');
-    return setRows(c.day(), id, planned(c, id)) === 1 ? reset(setSet(id, i, 's', null)) : removed(removeSet(id, i, planned(c, id)), 'таймер видалено');
+    if (!timed) return removed(removeSet(id, i, planned(c, id)), t('підхід видалено'));
+    return setRows(c.day(), id, planned(c, id)) === 1 ? reset(setSet(id, i, 's', null)) : removed(removeSet(id, i, planned(c, id)), t('таймер видалено'));
   },
 };
 
@@ -197,7 +198,7 @@ function dropWorkout(c: SectionControls): void {
     return;
   }
   c.session.armed = null;
-  removeWithUndo(c, dropSession, 'тренування прибрано');
+  removeWithUndo(c, dropSession, t('тренування прибрано'));
   workoutAssembles(c.screen());
 }
 
@@ -323,7 +324,7 @@ type Tap = (c: SectionControls, element: HTMLElement) => void;
 function finishTap(c: SectionControls, element: HTMLElement): void {
   const done = data(element, 'done') === 'true';
   c.edit(finishWorkout(done), true);
-  if (done) announce('тренування закінчено');
+  if (done) announce(t('тренування закінчено'));
   // a tap doesn't always focus the button (Safari): the focus goes to it on purpose
   c.screen().querySelector<HTMLElement>('[data-act="finish"]')?.focus({ preventScroll: true });
 }
@@ -396,10 +397,10 @@ const TYPING: Record<string, Typing> = {
     const tracker = el.closest<HTMLElement>('.tracker')!;
     tracker.classList.remove('tracker--unset');
     tracker.querySelector('.tracker__value')!.textContent = `${el.value}/${el.max}`;
-    el.setAttribute('aria-valuetext', `${el.value} з ${el.max}`);
+    el.setAttribute('aria-valuetext', `${el.value} ${t('з')} ${el.max}`);
     if (!tracker.querySelector('[data-act="slide-save"]')) {
       tracker.querySelector('.tracker__value')!.insertAdjacentHTML('afterend',
-        `<button type="button" class="ctl btn btn--tertiary" data-act="slide-save" data-moment="${moment(el)}">зберегти</button>`);
+        `<button type="button" class="ctl btn btn--tertiary" data-act="slide-save" data-moment="${moment(el)}">${t('зберегти')}</button>`);
       tracker.querySelector<HTMLElement>('[data-act="slide-save"]')!.dataset.tracker = data(el, 'tracker');
     }
     // the tip above «зберегти» of the first slider moved without a render (one at a time)

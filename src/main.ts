@@ -30,11 +30,28 @@ import { startFlight } from './ui/flight';
 import { within } from './ui/patience';
 import { copyWith, saveFile, screenHistory, shareWith } from './ui/device';
 import type { PdfFonts } from './pdf/pdf';
+import { keepLangWith, lang, LANG_KEY, t, type Lang } from './i18n/lang';
 
 // Wiring only: everything with a decision in it lives in the modules above.
 const root = document.documentElement;
 const installed = isInstalled((query) => matchMedia(query), navigator as { standalone?: boolean });
 const storage = storageFor(installed, { local: localStorage, session: sessionStorage });
+// the language: fixed for the page (i18n/lang.ts); `?lang=` from a link is kept, so the installed app opens in it too
+root.lang = lang();
+const saveLang = (next: Lang) => {
+  try {
+    storage.setItem(LANG_KEY, next);
+  } catch {
+    // storage refused: the switch still works through the link below
+  }
+};
+if (new URLSearchParams(location.search).has('lang')) saveLang(lang());
+keepLangWith((next) => {
+  saveLang(next);
+  const url = new URL(location.href);
+  url.searchParams.set('lang', next);
+  location.replace(url);
+});
 const themes = themeMemory(storage);
 let look: Omit<Appearance, 'theme'> = DEFAULT_APPEARANCE;
 const appearance = (): Appearance => ({ ...look, theme: themes.chosen() ?? 'system' });
@@ -101,7 +118,7 @@ leaveLoading(document, host, performance.now());
 // offline copy and «є нова версія :)»; only in the built app, never in development
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   void watchForUpdates(navigator.serviceWorker, import.meta.env.BASE_URL, {
-    offer: (apply) => toast.show({ message: 'є нова версія :)', action: { label: 'оновити', run: apply } }),
+    offer: (apply) => toast.show({ message: t('є нова версія :)'), action: { label: t('оновити'), run: apply } }),
     reload: () => location.reload(),
     onReturn: (check) => document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible') check();
