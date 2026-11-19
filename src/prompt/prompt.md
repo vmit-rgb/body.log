@@ -84,12 +84,12 @@ If the person chose 1, 2 or 3, ask whether they already have their own exercises
 Only what you can't do without, 1–3 questions at a time. Decide the rest yourself sensibly and say so in the summary:
 - how many days a week for each section (only the number, not the weekdays);
 - for well-being: when to ask;
-- for the weekly goal: how many days, and what has to be done for a day to count;
+- for the weekly goal: how many days, and what has to be done for a day to count. If more than one section can count, ask whether one of them is enough for the day (any) or all of them are needed (all), and write "any" accordingly;
 - phrases: suggest 2–3 yourself; the person can change them;
 - colour: ask only if item 8 was chosen. Options, with the value to write in theme.accent: grey (gray), orange (orange), pink (pink), magenta (magenta), purple (purple), lavender (violet), blue (blue), light blue (sky), turquoise (cyan), mint (mint), green (green). Not chosen → no theme block.
 
 ### Step 5. Summary in plain words
-Before the JSON, briefly show what will be in the app: sections, exercises, well-being questions, goal, accessibility. No JSON and no technical words. Ask whether everything is right. One round of edits, then move on.
+Before the JSON, briefly show what will be in the app: sections, exercises, well-being questions, goal, accessibility. For a goal with more than one section, say in words how a day counts: when any one of them is done, or only when all of them are. No JSON and no technical words. Ask whether everything is right. One round of edits, then move on.
 
 ### Step 6. Settings
 Give the settings as one JSON code block, with nothing inside the block except the JSON. After it, briefly:
@@ -104,6 +104,7 @@ Give the settings as one JSON code block, with nothing inside the block except t
 - Always write "lang": the code of the language of the texts (uk, en, pl, be…), never ru.
 - The four sections (morningWarmup, daytimeWarmup, workout, movement) are always there. A section that was not chosen gets "enabled": false; it is not left out.
 - If the person doesn't want a weekly goal, there is no goal block at all.
+- goal.any: true = a day counts when any one section in "done" is done; false or no "any" = every section in "done" is needed. Write it whenever "done" has more than one section.
 - accessibility: write it if the person turned on at least one feature; otherwise there is no block.
 - theme: only if the person chose a colour.
 - Fill in movement.hint yourself, briefly.

@@ -252,7 +252,7 @@ describe('describeChanges: the preview', () => {
         'зон денної розминки: 1',
         'тренувань: 1',
         'видів руху: 1',
-        'тижнева ціль: днів на тиждень — 5',
+        'тижнева ціль: днів на тиждень — 5, будь-яка активність',
         'акцентний колір: колір blue',
       ],
       changed: [],
@@ -304,7 +304,7 @@ describe('describeChanges: the preview', () => {
       'рівень ранкової розминки: легкий день',
     ]);
     const { goal: _goal, ...noGoal } = example;
-    expect(changes(example, noGoal).added).toEqual(['тижнева ціль: днів на тиждень — 5']);
+    expect(changes(example, noGoal).added).toEqual(['тижнева ціль: днів на тиждень — 5, будь-яка активність']);
     expect(changes({ ...example, goal: { enabled: true, days: 3, done: [] } }).changed).toEqual(['тижнева ціль: днів на тиждень — 3']);
   });
 
@@ -313,5 +313,45 @@ describe('describeChanges: the preview', () => {
     const added = changes({ ...example, exercises: [...example.exercises, ...exercises] }).added;
     expect(added).toHaveLength(GROUP_LINES + 1);
     expect(added.at(-1)).toBe('і ще 8');
+  });
+});
+
+describe('goal.any in the paste and the preview (Olesia, 2026-11-19)', () => {
+  const names = {
+    accents: new Proxy({}, { get: (_, key) => `колір ${String(key)}` }),
+    accessibility: new Proxy({}, { get: (_, key) => `доступність ${String(key)}` }),
+  } as unknown as PreviewNames;
+  const goal = (extra: object): Obj => ({ ...copyOf(), goal: { enabled: true, days: 5, done: ['morningWarmup', 'workout'], ...extra } });
+  const goalLine = (profile: Obj) => describeChanges(null, profile, names).added.find((line) => line.startsWith('тижнева ціль'));
+
+  it('is a known key: accepted with true, false or left out, never listed as unknown', () => {
+    for (const extra of [{ any: true }, { any: false }, {}]) {
+      const result = accepted(goal(extra));
+      expect(result.kind).toBe('accepted');
+      expect(result.unknown).toEqual([]);
+      expect(result.profile.goal).toEqual(goal(extra).goal);
+    }
+  });
+
+  it('refuses anything but true / false, by its Ukrainian name', () => {
+    const result = refused(goal({ any: 'так' }));
+    expect(result.kind).toBe('refused');
+    expect(JSON.stringify(result)).toContain('будь-яка активність зараховує день');
+  });
+
+  it('the preview names the mode when the goal has two or more sections', () => {
+    expect(goalLine(goal({ any: true }))).toBe('тижнева ціль: днів на тиждень — 5, будь-яка активність');
+    expect(goalLine(goal({ any: false }))).toBe('тижнева ціль: днів на тиждень — 5, усі розділи');
+    expect(goalLine(goal({}))).toBe('тижнева ціль: днів на тиждень — 5, усі розділи');
+    expect(goalLine({ ...copyOf(), goal: { enabled: true, days: 5, done: ['workout'], any: true } })).toBe('тижнева ціль: днів на тиждень — 5');
+    // a switched-off section does not count as one of the two
+    const off = goal({ any: true });
+    (off.workout as Obj).enabled = false;
+    expect(goalLine(off)).toBe('тижнева ціль: днів на тиждень — 5');
+  });
+
+  it('a change of the mode alone is «змінено»', () => {
+    expect(describeChanges(goal({}), goal({ any: true }), names).changed).toEqual(['тижнева ціль: днів на тиждень — 5, будь-яка активність']);
+    expect(describeChanges(goal({ any: true }), goal({ any: false }), names).changed).toEqual(['тижнева ціль: днів на тиждень — 5, усі розділи']);
   });
 });

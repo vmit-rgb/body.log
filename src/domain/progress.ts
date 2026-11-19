@@ -5,7 +5,8 @@ import type { ActivityKind, Level, Settings } from './settings';
 /*
  * Counting rules (Olesia, 2026-10-29; PROFILE-FORMAT.md):
  * - a warm-up level counts only when all its exercises are ticked;
- * - a day is «зроблено» only when every activity kind ticked in the main goal is done;
+ * - a day is «зроблено» when every activity kind ticked in the main goal is done,
+ *   or, with `goal.any` (Olesia, 2026-11-19), when any one of them is;
  * - the week starts on Monday and counts days up to today.
  */
 
@@ -31,7 +32,8 @@ export function goalKinds(settings: Settings): ActivityKind[] {
 
 export function dayDone(day: Day, settings: Settings): boolean {
   const kinds = goalKinds(settings);
-  return kinds.length > 0 && kinds.every((kind) => kindDone(day, kind, settings));
+  const done = (kind: ActivityKind) => kindDone(day, kind, settings);
+  return kinds.length > 0 && (settings.goal.any ? kinds.some(done) : kinds.every(done));
 }
 
 /** Days of the week of `date`, Monday first, up to today. */

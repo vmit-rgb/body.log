@@ -93,7 +93,8 @@ export type Accessibility = Readonly<Record<AccessibilityKey, boolean>>;
 export interface Settings {
   readonly accent: Accent;
   readonly accessibility: Accessibility;
-  readonly goal: { readonly enabled: boolean; readonly days: number; readonly done: readonly ActivityKind[] };
+  /** `any`: a day counts when any one kind of `done` is done, not all of them (Olesia, 2026-11-19); no `any` = all. */
+  readonly goal: { readonly enabled: boolean; readonly days: number; readonly done: readonly ActivityKind[]; readonly any: boolean };
   readonly encouragement: readonly string[];
   readonly morningWarmup: Activity & { readonly levels: readonly Level[] };
   readonly daytimeWarmup: Activity & { readonly groups: readonly DaytimeGroup[] };
@@ -213,7 +214,7 @@ export function readSettings(profile: Raw): Settings {
     accent: parseAccent(theme.accent),
     accessibility: readAccessibility(profile),
     // no `goal` = no weekly goal (Olesia, 2026-11-15); 5 is where the days start when it is switched on
-    goal: { enabled: goal.enabled === true, days: numberOr(goal.days, 5), done: pick(ACTIVITY_KINDS, goal.done) },
+    goal: { enabled: goal.enabled === true, days: numberOr(goal.days, 5), done: pick(ACTIVITY_KINDS, goal.done), any: goal.any === true },
     encouragement: list(profile.encouragement).map(text).filter((phrase) => phrase.trim() !== ''),
     morningWarmup: {
       ...readActivity(morning),

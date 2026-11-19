@@ -994,3 +994,63 @@ describe('settings: the days at their ends', () => {
     expect(range.getAttribute('aria-valuetext')).toBe('7 з 7');
   });
 });
+
+describe('settings: «будь-яка активність зараховує день» (Olesia, 2026-11-19)', () => {
+  const anyBox = () => [...host.querySelectorAll<HTMLLabelElement>('label.checkbox')].find((l) => l.textContent!.trim() === 'будь-яка активність зараховує день');
+  const noGoal = (): Diary => {
+    const { goal: _goal, ...profile } = EXAMPLE_DIARY.profile;
+    return { ...WITH_A_DAY, profile };
+  };
+
+  it('shows only with two or more sections ticked, under the list, as a labelled checkbox', async () => {
+    await openSettings();
+    await openPart('тижнева ціль');
+    expect(anyBox()).toBeUndefined();
+    await tick('денна розминка');
+    const box = anyBox()!;
+    expect(box).toBeDefined();
+    // under the sections, above the days slider
+    const order = [...host.querySelectorAll('#st-goal label.checkbox, #st-goal .st-days')];
+    expect(order.indexOf(box)).toBe(order.indexOf(host.querySelector('#st-goal .st-days')!) - 1);
+    expect(box.classList.contains('ctl')).toBe(true);
+    expect(box.querySelector('input')!.type).toBe('checkbox');
+    // an existing goal without `any` stays «усі»
+    expect(box.querySelector('input')!.checked).toBe(false);
+    await tick('денна розминка');
+    expect(anyBox()).toBeUndefined();
+  });
+
+  it('saves `any`, keeps the focus on it after the redraw and says it in the closed row', async () => {
+    await openSettings();
+    await openPart('тижнева ціль');
+    await tick('денна розминка');
+    checkbox('будь-яка активність зараховує день').focus();
+    await tick('будь-яка активність зараховує день');
+    expect((document.activeElement as HTMLElement).dataset.act).toBe('goal-any');
+    await tap('зберегти налаштування');
+    expect(storedProfile().goal).toMatchObject({ done: ['morningWarmup', 'daytimeWarmup'], any: true });
+    await openPart('тижнева ціль');
+    expect(meta('тижнева ціль')).toBe('5 днів на тиждень, будь-яка активність');
+  });
+
+  it('a goal switched on from nothing starts with the checkbox ticked', async () => {
+    await openSettings(noGoal());
+    await openPart('тижнева ціль');
+    await tick('рахувати тижневу ціль');
+    await tick('ранкова розминка');
+    await tick('денна розминка');
+    expect(checkbox('будь-яка активність зараховує день').checked).toBe(true);
+    await tap('зберегти налаштування');
+    expect(storedProfile().goal).toMatchObject({ enabled: true, any: true });
+  });
+
+  it('the copy for the AI carries `any`', async () => {
+    const profile = { ...EXAMPLE_DIARY.profile, goal: { enabled: true, days: 4, done: ['morningWarmup', 'daytimeWarmup'], any: true } };
+    await openSettings({ ...WITH_A_DAY, profile });
+    await openPart('налаштування через ШІ');
+    await tap('скопіювати мої налаштування для ШІ');
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(JSON.parse(device.copied[0]!).goal).toEqual(profile.goal);
+  });
+});

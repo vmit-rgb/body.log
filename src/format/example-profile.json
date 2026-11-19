@@ -3,7 +3,7 @@
   "version": "0.1",
   "lang": "uk",
   "theme": { "accent": "blue" },
-  "goal": { "enabled": true, "days": 5, "done": ["morningWarmup", "workout"] },
+  "goal": { "enabled": true, "days": 5, "done": ["morningWarmup", "workout"], "any": true },
   "encouragement": ["ти тут — це вже половина справи", "маленький крок теж рахується"],
   "morningWarmup": {
     "enabled": true,

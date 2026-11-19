@@ -118,3 +118,53 @@ describe('completed: what an edit finished (the rewards of MICROINTERACTIONS.md)
     expect(completed(day({ mw: ticks('a') }), day({ mw: ticks('a', 'b') }), goalOnly(['morningWarmup'], false)).day).toBe(false);
   });
 });
+
+describe('goal.any: «будь-яка активність зараховує день» (Olesia, 2026-11-19)', () => {
+  // movement is switched off in `settings`; the goal lists morning warm-up, workout and movement
+  const goalWith = (goal: object) => readSettings({
+    goal: { enabled: true, days: 4, done: ['morningWarmup', 'workout', 'movement'], ...goal },
+    morningWarmup: { enabled: true, levels: [{ id: 'l1', items: [{ exercise: 'a' }] }] },
+    workout: { enabled: true, sessions: [{ id: 's' }] },
+    movement: { enabled: false, kinds: [{ id: 'walk' }] },
+  });
+  const morningOnly = day({ mw: ticks('a') });
+  const both = day({ mw: ticks('a'), wo: workout(20) });
+
+  it('an old goal without `any` still needs every section', () => {
+    expect(goalWith({}).goal.any).toBe(false);
+    expect(dayDone(morningOnly, goalWith({}))).toBe(false);
+    expect(dayDone(both, goalWith({}))).toBe(true);
+  });
+
+  it('any: true counts a day with one section done; any: false needs all', () => {
+    expect(dayDone(morningOnly, goalWith({ any: true }))).toBe(true);
+    expect(dayDone(day({ wo: workout(20) }), goalWith({ any: true }))).toBe(true);
+    expect(dayDone(day(), goalWith({ any: true }))).toBe(false);
+    expect(dayDone(morningOnly, goalWith({ any: false }))).toBe(false);
+    expect(dayDone(both, goalWith({ any: false }))).toBe(true);
+  });
+
+  it('a switched-off section never counts, with any or all', () => {
+    const walked = day({ mv: { walk: [{ km: 2, min: null, steps: null }] } });
+    expect(dayDone(walked, goalWith({ any: true }))).toBe(false);
+    // all: the switched-off movement is not required either
+    expect(dayDone(both, goalWith({ any: false }))).toBe(true);
+  });
+
+  it('with one section in done, any and all are the same', () => {
+    const one = (any: boolean) => readSettings({ goal: { enabled: true, days: 3, done: ['workout'], any }, workout: { enabled: true, sessions: [{ id: 's' }] } });
+    for (const any of [true, false]) {
+      expect(dayDone(day({ wo: workout(5) }), one(any))).toBe(true);
+      expect(dayDone(day(), one(any))).toBe(false);
+    }
+  });
+
+  it('«цей тиждень» and the day that just counted follow the mode', () => {
+    const at = (k: DayKey) => (k === key('2026-11-10') ? morningOnly : k === DATE ? both : day());
+    expect(weekGoal(DATE, DATE, at, goalWith({}))).toEqual({ done: 1, target: 4 });
+    expect(weekGoal(DATE, DATE, at, goalWith({ any: true }))).toEqual({ done: 2, target: 4 });
+    expect(completed(day(), morningOnly, goalWith({ any: true })).day).toBe(true);
+    expect(completed(day(), morningOnly, goalWith({})).day).toBe(false);
+    expect(completed(morningOnly, both, goalWith({ any: true })).day).toBe(false);
+  });
+});

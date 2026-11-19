@@ -81,3 +81,16 @@ describe('the accent of a diary (readSettings)', () => {
     expect(diaryAccent(parseDiary(backup({ profile: { theme: 'blue' } }))!)).toBe('pink');
   });
 });
+
+describe('goal.any in a copy (Olesia, 2026-11-19)', () => {
+  it('a copy keeps «будь-яка активність», and an old copy without it still counts all', () => {
+    const profile = { format: 'phys-activity-profile', version: '0.1', goal: { enabled: true, days: 5, done: ['workout', 'movement'], any: true } };
+    const back = parseDiary(serializeDiary({ profile, days: {} }, new Date('2026-11-19T08:00:00.000Z')))!;
+    expect(back.profile.goal).toEqual(profile.goal);
+    expect(readSettings(back.profile).goal.any).toBe(true);
+    const { any: _any, ...old } = profile.goal;
+    const oldBack = parseDiary(serializeDiary({ profile: { ...profile, goal: old }, days: {} }, new Date('2026-11-19T08:00:00.000Z')))!;
+    expect(oldBack.profile.goal).toEqual(old);
+    expect(readSettings(oldBack.profile).goal.any).toBe(false);
+  });
+});
