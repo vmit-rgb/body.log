@@ -157,7 +157,7 @@ describe('readPaste: refusals', () => {
 
   it('refuses russian by `lang` and by letters, seriously', () => {
     const byLang = refused({ ...example, lang: 'ru' });
-    expect(byLang).toMatchObject({ reason: 'russian', serious: true, title: 'налаштування російською мовою не приймаються.', hint: 'попроси свій ШІ написати їх українською.' });
+    expect(byLang).toMatchObject({ reason: 'russian', serious: true, title: 'налаштування російською мовою не приймаються.', hint: 'попроси свій ШІ написати їх українською або англійською.' });
     expect(byLang.forAi).toContain('Перепиши всі тексти українською');
     expect(refused(withAt('exercises.0.name', 'подъём')).reason).toBe('russian');
     expect(refused({ format: 'phys-activity-profile', lang: 'ru' }).reason).toBe('russian');
