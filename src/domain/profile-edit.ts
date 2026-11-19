@@ -16,12 +16,21 @@ export interface GoalChange {
   readonly enabled?: boolean;
   readonly days?: number;
   readonly done?: readonly ActivityKind[];
+  readonly any?: boolean;
 }
 
-/** The main goal: counted or not, days per week (0–7), what makes a day «зроблено». */
+/**
+ * The main goal: counted or not, days per week (0–7), what makes a day «зроблено»,
+ * any one of those sections or all of them. A goal made here from nothing starts
+ * with «будь-яка активність» on (Olesia, 2026-11-19); a stored goal without `any`
+ * keeps counting all sections and gets no `any` until the checkbox is touched.
+ */
 export const withGoal = (change: GoalChange): ProfileEdit => (profile) => {
-  const goal = { ...readSettings(profile).goal, ...change };
-  return { ...profile, goal: { ...raw(profile.goal), enabled: goal.enabled, days: Math.min(7, Math.max(0, goal.days)), done: goal.done } };
+  const stored = raw(profile.goal);
+  const fresh = typeof profile.goal !== 'object' || profile.goal === null || Array.isArray(profile.goal);
+  const goal = { ...readSettings(profile).goal, ...(fresh ? { any: true } : {}), ...change };
+  const any = goal.any || 'any' in stored ? { any: goal.any } : {};
+  return { ...profile, goal: { ...stored, enabled: goal.enabled, days: Math.min(7, Math.max(0, goal.days)), done: goal.done, ...any } };
 };
 
 /** The encouraging phrases, in order; empty ones are dropped when saved (see `cleanForSave`). */

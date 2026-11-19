@@ -114,7 +114,7 @@ describe('upgradeProfile: settings older than format 0.1', () => {
     expect(upgraded.goal).toEqual({ enabled: true, days: 5, done: [] });
     expect(upgradeProfile({ goal: { enabled: false, days: 3, done: ['workout'], note: 'x' } }).goal).toEqual({ enabled: false, days: 3, done: ['workout'], note: 'x' });
     expect(upgradeProfile({ goal: { days: 'п’ять' } }).goal).toEqual({ enabled: true, days: 5, done: [] });
-    expect(readSettings(upgradeProfile({})).goal).toEqual({ enabled: true, days: 5, done: [] });
+    expect(readSettings(upgradeProfile({})).goal).toEqual({ enabled: true, days: 5, done: [], any: false });
   });
 
   it('keeps everything else, also what the app does not know', () => {

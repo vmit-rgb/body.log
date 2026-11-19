@@ -69,6 +69,11 @@
           "uniqueItems": true,
           "maxItems": 4,
           "items": { "title": "розділ", "enum": ["morningWarmup", "daytimeWarmup", "workout", "movement"] }
+        },
+        "any": {
+          "title": "будь-яка активність зараховує день",
+          "description": "true — день зараховано за будь-який розділ із done; false або немає — потрібні всі",
+          "type": "boolean"
         }
       }
     },

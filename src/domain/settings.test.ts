@@ -30,7 +30,7 @@ describe('readSettings: the example settings («почати без ШІ»)', ()
   });
 
   it('reads the goal and the phrases', () => {
-    expect(settings.goal).toEqual({ enabled: true, days: 5, done: ['morningWarmup'] });
+    expect(settings.goal).toEqual({ enabled: true, days: 5, done: ['morningWarmup'], any: false });
     expect(settings.encouragement).toEqual(['ти можеш налаштувати все в налаштуваннях :)']);
     expect(settings.accent).toBe('pink');
   });
@@ -118,9 +118,9 @@ describe('readSettings: missing or broken parts', () => {
   it('gives an empty, switched-off diary for empty settings', () => {
     const settings = readSettings({});
     // no `goal` = no weekly goal (Olesia, 2026-11-15)
-    expect(settings.goal).toEqual({ enabled: false, days: 5, done: [] });
+    expect(settings.goal).toEqual({ enabled: false, days: 5, done: [], any: false });
     expect(readSettings({ goal: { days: 4, done: ['workout'] } }).goal.enabled).toBe(false);
-    expect(readSettings({ goal: { enabled: true, days: 4, done: ['workout'] } }).goal).toEqual({ enabled: true, days: 4, done: ['workout'] });
+    expect(readSettings({ goal: { enabled: true, days: 4, done: ['workout'] } }).goal).toEqual({ enabled: true, days: 4, done: ['workout'], any: false });
     expect(settings.morningWarmup).toEqual({ enabled: false, weeklyTarget: 0, hint: '', levels: [] });
     expect(settings.workout.sessions).toEqual([]);
     expect(settings.trackers).toEqual([]);
@@ -137,7 +137,7 @@ describe('readSettings: missing or broken parts', () => {
       ] },
       trackers: [{ id: 't', kind: 'mood', ask: ['night', 'evening'] }, { kind: 'yesno' }, { id: 'u', kind: 'numbers', units: ['кг'] }],
     });
-    expect(settings.goal).toEqual({ enabled: false, days: 5, done: ['workout'] });
+    expect(settings.goal).toEqual({ enabled: false, days: 5, done: ['workout'], any: false });
     expect(settings.encouragement).toEqual(['ок', '7']);
     expect(settings.workout.sessions).toEqual([{ id: 's', name: '', how: '', items: [
       { exercise: 'x', reps: '', seconds: null, weight: null, sets: null, fields: ['reps'] },

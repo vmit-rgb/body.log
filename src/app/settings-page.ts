@@ -429,6 +429,7 @@ const ACTS: Acts = {
   part: (p, a) => p.toggle(a.part),
   'goal-on': (p, a) => p.change(withGoal({ enabled: a.on })),
   'goal-kind': (p, a) => p.goalKind(a.kind, a.on),
+  'goal-any': (p, a) => p.change(withGoal({ any: a.on })),
   'goal-days': (p, a) => p.goalDays(a.delta),
   phrase: (p, a) => void p.editPhrase(a.index, false),
   'phrase-add': (p) => void p.editPhrase(p.settings().encouragement.length, true),

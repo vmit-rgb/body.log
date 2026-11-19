@@ -17,6 +17,10 @@ import { act, checkbox, daysSlider, destructive, secondary, tertiary } from './s
 import {
   daytimeBody, KIND_NAMES, morningBody, movementBody, QUESTIONS, sectionMetas, wellbeingBody, workoutBody, type EditKind, type SectionsView,
 } from './settings-sections';
+import { goalKinds } from '../domain/progress';
+
+/** Shown only with two or more sections ticked: with one, «any» and «all» are the same (Нитка, 2026-11-19). */
+export const GOAL_ANY = 'будь-яка активність зараховує день';
 
 /*
  * «налаштування» (Figma screen/edit-profile 186:3278): the parts goal,
@@ -54,6 +58,7 @@ export type SettingsAct =
   | { readonly act: 'part'; readonly part: PartId }
   | { readonly act: 'goal-on'; readonly on: boolean }
   | { readonly act: 'goal-kind'; readonly on: boolean; readonly kind: ActivityKind }
+  | { readonly act: 'goal-any'; readonly on: boolean }
   | { readonly act: 'goal-days'; readonly delta: number }
   | { readonly act: 'phrase'; readonly index: number }
   | { readonly act: 'phrase-rm'; readonly index: number }
@@ -163,6 +168,7 @@ function goalBody({ goal, ...settings }: Settings): string {
       <div class="st-indent">
         <p class="t-2nd-bold">що треба виконати, щоб день був «зроблено»</p>
         ${on.map((kind) => checkbox(KIND_NAMES[kind], goal.done.includes(kind), `${act('goal-kind')} data-kind="${kind}"`)).join('')}
+        ${goalKinds({ goal, ...settings }).length > 1 ? checkbox(GOAL_ANY, goal.any, act('goal-any')) : ''}
         ${daysSlider({ label: 'ціль: днів на тиждень', value: goal.days, name: 'goal-days', spoken: 'днів на тиждень' })}
       </div>`;
   return `${checkbox('рахувати тижневу ціль', goal.enabled, act('goal-on'))}${goal.enabled ? details : ''}`;
@@ -255,7 +261,7 @@ function metas(state: SettingsState): Record<PartId, string> {
   const fields = settings.trackers.length;
   const sections = sectionMetas(settings);
   return {
-    goal: goal.enabled ? `${goal.days} ${plural(goal.days, DAYS)} на тиждень` : 'вимкнено',
+    goal: goal.enabled ? `${goal.days} ${plural(goal.days, DAYS)} на тиждень${goal.any && goalKinds(settings).length > 1 ? ', будь-яка активність' : ''}` : 'вимкнено',
     phrase: `${encouragement.length} ${plural(encouragement.length, PHRASES)}`,
     accent: ACCENT_NAMES[settings.accent],
     access: accessMeta(settings, state.motionReduced),
@@ -331,6 +337,7 @@ const slot = (el: HTMLElement): Slot => ({ list: d(el, 'list'), index: Number(d(
 const READ: Record<string, Read> = {
   'goal-on': (_, on) => ({ act: 'goal-on', on }),
   'goal-kind': (el, on) => ({ act: 'goal-kind', on, kind: d(el, 'kind') as ActivityKind }),
+  'goal-any': (_, on) => ({ act: 'goal-any', on }),
   'goal-days': (el) => ({ act: 'goal-days', delta: Number(d(el, 'delta')) }),
   phrase: (el) => ({ act: 'phrase', index: Number(d(el, 'index')) }),
   'phrase-rm': (el) => ({ act: 'phrase-rm', index: Number(d(el, 'index')) }),
