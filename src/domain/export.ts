@@ -36,7 +36,7 @@ function recordDays(days: Diary['days'], settings: Settings): string[][] {
 
 /** Days with records, newest first, each as its date and one line per block. */
 export function recordsText(days: Diary['days'], settings: Settings, today: DayKey): string {
-  const head = `Мій щоденник руху й самопочуття (експорт з трекера, ${dotted(today)}). Це записи, а не діагнози: не інтерпретуй значення як медичні.`;
+  const head = `Мій щоденник руху й самопочуття (експорт з body.log, ${dotted(today)}). Це записи, а не діагнози: не інтерпретуй значення як медичні.`;
   const blocks = recordDays(days, settings).map(([date, ...lines]) => [date, ...lines.map((line) => `  ${line}`)].join('\n'));
   return [head, ...blocks].join('\n\n');
 }
@@ -109,7 +109,7 @@ const exerciseSections = (settings: Settings) =>
 
 export function exercisesText(settings: Settings, today: DayKey): string {
   const sections = exerciseSections(settings).map((lines) => lines.join('\n'));
-  return [`Мої вправи (з трекера, ${dotted(today)}):`, ...sections].join('\n\n');
+  return [`Мої вправи (з body.log, ${dotted(today)}):`, ...sections].join('\n\n');
 }
 
 /* ---- PDF: the same texts, laid out as «бета 0.81» `exportPDF` did ---- */

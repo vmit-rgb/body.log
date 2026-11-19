@@ -722,7 +722,7 @@ describe('settings: copy and export', () => {
   it('says so when the file is not a copy', async () => {
     await pick('не копія');
     expect(dialog()).toBeNull();
-    expect(toastSays()).toBe('цей файл не схожий на копію з трекера >_<');
+    expect(toastSays()).toBe('цей файл не схожий на копію з body.log >_<');
   });
 
   it('says that a copy holds health records (E-13)', () => {
@@ -746,7 +746,7 @@ describe('settings: copy and export', () => {
     await tap('скопіювати для ШІ');
     await Promise.resolve();
     await Promise.resolve();
-    expect(device.copied[0]).toContain('Мій щоденник руху й самопочуття (експорт з трекера, 09.11.2026)');
+    expect(device.copied[0]).toContain('Мій щоденник руху й самопочуття (експорт з body.log, 09.11.2026)');
     expect(device.copied[0]).toContain('нотатка: вправа 1 легко');
     await tap('зберегти JSON');
     expect(device.saved[0]!.name).toBe('trekr-zapysy-2026-11-09.json');
@@ -760,7 +760,7 @@ describe('settings: copy and export', () => {
     await tap('скопіювати для ШІ');
     await Promise.resolve();
     await Promise.resolve();
-    expect(device.copied[0]).toContain('Мої вправи (з трекера, 09.11.2026):');
+    expect(device.copied[0]).toContain('Мої вправи (з body.log, 09.11.2026):');
     await tap('зберегти JSON');
     expect(device.saved[0]!.name).toBe('trekr-vpravy-2026-11-09.json');
   });
@@ -955,7 +955,7 @@ describe('settings: less common paths', () => {
     await openSettings();
     await openPart('копія й експорт');
     await pick({ text: () => Promise.reject(new Error('unreadable')) });
-    expect(toastSays()).toBe('цей файл не схожий на копію з трекера >_<');
+    expect(toastSays()).toBe('цей файл не схожий на копію з body.log >_<');
   });
 
   it('has no timer when no question takes a number', async () => {

@@ -36,7 +36,7 @@ describe('trackerCards', () => {
     const [pain] = trackerCards(WEEK, dayAt, settings);
     expect(pain!.kind).toBe('averages');
     if (pain!.kind !== 'averages') return;
-    expect(pain!.rows.map((row) => [row.label, row.value])).toEqual([['зранку', 3], ['після розминки', 2], ['ввечері', 2]]);
+    expect(pain!.rows.map((row) => [row.label, row.value])).toEqual([['зранку', 3], ['після ранкової', 2], ['ввечері', 2]]);
   });
 
   it('draws a line per moment over the 7 days, a point per day, with gaps for days without answers', () => {
@@ -46,7 +46,7 @@ describe('trackerCards', () => {
     expect(chart.starts).toEqual(WEEK);
     expect(chart.weekly).toBe(false);
     expect([chart.min, chart.max]).toEqual([0, 10]);
-    expect(chart.lines.map((line) => line.label)).toEqual(['зранку', 'після розминки', 'ввечері']);
+    expect(chart.lines.map((line) => line.label)).toEqual(['зранку', 'після ранкової', 'ввечері']);
     expect(chart.lines[0]!.points).toEqual([null, null, null, null, 4, 3, 2]);
     expect(chart.lines[1]!.points).toEqual([null, null, null, null, null, 2, null]);
   });

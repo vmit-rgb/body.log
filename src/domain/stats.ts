@@ -49,7 +49,7 @@ export function lastSevenDays(date: DayKey, today: DayKey): DayKey[] {
 
 export const MOMENT_SHORT: Record<Moment, string> = {
   morning: 'зранку',
-  afterMorningWarmup: 'після розминки',
+  afterMorningWarmup: 'після ранкової',
   beforeDaytimeWarmup: 'до денної',
   afterDaytimeWarmup: 'після денної',
   beforeWorkout: 'до тренування',

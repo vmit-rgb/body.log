@@ -65,7 +65,7 @@ function markup(state: MenuState): string {
           ${item(HELP, 'whats-new', 'що нового в застосунку')}
           ${item(HELP, 'how-to-use', 'як користуватись')}
           ${item(HELP, 'share', 'поділитися застосунком')}
-          ${item(HELP, 'feedback', 'додати фідбек')}
+          ${item(HELP, 'feedback', 'залишити відгук')}
         </nav>
         ${FOOTER}
       </div>

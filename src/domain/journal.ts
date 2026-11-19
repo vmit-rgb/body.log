@@ -15,7 +15,7 @@ import { monthName, monthOf, type MonthKey } from './stats';
 
 export const MOMENT_TITLES: Record<Moment, string> = {
   morning: 'самопочуття зранку',
-  afterMorningWarmup: 'самопочуття після розминки',
+  afterMorningWarmup: 'самопочуття після ранкової розминки',
   beforeDaytimeWarmup: 'самопочуття до денної розминки',
   afterDaytimeWarmup: 'самопочуття після денної розминки',
   beforeWorkout: 'самопочуття до тренування',

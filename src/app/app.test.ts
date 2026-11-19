@@ -271,7 +271,7 @@ describe('first launch in the installed app', () => {
 
   it('refuses a file that is not a copy and stays on the first screen', async () => {
     await restoreFile('{"format":"something-else"}');
-    expect(toastSays()).toBe('цей файл не схожий на копію з трекера >_<');
+    expect(toastSays()).toBe('цей файл не схожий на копію з body.log >_<');
     expect(stored()).toBeNull();
     expect(heading()).toBe('привіт! почнімо з налаштувань :)');
   });
@@ -280,7 +280,7 @@ describe('first launch in the installed app', () => {
     const unreadable = new File([''], 'trekr-kopiya.json');
     unreadable.text = () => Promise.reject(new Error('NotReadableError'));
     await restoreFile('', unreadable);
-    expect(toastSays()).toBe('цей файл не схожий на копію з трекера >_<');
+    expect(toastSays()).toBe('цей файл не схожий на копію з body.log >_<');
     expect(stored()).toBeNull();
   });
 
