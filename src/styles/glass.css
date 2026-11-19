@@ -16,7 +16,7 @@
 .lang,
 .footer,
 .day-card,
-.st-part {
+.settings__group {
   -webkit-backdrop-filter: var(--glass-blur);
   backdrop-filter: var(--glass-blur);
 }
@@ -26,6 +26,10 @@
 .footer,
 .day-card {
   background: var(--panel);
+}
+/* a settings group is the glass, tinted 10 %; its parts sit on it as cards: one more panel layer and the 5 % tint */
+.settings__group {
+  background: linear-gradient(var(--sunk), var(--sunk)), var(--panel);
 }
 .st-part {
   background: linear-gradient(var(--surface), var(--surface)), var(--panel);

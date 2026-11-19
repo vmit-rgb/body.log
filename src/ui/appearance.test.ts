@@ -2,7 +2,8 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import tokens from '../styles/tokens.css?raw';
 import settings from '../styles/settings.css?raw';
 import { ACCENTS } from '../domain/accents';
-import { DEFAULT_APPEARANCE, lookOf, startAppearance, type SystemTheme } from './appearance';
+import indexHtml from '../../index.html?raw';
+import { BAR_COLOUR, DEFAULT_APPEARANCE, lookOf, startAppearance, type SystemTheme } from './appearance';
 
 type Theme = 'dark' | 'light';
 const THEMES: readonly Theme[] = ['dark', 'light'];
@@ -90,6 +91,44 @@ describe('appearance', () => {
     expect(root.dataset.accent).toBe('cyan');
   });
 
+  describe('the browser bar colour (wave 11, item 4)', () => {
+    const bars = () => [...document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')].map((meta) => meta.content);
+    beforeEach(() => {
+      document.head.innerHTML =
+        '<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#161616" />' +
+        '<meta name="theme-color" media="(prefers-color-scheme: light)" content="#f6f5f7" />';
+    });
+
+    it('is the page colour of the theme shown, on every tag', () => {
+      startAppearance(document.documentElement, fakePhone(true).media, DEFAULT_APPEARANCE);
+      expect(bars()).toEqual([BAR_COLOUR.light, BAR_COLOUR.light]);
+    });
+
+    it('follows the phone', () => {
+      const phone = fakePhone(false);
+      startAppearance(document.documentElement, phone.media, DEFAULT_APPEARANCE);
+      expect(bars()).toEqual([BAR_COLOUR.dark, BAR_COLOUR.dark]);
+      phone.switchTo(true);
+      expect(bars()).toEqual([BAR_COLOUR.light, BAR_COLOUR.light]);
+    });
+
+    it('follows ☼ / ☾ against the phone', () => {
+      const apply = startAppearance(document.documentElement, fakePhone(true).media, DEFAULT_APPEARANCE);
+      apply({ ...DEFAULT_APPEARANCE, theme: 'dark' });
+      expect(bars()).toEqual([BAR_COLOUR.dark, BAR_COLOUR.dark]);
+      apply({ ...DEFAULT_APPEARANCE, theme: 'light' });
+      expect(bars()).toEqual([BAR_COLOUR.light, BAR_COLOUR.light]);
+    });
+
+    it('is the --bg of each theme in tokens.css and the colour index.html starts with', () => {
+      for (const theme of THEMES) {
+        const block = tokens.slice(tokens.indexOf(`${THEME_BLOCK[theme]} {`));
+        expect(block.match(/--bg:\s*(#[0-9a-f]{6})/i)?.[1]?.toLowerCase()).toBe(BAR_COLOUR[theme]);
+        expect(indexHtml).toContain(`media="(prefers-color-scheme: ${theme})" content="${BAR_COLOUR[theme]}"`);
+      }
+    });
+  });
+
   it('turns the accessibility options off again', () => {
     const apply = startAppearance(root, fakePhone(false).media, { ...DEFAULT_APPEARANCE, largerText: true, largerTargets: true });
     apply(DEFAULT_APPEARANCE);
@@ -173,6 +212,14 @@ describe('accent tokens', () => {
       const mid: Rgb = [parseInt(found[1]!, 16), parseInt(found[2]!, 16), parseInt(found[3]!, 16)];
       expect(contrast(mid, page), accent).toBeGreaterThanOrEqual(3);
     }
+  });
+
+  // E-17: the header scene is dark in both themes, so an emoticon in its phrase keeps the dark accent there.
+  it.each(ACCENTS)('gives the header scene the dark %s in the light theme, at 4.5:1 on the scene', (accent) => {
+    const found = /--scene-accent-rgb: (\d{1,3}) (\d{1,3}) (\d{1,3});/.exec(shades(`:root[data-theme='light'][data-accent='${accent}']`))!;
+    const scene: Rgb = [Number(found[1]), Number(found[2]), Number(found[3])];
+    expect(scene).toEqual(rgbOf('dark', accent));
+    expect(contrast(scene, hexOf('dark', 'scene-bg')!)).toBeGreaterThanOrEqual(4.5);
   });
 
   it('needs nothing newer than iOS 15.4 for colours', () => {

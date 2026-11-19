@@ -43,9 +43,22 @@ export interface SystemTheme {
   addEventListener(type: 'change', listener: () => void): void;
 }
 
+/**
+ * The browser bar / status bar colour for each theme: the page colour (--bg in
+ * tokens.css; appearance.test.ts checks they match). Wave 11, item 4 (Olesia,
+ * 2026-11-18): light in the light theme, dark in the dark one, and it changes
+ * with ☼/☾ too, not only with the phone.
+ */
+export const BAR_COLOUR = { dark: '#161616', light: '#f6f5f7' } as const;
+
 function apply(root: HTMLElement, appearance: Appearance, systemLight: boolean): void {
   const light = appearance.theme === 'system' ? systemLight : appearance.theme === 'light';
   root.dataset.theme = light ? 'light' : 'dark';
+  // index.html has one tag per phone theme (media) for the moments before this runs;
+  // from here on both say the app's theme, whatever the phone's is
+  for (const meta of root.ownerDocument.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')) {
+    meta.content = BAR_COLOUR[light ? 'light' : 'dark'];
+  }
   root.dataset.accent = appearance.accent;
   root.toggleAttribute('data-larger-text', appearance.largerText);
   root.toggleAttribute('data-larger-targets', appearance.largerTargets);

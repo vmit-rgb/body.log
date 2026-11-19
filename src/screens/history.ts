@@ -13,6 +13,7 @@ import { announce } from '../ui/announce';
 import { goalLine } from '../home/home-view';
 import { wireAccordions } from '../ui/accordion';
 import { esc } from '../ui/html';
+import { emoticonsHtml } from '../ui/emoticons';
 import { iconSvg } from '../ui/icons';
 import { smallUnits } from '../ui/units';
 import type { ToastMessage } from '../ui/toast';
@@ -140,7 +141,7 @@ function content(state: HistoryState, view: View, tips: TipMemory | undefined): 
     <section class="history__days" aria-label="дні">
       ${keys.length
     ? keys.map((key) => card(dayAt(key), view.open.has(key), state)).join('')
-    : '<p class="history__empty t-2nd-regular muted">цього місяця записів немає. зате попереду ще купа днів :3</p>'}
+    : `<p class="history__empty t-2nd-regular muted">${emoticonsHtml('цього місяця записів немає. зате попереду ще купа днів :3')}</p>`}
     </section>`;
 }
 

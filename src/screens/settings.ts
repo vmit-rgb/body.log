@@ -15,7 +15,7 @@ import { FOOTER, part, wireRestore } from './parts';
 import { pasteActOf, pasteResultBox, showPasteResult } from './paste-result';
 import { act, checkbox, daysSlider, destructive, secondary, tertiary } from './settings-bits';
 import {
-  daytimeBody, KIND_NAMES, morningBody, movementBody, sectionMetas, wellbeingBody, workoutBody, type EditKind, type SectionsView,
+  daytimeBody, KIND_NAMES, morningBody, movementBody, QUESTIONS, sectionMetas, wellbeingBody, workoutBody, type EditKind, type SectionsView,
 } from './settings-sections';
 
 /*
@@ -129,18 +129,28 @@ const MOTION_KEYS: readonly AccessibilityKey[] = ['noMotion', 'noBackgroundMotio
 
 const DAYS = ['день', 'дні', 'днів'] as const;
 const PHRASES = ['фраза', 'фрази', 'фраз'] as const;
-const FIELDS = ['поле', 'поля', 'полів'] as const;
+
+/**
+ * E-14 (Olesia, 2026-11-18): the 12 parts stand in groups with a background
+ * of their own; a group never folds, every part stays in sight. Names and
+ * what goes where: Нитка's proposal, Olesia may change them.
+ */
+export const GROUPS: readonly (readonly [id: string, name: string, parts: readonly PartId[]])[] = [
+  ['tracked', 'що відстежую', ['wellbeing', 'morning', 'daytime', 'workout', 'movement', 'goal']],
+  ['look', 'вигляд і доступність', ['accent', 'phrase', 'access']],
+  ['data', 'дані', ['ai', 'backup', 'delete']],
+];
 
 /** One part: accordion/trigger (group) and its body; the line under the title only while closed. */
 function partMarkup(id: PartId, title: string, meta: string, open: boolean, body: () => string): string {
   return `
     <section class="st-part" aria-labelledby="st-${id}-title">
-      <h2 class="st-part__heading">
+      <h3 class="st-part__heading">
         <button type="button" class="ctl accordion accordion--group" id="st-${id}-title" data-part="${id}" aria-expanded="${open}" aria-controls="st-${id}">
           <span class="accordion__title">${title}</span><span class="accordion__icon">${iconSvg(open ? 'remove' : 'add')}</span>${
   !open && meta ? `<span class="accordion__meta">${esc(meta)}</span>` : ''}
         </button>
-      </h2>
+      </h3>
       <div class="st-part__body" id="st-${id}"${open ? '' : ' hidden'}>${open ? body() : ''}</div>
     </section>`;
 }
@@ -213,7 +223,7 @@ function backupBody(state: SettingsState): string {
       </div>
       <p class="t-2nd-regular muted">копія — один файл з усіма записами й налаштуваннями. з нього все відновиться на новому телефоні.</p>
       <p class="t-2nd-bold st-warning">у копії всі записи про здоров’я.</p>
-      <h3 class="t-2nd-bold">експорт</h3>
+      <h4 class="t-2nd-bold">експорт</h4>
       <div class="segmented" role="group" aria-label="що експортувати">${tab('records', 'записи')}${tab('exercises', 'вправи')}</div>
       ${warning}
       ${secondary('скопіювати для ШІ', act('export-ai'))}
@@ -249,7 +259,7 @@ function metas(state: SettingsState): Record<PartId, string> {
     phrase: `${encouragement.length} ${plural(encouragement.length, PHRASES)}`,
     accent: ACCENT_NAMES[settings.accent],
     access: accessMeta(settings, state.motionReduced),
-    wellbeing: `${fields} ${plural(fields, FIELDS)}`,
+    wellbeing: `${fields} ${plural(fields, QUESTIONS)}`,
     morning: sections.morningWarmup,
     daytime: sections.daytimeWarmup,
     workout: sections.workout,
@@ -264,20 +274,25 @@ function markup(state: SettingsState): string {
   const { settings } = state;
   const ctx = { settings, view: state.sections };
   const meta = metas(state);
-  const parts: [PartId, string, () => string][] = [
-    ['goal', 'тижнева ціль', () => goalBody(settings)],
-    ['phrase', 'підбадьорлива фраза', () => phraseBody(settings)],
-    ['accent', 'акцентний колір', () => accentBody(settings)],
-    ['access', 'доступність', () => accessBody(settings, state.motionReduced)],
-    ['wellbeing', 'самопочуття', () => wellbeingBody(ctx)],
-    ['morning', 'ранкова розминка', () => morningBody(ctx)],
-    ['daytime', 'денна розминка', () => daytimeBody(ctx)],
-    ['workout', 'тренування', () => workoutBody(ctx)],
-    ['movement', 'рух', () => movementBody(ctx)],
-    ['ai', 'налаштування через ШІ', () => aiBody(state)],
-    ['backup', 'копія й експорт', () => backupBody(state)],
-    ['delete', 'видалення', deleteBody],
-  ];
+  const parts: Record<PartId, [string, () => string]> = {
+    goal: ['тижнева ціль', () => goalBody(settings)],
+    phrase: ['підбадьорлива фраза', () => phraseBody(settings)],
+    accent: ['акцентний колір', () => accentBody(settings)],
+    access: ['доступність', () => accessBody(settings, state.motionReduced)],
+    wellbeing: ['самопочуття', () => wellbeingBody(ctx)],
+    morning: ['ранкова розминка', () => morningBody(ctx)],
+    daytime: ['денна розминка', () => daytimeBody(ctx)],
+    workout: ['тренування', () => workoutBody(ctx)],
+    movement: ['рух', () => movementBody(ctx)],
+    ai: ['налаштування через ШІ', () => aiBody(state)],
+    backup: ['копія й експорт', () => backupBody(state)],
+    delete: ['видалення', deleteBody],
+  };
+  const group = ([gid, name, ids]: (typeof GROUPS)[number]) => `
+      <section class="settings__group" aria-labelledby="settings-group-${gid}">
+        <h2 class="settings__group-title t-2nd-bold" id="settings-group-${gid}">${name}</h2>
+        ${ids.map((id) => partMarkup(id, parts[id][0], meta[id], state.open.has(id), parts[id][1])).join('')}
+      </section>`;
   return `
     <div class="settings">
       <h1 class="visually-hidden">налаштування</h1>
@@ -288,7 +303,7 @@ function markup(state: SettingsState): string {
     ? 'без перетягування: натисни ⋯ біля запису або затримай на ньому палець і відпусти.'
     : 'без перетягування: затримай палець на записі й відпусти.'}</p>
       </div>
-      <div class="settings__parts">${parts.map(([id, title, body]) => partMarkup(id, title, meta[id], state.open.has(id), body)).join('')}</div>
+      <div class="settings__parts">${GROUPS.map(group).join('')}</div>
       ${FOOTER}
     </div>
     <nav class="bar bar--edit" aria-label="навігація">

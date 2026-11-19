@@ -345,6 +345,11 @@ describe('wellbeing questions', () => {
     expect(saved().t.morning).toBeUndefined();
   });
 
+  it('E-09: a note question asks lightly, the note of the day keeps its own hint', () => {
+    expect($<HTMLTextAreaElement>('[data-input="tracker-note"]').placeholder).toBe('напиши щось');
+    expect($<HTMLTextAreaElement>('[data-input="note"]').placeholder).toBe('як минув день? пиши як є');
+  });
+
   it('keeps a text answer and the note of the day', () => {
     type($<HTMLTextAreaElement>('[data-input="tracker-note"]'), 'добре');
     type($<HTMLTextAreaElement>('[data-input="note"]'), 'день як день');

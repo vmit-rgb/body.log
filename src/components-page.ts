@@ -114,7 +114,7 @@ document.head.append(style);
 wireAccordions(sheet);
 const toast = mountToast(document.body);
 const messages = {
-  saved: { message: 'збережено', emoticon: ':)', showIcon: true },
+  saved: { message: 'збережено :)', showIcon: true },
   removed: { message: 'підхід видалено', showIcon: true, action: undo(() => {}) },
   info: { message: 'за цей день записів немає' },
 };

@@ -75,12 +75,12 @@ export interface Home {
 
 /* COPY.md, Toasts; «не вдалося зберегти файл» as «бета 0.81» says it. */
 const COPY_SAVED: ToastMessage = { message: 'копію збережено', showIcon: true };
-const FILE_NOT_SAVED: ToastMessage = { message: 'не вдалося зберегти файл', emoticon: '>_<', error: true };
-const LINK_COPIED: ToastMessage = { message: 'посилання скопійовано — надішли, кому хочеш', emoticon: ':)', showIcon: true };
+const FILE_NOT_SAVED: ToastMessage = { message: 'не вдалося зберегти файл >_<', error: true };
+const LINK_COPIED: ToastMessage = { message: 'посилання скопійовано — надішли, кому хочеш :)', showIcon: true };
 /* Нитка's drafts (stage 6a): what the menu offers before it is built. */
-const NOT_SHARED: ToastMessage = { message: 'не вдалося поділитися', emoticon: '>_<', error: true };
+const NOT_SHARED: ToastMessage = { message: 'не вдалося поділитися >_<', error: true };
 /* A-02: «скоро» speaks about the screen it came on and goes with it. */
-const soon = (message: string): ToastMessage => ({ message, emoticon: ':)', local: true });
+const soon = (message: string): ToastMessage => ({ message: `${message} :)`, local: true });
 const FEEDBACK_SOON = soon('форму для фідбеку ще робимо, скоро буде');
 
 /** «поділитися застосунком» (Figma caption, Нитка's draft): the landing page, not the app itself. */

@@ -15,6 +15,8 @@
   --bg: #161616;
   /* the header's ASCII scene: the dark page colour in both themes (Olesia, 2026-11-18) */
   --scene-bg: #161616;
+  /* the same colour as channels, for the fade under the header (home.css) */
+  --scene-rgb: 22 22 22;
   --ink: #e9e9e9;
   --on-accent: #161d1b;
   /* text on the section title bar: dark in both themes (Olesia, 2026-11-09) */
@@ -50,6 +52,8 @@
   --glass-blur: blur(4px);
 
   --accent: rgb(var(--accent-rgb));
+  /* the header scene is dark in both themes, so its emoticons keep the dark theme's accent (E-17) */
+  --scene-accent-rgb: var(--accent-rgb);
   --surface: rgb(var(--accent-rgb) / 5%);
   --sunk: rgb(var(--accent-rgb) / 10%);
   --line: rgb(var(--accent-rgb) / 85%);
@@ -193,66 +197,77 @@
 /* Accents, light theme: primary (from --rgb-*) · mid · quiet (tint) · muted text. */
 :root[data-theme='light'][data-accent='gray'] {
   --accent-rgb: var(--rgb-gray);
+  --scene-accent-rgb: 193 187 197;
   --accent-mid: #89848d;
   --accent-quiet: #dbd7de;
   --muted: #656267;
 }
 :root[data-theme='light'][data-accent='orange'] {
   --accent-rgb: var(--rgb-orange);
+  --scene-accent-rgb: 247 140 3;
   --accent-mid: #ac7a50;
   --accent-quiet: #e9d5c6;
   --muted: #6e6056;
 }
 :root[data-theme='light'][data-accent='pink'] {
   --accent-rgb: var(--rgb-pink);
+  --scene-accent-rgb: 245 115 187;
   --accent-mid: #ac718f;
   --accent-quiet: #e9d2dd;
   --muted: #6e5e66;
 }
 :root[data-theme='light'][data-accent='magenta'] {
   --accent-rgb: var(--rgb-magenta);
+  --scene-accent-rgb: 255 78 248;
   --accent-mid: #a3739f;
   --accent-quiet: #e5d2e3;
   --muted: #6c5e6a;
 }
 :root[data-theme='light'][data-accent='purple'] {
   --accent-rgb: var(--rgb-purple);
+  --scene-accent-rgb: 209 124 255;
   --accent-mid: #9877ab;
   --accent-quiet: #e0d4e8;
   --muted: #685f6e;
 }
 :root[data-theme='light'][data-accent='violet'] {
   --accent-rgb: var(--rgb-violet);
+  --scene-accent-rgb: 167 149 254;
   --accent-mid: #857db6;
   --accent-quiet: #d8d6ec;
   --muted: #636171;
 }
 :root[data-theme='light'][data-accent='blue'] {
   --accent-rgb: var(--rgb-blue);
+  --scene-accent-rgb: 118 167 254;
   --accent-mid: #6986ba;
   --accent-quiet: #cedaee;
   --muted: #5b6472;
 }
 :root[data-theme='light'][data-accent='sky'] {
   --accent-rgb: var(--rgb-sky);
+  --scene-accent-rgb: 75 206 253;
   --accent-mid: #4791ad;
   --accent-quiet: #c5dee8;
   --muted: #55666e;
 }
 :root[data-theme='light'][data-accent='cyan'] {
   --accent-rgb: var(--rgb-cyan);
+  --scene-accent-rgb: 21 235 230;
   --accent-mid: #3c9693;
   --accent-quiet: #c4e0de;
   --muted: #536867;
 }
 :root[data-theme='light'][data-accent='mint'] {
   --accent-rgb: var(--rgb-mint);
+  --scene-accent-rgb: 33 239 194;
   --accent-mid: #499780;
   --accent-quiet: #c6e0d7;
   --muted: #556862;
 }
 :root[data-theme='light'][data-accent='green'] {
   --accent-rgb: var(--rgb-green);
+  --scene-accent-rgb: 102 212 92;
   --accent-mid: #689363;
   --accent-quiet: #cedfcc;
   --muted: #5c675a;

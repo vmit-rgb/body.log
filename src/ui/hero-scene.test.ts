@@ -84,8 +84,33 @@ describe('the header block', () => {
     expect(tokens).toMatch(/:root \{[^}]*--scene-bg: #161616;/);
     expect(tokens.match(/--scene-bg:/g)).toHaveLength(1);
     expect(css).toMatch(/\.hero \{[^}]*background: var\(--scene-bg\)/);
-    expect(css).toMatch(/\.home__fade \{[^}]*z-index: -1;[^}]*linear-gradient\(to bottom, var\(--scene-bg\), transparent\)/);
+    expect(css).toMatch(/\.home__fade \{[^}]*z-index: -1;[^}]*linear-gradient\(\s*to bottom/);
     expect(css).not.toMatch(/hero__scene::(before|after)|mask-image/);
+  });
+
+  describe('the fade below it (wave 11, item 5)', () => {
+    const fade = css.slice(css.indexOf('.home__fade {'), css.indexOf('}', css.indexOf('.home__fade {')));
+    const stops = [...fade.matchAll(/rgb\(var\(--scene-rgb\) \/ ([\d.]+)%\) (\d+)%/g)].map(([, alpha, at]) => [Number(alpha), Number(at)]);
+
+    it('is the header colour, 112 px long', () => {
+      const [r, g, b] = tokens.match(/--scene-rgb: (\d+) (\d+) (\d+);/)!.slice(1).map(Number);
+      expect(`#${[r, g, b].map((c) => c!.toString(16).padStart(2, '0')).join('')}`).toBe('#161616');
+      expect(css).toMatch(/\.home \{[^}]*--hero-fade: 112px;/);
+      expect(fade).toMatch(/height: var\(--hero-fade\);/);
+    });
+
+    it('follows an S-curve every 10 %, so neither end shows as a line', () => {
+      expect(stops.map(([, at]) => at)).toEqual([0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]);
+      for (const [alpha, at] of stops) {
+        const t = at! / 100;
+        expect(alpha! / 100).toBeCloseTo(1 - (3 * t ** 2 - 2 * t ** 3), 3);
+      }
+    });
+
+    it('has room of its own in the light theme only', () => {
+      expect(css).toMatch(/:root\[data-theme='light'\] \.hero \{\s*margin-bottom: calc\(var\(--hero-fade\) - 40px\);/);
+      expect(css).not.toMatch(/(^|\n)\.hero \{[^}]*margin-bottom/);
+    });
   });
 
   it('the phrase is white with a dark shadow in both themes', () => {

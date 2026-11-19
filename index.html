@@ -3,7 +3,9 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#161616" />
+    <!-- the bar colour follows the phone until the app puts its own theme on (ui/appearance.ts) -->
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#161616" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f6f5f7" />
     <meta name="referrer" content="no-referrer" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />

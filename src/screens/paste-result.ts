@@ -1,5 +1,5 @@
 import type { PasteAct, PasteView } from '../app/paste-flow';
-import { esc } from '../ui/html';
+import { emoticonsHtml } from '../ui/emoticons';
 
 /*
  * What «застосувати» answers, under the paste field on the first screen
@@ -12,10 +12,11 @@ const button = (order: 'primary' | 'secondary', act: PasteAct, label: string) =>
   `<button type="button" class="ctl btn btn--${order} btn--wide" data-paste-act="${act}">${label}</button>`;
 
 const list = (lines: readonly string[]) =>
-  (lines.length ? `<ul class="paste-result__lines t-2nd-regular">${lines.map((line) => `<li>${esc(line)}</li>`).join('')}</ul>` : '');
+  (lines.length ? `<ul class="paste-result__lines t-2nd-regular">${lines.map((line) => `<li>${emoticonsHtml(line)}</li>`).join('')}</ul>` : '');
 
-const title = (text: string) => `<p class="t-1st-bold" tabindex="-1" data-paste-title>${esc(text)}</p>`;
-const hint = (text: string) => (text ? `<p class="t-3rd-regular muted">${esc(text)}</p>` : '');
+/* Texts here and from the settings (a phrase in «додано») may carry an emoticon: in the accent (E-17). */
+const title = (text: string) => `<p class="t-1st-bold" tabindex="-1" data-paste-title>${emoticonsHtml(text)}</p>`;
+const hint = (text: string) => (text ? `<p class="t-3rd-regular muted">${emoticonsHtml(text)}</p>` : '');
 
 function group(name: string, lines: readonly string[]): string {
   return lines.length ? `<div class="paste-result__group"><p class="t-2nd-bold">${name}</p>${list(lines)}</div>` : '';
