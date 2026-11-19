@@ -24,6 +24,7 @@ import { copyPrompt as copyPromptText, PasteFlow, pasteFailed, RUSSIAN_COPY } fr
 import { logKeeper } from './keeper';
 import { pagesOverHome, type DeviceEnv } from './pages';
 import { startScreen, type Phone, type Platform, type StartScreen } from './start';
+import { t } from '../i18n/lang';
 
 export { SAVE_DELAY_MS } from './keeper';
 
@@ -46,15 +47,15 @@ export interface AppEnv extends DeviceEnv {
 }
 
 /* Texts: COPY.md. */
-const SAVED: ToastMessage = { message: 'збережено :)', showIcon: true };
-const UNDONE: ToastMessage = { message: 'скасовано', showIcon: true };
+const SAVED: ToastMessage = { message: t('збережено :)'), showIcon: true };
+const UNDONE: ToastMessage = { message: t('скасовано'), showIcon: true };
 /* Нитка's draft. */
-const HAS_RECORDS: ToastMessage = { message: 'уже є записи, тож скасувати не вийде. налаштування можна змінити в меню', error: true };
-const NOT_A_COPY: ToastMessage = { message: 'цей файл не схожий на копію з body.log >_<', error: true };
-const RESTORED: ToastMessage = { message: 'відновлено з файлу :)', showIcon: true };
-const FILE_SAVED: ToastMessage = { message: 'збережено', showIcon: true };
-const FILE_NOT_SAVED: ToastMessage = { message: 'не вдалося зберегти файл >_<', error: true };
-const NOT_SAVED: ToastMessage = { message: 'не вдалося зберегти: схоже, на телефоні забракло місця >_<', error: true };
+const HAS_RECORDS: ToastMessage = { message: t('уже є записи, тож скасувати не вийде. налаштування можна змінити в меню'), error: true };
+const NOT_A_COPY: ToastMessage = { message: `${t('цей файл не схожий на копію з body.log')} >_<`, error: true };
+const RESTORED: ToastMessage = { message: t('відновлено з файлу :)'), showIcon: true };
+const FILE_SAVED: ToastMessage = { message: t('збережено'), showIcon: true };
+const FILE_NOT_SAVED: ToastMessage = { message: `${t('не вдалося зберегти файл')} >_<`, error: true };
+const NOT_SAVED: ToastMessage = { message: `${t('не вдалося зберегти: схоже, на телефоні забракло місця')} >_<`, error: true };
 
 /** Stores the diary; false and the «no space» toast when the phone refuses. */
 function saved(store: DiaryStore, next: Diary, toast: Toast): boolean {
@@ -82,8 +83,8 @@ async function restoreFrom(file: File, keep: (diary: Diary, done: ToastMessage) 
 const START_TITLES: Record<StartScreen, string | undefined> = {
   home: undefined,
   unreadable: undefined,
-  'first-launch': 'початок',
-  'install-first': 'початок',
+  'first-launch': t('початок'),
+  'install-first': t('початок'),
 };
 
 /**
@@ -249,7 +250,7 @@ export function startApp(env: AppEnv): void {
       show('first-launch');
       return UNDONE;
     };
-    keep({ profile, days: {} }, { ...SAVED, action: { label: 'скасувати', run: back } });
+    keep({ profile, days: {} }, { ...SAVED, action: { label: t('скасувати'), run: back } });
   }
   const paste = new PasteFlow({
     current: () => null,

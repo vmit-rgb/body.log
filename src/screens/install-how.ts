@@ -2,6 +2,7 @@ import { detectPlatform, type Phone } from '../app/start';
 import { layer } from '../ui/dialog';
 import { EASE, MS, play } from '../ui/motion';
 import { platformToggles, wireInstallSteps } from './parts';
+import { t } from '../i18n/lang';
 
 /*
  * «як?» on the tab note (Olesia, 2026-11-19): a popup with the landing page's
@@ -13,13 +14,13 @@ const MARKUP = `
   <div class="dialog install-how" role="dialog" aria-modal="true" aria-labelledby="install-how-title">
     <div class="dialog__scrim" data-close></div>
     <div class="dialog__panel">
-      <h2 class="t-1st-bold" id="install-how-title">як встановити застосунок</h2>
+      <h2 class="t-1st-bold" id="install-how-title">${t('як встановити застосунок')}</h2>
       ${platformToggles()}
       <ol class="steps t-2nd-regular" data-steps></ol>
       <p class="t-3rd-regular muted" data-steps-note></p>
-      <p class="t-3rd-regular muted">телефон визначено автоматично. якщо не той — перемкни.</p>
+      <p class="t-3rd-regular muted">${t('телефон визначено автоматично. якщо не той — перемкни.')}</p>
       <div class="dialog__actions">
-        <button type="button" class="ctl btn btn--secondary" data-close>зрозуміло</button>
+        <button type="button" class="ctl btn btn--secondary" data-close>${t('зрозуміло')}</button>
       </div>
     </div>
   </div>`;

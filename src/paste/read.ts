@@ -4,6 +4,7 @@ import type { Path } from '../format/schema';
 import { cleanPaste } from './clean';
 import { issueLine, sectionName, unknownLine, type Line } from './messages';
 import { russianReason } from './russian';
+import { t } from '../i18n/lang';
 
 /*
  * «застосувати»: from the pasted text to settings that can be kept, or to
@@ -48,46 +49,46 @@ export type PasteRead = Refusal | Accepted;
 export const SHOWN_LINES = 8;
 const AI_LINES = 40;
 
-const AGAIN = 'Надішли весь JSON заново, повністю, одним блоком коду, без пояснень навколо.';
+const AGAIN = t('Надішли весь JSON заново, повністю, одним блоком коду, без пояснень навколо.');
 
 const isObject = (value: unknown): value is JsonObject => typeof value === 'object' && value !== null && !Array.isArray(value);
 const numbered = (lines: readonly string[]) => lines.map((line, i) => `${i + 1}. ${line}`).join('\n');
 
 function capped(lines: readonly string[], max: number): string[] {
-  return lines.length > max ? [...lines.slice(0, max), `і ще ${lines.length - max}`] : [...lines];
+  return lines.length > max ? [...lines.slice(0, max), t('і ще {n}', { n: lines.length - max })] : [...lines];
 }
 
 function refusal(reason: Refusal['reason'], title: string, parts: Partial<Omit<Refusal, 'kind' | 'reason' | 'title'>>): Refusal {
   return { kind: 'refused', reason, title, serious: false, lines: [], hint: '', forAi: null, ...parts };
 }
 
-const NOT_JSON = refusal('notJson', 'це не схоже на налаштування >_<', {
-  hint: 'скопіюй усю відповідь ШІ, разом із фігурними дужками { }.',
+const NOT_JSON = refusal('notJson', `${t('це не схоже на налаштування')} >_<`, {
+  hint: t('скопіюй усю відповідь ШІ, разом із фігурними дужками { }.'),
 });
 
-const TRUNCATED = refusal('truncated', 'схоже, відповідь ШІ обірвалася >_<', {
-  hint: 'у тексті немає закривної дужки }. скопіюй відповідь повністю або попроси ШІ надіслати її ще раз.',
-  forAi: `Застосунок не прийняв налаштування: JSON обірваний, немає закривної дужки. ${AGAIN}`,
+const TRUNCATED = refusal('truncated', `${t('схоже, відповідь ШІ обірвалася')} >_<`, {
+  hint: t('у тексті немає закривної дужки }. скопіюй відповідь повністю або попроси ШІ надіслати її ще раз.'),
+  forAi: `${t('Застосунок не прийняв налаштування: JSON обірваний, немає закривної дужки.')} ${AGAIN}`,
 });
 
-const TOO_LONG = refusal('tooLong', 'текст завеликий >_<', {
-  hint: 'налаштування мають вміщатися у 200 КБ. попроси свій ШІ скоротити: менше вправ і коротші описи.',
-  forAi: `Застосунок не прийняв налаштування: текст більший за 200 КБ. Скороти: лиши необхідний мінімум вправ і коротші описи. ${AGAIN}`,
+const TOO_LONG = refusal('tooLong', `${t('текст завеликий')} >_<`, {
+  hint: t('налаштування мають вміщатися у 200 КБ. попроси свій ШІ скоротити: менше вправ і коротші описи.'),
+  forAi: `${t('Застосунок не прийняв налаштування: текст більший за 200 КБ. Скороти: лиши необхідний мінімум вправ і коротші описи.')} ${AGAIN}`,
 });
 
-const BACKUP = refusal('backup', 'це копія щоденника, а не налаштування від ШІ', {
-  hint: 'копію відновлює кнопка «відновити з копії».',
+const BACKUP = refusal('backup', t('це копія щоденника, а не налаштування від ШІ'), {
+  hint: t('копію відновлює кнопка «відновити з копії».'),
 });
 
-const NOT_SETTINGS = refusal('notSettings', 'це не схоже на налаштування для body.log >_<', {
-  hint: 'скопіюй усю відповідь ШІ. якщо це вона і є — попроси його написати налаштування за форматом із промпту.',
-  forAi: `Застосунок не прийняв відповідь: це не налаштування у форматі з промпту (немає "format": "${PROFILE_FORMAT}"). ${AGAIN}`,
+const NOT_SETTINGS = refusal('notSettings', `${t('це не схоже на налаштування для body.log')} >_<`, {
+  hint: t('скопіюй усю відповідь ШІ. якщо це вона і є — попроси його написати налаштування за форматом із промпту.'),
+  forAi: `${t('Застосунок не прийняв відповідь: це не налаштування у форматі з промпту (немає')} "format": "${PROFILE_FORMAT}"). ${AGAIN}`,
 });
 
-const RUSSIAN = refusal('russian', 'налаштування російською мовою не приймаються.', {
+const RUSSIAN = refusal('russian', t('налаштування російською мовою не приймаються.'), {
   serious: true,
-  hint: 'попроси свій ШІ написати їх українською або англійською.',
-  forAi: `Застосунок не приймає налаштування російською мовою. Перепиши всі тексти українською або англійською, як обрала людина (розмовляти з нею можна й далі її мовою), і вкажи відповідний "lang". ${AGAIN}`,
+  hint: t('попроси свій ШІ написати їх українською або англійською.'),
+  forAi: `${t('Застосунок не приймає налаштування російською мовою. Перепиши всі тексти українською або англійською, як обрала людина (розмовляти з нею можна й далі її мовою), і вкажи відповідний')} "lang". ${AGAIN}`,
 });
 
 /** The top-level sections the format needs; a paste without some of them is a part, not the whole. */
@@ -97,18 +98,18 @@ function missingSections(value: JsonObject): string[] {
 
 function partial(missing: readonly string[]): Refusal {
   const names = missing.map(sectionName).join(', ');
-  return refusal('partial', 'це лише частина налаштувань', {
-    lines: [`бракує розділів: ${names}`],
-    hint: 'застосунок приймає тільки повні налаштування. попроси свій ШІ надіслати все повністю, а не лише те, що змінилося.',
-    forAi: `Застосунок приймає тільки повні налаштування, а не частину. Бракує розділів: ${names}. Надішли весь JSON повністю: усі розділи, також ті, що не змінювалися, одним блоком коду, без пояснень навколо.`,
+  return refusal('partial', t('це лише частина налаштувань'), {
+    lines: [`${t('бракує розділів:')} ${names}`],
+    hint: t('застосунок приймає тільки повні налаштування. попроси свій ШІ надіслати все повністю, а не лише те, що змінилося.'),
+    forAi: `${t('Застосунок приймає тільки повні налаштування, а не частину. Бракує розділів:')} ${names}${t('. Надішли весь JSON повністю: усі розділи, також ті, що не змінювалися, одним блоком коду, без пояснень навколо.')}`,
   });
 }
 
 function errors(lines: readonly Line[]): Refusal {
-  return refusal('errors', 'щось не так у налаштуваннях >_<', {
+  return refusal('errors', `${t('щось не так у налаштуваннях')} >_<`, {
     lines: capped(lines.map((line) => line.text), SHOWN_LINES),
-    hint: 'встав це своєму ШІ — він виправить.',
-    forAi: `Застосунок не прийняв налаштування. Що треба виправити:\n${numbered(capped(lines.map((line) => line.forAi), AI_LINES))}\n\nВиправ це й нічого іншого не міняй. ${AGAIN}`,
+    hint: t('встав це своєму ШІ — він виправить.'),
+    forAi: `${t('Застосунок не прийняв налаштування. Що треба виправити:\n')}${numbered(capped(lines.map((line) => line.forAi), AI_LINES))}${t('\n\nВиправ це й нічого іншого не міняй.')} ${AGAIN}`,
   });
 }
 
@@ -131,7 +132,7 @@ function withTextReps(value: unknown): unknown {
 }
 
 function unknownForAi(lines: readonly Line[]): string {
-  return `Застосунок не знає цих полів і не збереже їх:\n${numbered(capped(lines.map((line) => line.forAi), AI_LINES))}\n\nПрибери їх, а якщо в них було щось потрібне — перенеси це в поля, які є у форматі з промпту. Решту не міняй. ${AGAIN}`;
+  return `${t('Застосунок не знає цих полів і не збереже їх:\n')}${numbered(capped(lines.map((line) => line.forAi), AI_LINES))}${t('\n\nПрибери їх, а якщо в них було щось потрібне — перенеси це в поля, які є у форматі з промпту. Решту не міняй.')} ${AGAIN}`;
 }
 
 export function readPaste(text: string): PasteRead {

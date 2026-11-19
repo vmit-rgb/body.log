@@ -1,5 +1,6 @@
 import type { PasteAct, PasteView } from '../app/paste-flow';
 import { emoticonsHtml } from '../ui/emoticons';
+import { t } from '../i18n/lang';
 
 /*
  * What «застосувати» answers, under the paste field on the first screen
@@ -25,14 +26,14 @@ function group(name: string, lines: readonly string[]): string {
 function previewMarkup(view: PasteView & { kind: 'preview' }): string {
   const { changes } = view;
   if (view.nothing) {
-    return `${title('нічого не зміниться')}${hint('ці налаштування такі самі, як зараз.')}${button('secondary', 'cancel', 'закрити')}`;
+    return `${title(t('нічого не зміниться'))}${hint(t('ці налаштування такі самі, як зараз.'))}${button('secondary', 'cancel', t('закрити'))}`;
   }
   const body = changes.first
     ? list(changes.added)
-    : `${group('додано', changes.added)}${group('змінено', changes.changed)}${group('прибрано', changes.removed)}
-       <p class="t-2nd-regular">записи лишаються як були</p>`;
-  return `${title(changes.first ? 'ось що буде в налаштуваннях' : 'ось що зміниться')}${body}
-    ${button('primary', 'save', 'зберегти')}${button('secondary', 'cancel', 'скасувати', ' btn--cancel')}`;
+    : `${group(t('додано'), changes.added)}${group(t('змінено'), changes.changed)}${group(t('прибрано'), changes.removed)}
+       <p class="t-2nd-regular">${t('записи лишаються як були')}</p>`;
+  return `${title(changes.first ? t('ось що буде в налаштуваннях') : t('ось що зміниться'))}${body}
+    ${button('primary', 'save', t('зберегти'))}${button('secondary', 'cancel', t('скасувати'), ' btn--cancel')}`;
 }
 
 /** The inside of `[data-paste-result]`; empty when there is nothing to say. */
@@ -40,13 +41,13 @@ export function pasteResultMarkup(view: PasteView): string {
   if (view.kind === 'none') return '';
   if (view.kind === 'preview') return previewMarkup(view);
   if (view.kind === 'unknown') {
-    return `${title('ось що застосунок не прочитав')}${list(view.lines)}
-      ${hint('таких полів у налаштуваннях немає, тож вони не збережуться. попроси свій ШІ виправити — або продовж без них.')}
-      ${button('primary', 'copy', 'скопіювати для ШІ, щоб виправити')}${button('secondary', 'continue', 'продовжити без цього')}`;
+    return `${title(t('ось що застосунок не прочитав'))}${list(view.lines)}
+      ${hint(t('таких полів у налаштуваннях немає, тож вони не збережуться. попроси свій ШІ виправити — або продовж без них.'))}
+      ${button('primary', 'copy', t('скопіювати для ШІ, щоб виправити'))}${button('secondary', 'continue', t('продовжити без цього'))}`;
   }
   const { refusal } = view;
   return `${title(refusal.title)}${list(refusal.lines)}${hint(refusal.hint)}
-    ${refusal.forAi === null ? '' : button('primary', 'copy', 'скопіювати для ШІ')}`;
+    ${refusal.forAi === null ? '' : button('primary', 'copy', t('скопіювати для ШІ'))}`;
 }
 
 /** The box the result lives in; `role="status"` so a screen reader hears a new result. */

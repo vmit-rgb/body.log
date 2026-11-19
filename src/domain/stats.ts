@@ -3,6 +3,7 @@ import type { Day } from './day';
 import { plural } from './numbers';
 import { kindDone, levelDone, weekSoFar } from './progress';
 import { ACTIVITY_KINDS, MOMENTS, type ActivityKind, type Moment, type Settings } from './settings';
+import { t } from '../i18n/lang';
 
 /*
  * The calendar block (Figma `calendar/month` 131:2314): «цей тиждень»,
@@ -24,10 +25,10 @@ export interface WeekStat {
 function kindLabel(kind: ActivityKind, settings: Settings): string {
   const bothWarmups = settings.morningWarmup.enabled && settings.daytimeWarmup.enabled;
   const labels: Record<ActivityKind, string> = {
-    morningWarmup: bothWarmups ? 'ранкова розминка' : 'розминка',
-    daytimeWarmup: bothWarmups ? 'денна розминка' : 'розминка',
-    workout: 'тренування',
-    movement: 'рух',
+    morningWarmup: bothWarmups ? t('ранкова розминка') : t('розминка'),
+    daytimeWarmup: bothWarmups ? t('денна розминка') : t('розминка'),
+    workout: t('тренування'),
+    movement: t('рух'),
   };
   return labels[kind];
 }
@@ -48,15 +49,15 @@ export function lastSevenDays(date: DayKey, today: DayKey): DayKey[] {
 }
 
 export const MOMENT_SHORT: Record<Moment, string> = {
-  morning: 'зранку',
-  afterMorningWarmup: 'після ранкової',
-  beforeDaytimeWarmup: 'до денної',
-  afterDaytimeWarmup: 'після денної',
-  beforeWorkout: 'до тренування',
-  afterWorkout: 'після тренування',
-  beforeMovement: 'до руху',
-  afterMovement: 'після руху',
-  evening: 'ввечері',
+  morning: t('зранку'),
+  afterMorningWarmup: t('після ранкової'),
+  beforeDaytimeWarmup: t('до денної'),
+  afterDaytimeWarmup: t('після денної'),
+  beforeWorkout: t('до тренування'),
+  afterWorkout: t('після тренування'),
+  beforeMovement: t('до руху'),
+  afterMovement: t('після руху'),
+  evening: t('ввечері'),
 };
 
 export interface Average { readonly label: string; readonly value: number }
@@ -68,7 +69,7 @@ export function averages(keys: readonly DayKey[], dayAt: (key: DayKey) => Day, s
     const values = keys.map((key) => dayAt(key).t[moment]?.[tracker.id]).filter((value) => typeof value === 'number');
     if (values.length === 0) return [];
     const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
-    return [{ label: `${tracker.name || 'без назви'} · ${MOMENT_SHORT[moment]}`, value: Math.round(mean * 10) / 10 }];
+    return [{ label: `${tracker.name || t('без назви')} · ${MOMENT_SHORT[moment]}`, value: Math.round(mean * 10) / 10 }];
   }));
 }
 
@@ -142,7 +143,7 @@ export function monthCells(month: MonthKey): MonthCell[] {
   });
 }
 
-const MONTHS = ['січень', 'лютий', 'березень', 'квітень', 'травень', 'червень', 'липень', 'серпень', 'вересень', 'жовтень', 'листопад', 'грудень'];
+const MONTHS = [t('січень'), t('лютий'), t('березень'), t('квітень'), t('травень'), t('червень'), t('липень'), t('серпень'), t('вересень'), t('жовтень'), t('листопад'), t('грудень')];
 
 export function monthName(month: MonthKey, today: DayKey): string {
   const [year, m] = month.split('-');
@@ -159,5 +160,5 @@ const BEATS = ['удар', 'удари', 'ударів'] as const;
 /** «42 удари за 30 с × 2» */
 export function beatsLine(beats: number, seconds: number): string {
   const times = 60 / seconds;
-  return `${beats} ${plural(beats, BEATS)} за ${seconds} с${times === 1 ? '' : ` × ${times}`}`;
+  return `${beats} ${plural(beats, BEATS)} ${t('за')} ${seconds} ${t('с')}${times === 1 ? '' : ` × ${times}`}`;
 }

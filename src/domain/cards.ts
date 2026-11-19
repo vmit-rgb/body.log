@@ -2,6 +2,7 @@ import { addDays, type DayKey } from './dates';
 import type { Answer, Day } from './day';
 import { MOMENTS, type Moment, type Settings, type Tracker } from './settings';
 import { MOMENT_SHORT } from './stats';
+import { t } from '../i18n/lang';
 
 /*
  * The carousel «середнє за 7 днів» (wave 9, Olesia 2026-11-18; FIXES-PLAN
@@ -85,7 +86,7 @@ function chartOf(tracker: Tracker, moments: readonly Moment[], keys: readonly Da
 }
 
 function card(tracker: Tracker, keys: readonly DayKey[], dayAt: (key: DayKey) => Day): TrackerCard {
-  const base = { id: tracker.id, name: tracker.name || 'без назви' };
+  const base = { id: tracker.id, name: tracker.name || t('без назви') };
   const days = keys.map(dayAt);
   const asked = MOMENTS.filter((moment) => tracker.ask.includes(moment));
   const answered = asked.filter((moment) => days.some((day) => answerAt(day, moment, tracker) !== undefined));

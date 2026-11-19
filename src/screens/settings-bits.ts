@@ -1,5 +1,6 @@
 import { esc } from '../ui/html';
 import { iconSvg, type IconName } from '../ui/icons';
+import { t } from '../i18n/lang';
 
 /* Small pieces of the settings page, shared by its parts. */
 
@@ -37,9 +38,9 @@ export function daysSlider({ label, value, name, data = '', spoken }: DaysSpec):
   return `
         <div class="st-days">
           <div class="st-days__head"><span class="t-1st-semibold">${label}</span><span class="st-days__value t-3rd-semibold" aria-live="polite">${value}/7</span></div>
-          <div class="slider-row">${step(-1, 'менше', 'remove', value <= 0)}
-            <input type="range" class="slider" min="0" max="7" step="1" value="${value}" aria-label="${esc(spoken)}" aria-valuetext="${value} з 7" data-input="${name}"${extra} />${
-  step(1, 'більше', 'add', value >= 7)}
+          <div class="slider-row">${step(-1, t('менше'), 'remove', value <= 0)}
+            <input type="range" class="slider" min="0" max="7" step="1" value="${value}" aria-label="${esc(spoken)}" aria-valuetext="${value} ${t('з 7')}" data-input="${name}"${extra} />${
+  step(1, t('більше'), 'add', value >= 7)}
           </div>
           <div class="st-days__ticks t-3rd-regular" aria-hidden="true">${Array.from({ length: 8 }, (_, n) => `<span${n === value ? ' class="on"' : ''}>${n}</span>`).join('')}</div>
         </div>`;

@@ -1,6 +1,7 @@
 import type { DayKey } from './dates';
 import { hasLap, hasSet, type Day, type MovementLog, type SetLog } from './day';
 import { formatNumber, plural } from './numbers';
+import { t } from '../i18n/lang';
 
 /* «минулого разу»: what was logged the last time before the day shown. */
 
@@ -31,7 +32,7 @@ const part = (value: number | null, unit: string) => (value === null ? [] : [`${
 
 /** «5 кг × 10, 5 кг × 8» (as «бета 0.81» wrote it). */
 export function formatSets(sets: readonly SetLog[]): string {
-  return sets.map((set) => [...part(set.w, ' кг'), ...part(set.r, ''), ...part(set.s, ' с')].join(' × ')).join(', ');
+  return sets.map((set) => [...part(set.w, t(' кг')), ...part(set.r, ''), ...part(set.s, t(' с'))].join(' × ')).join(', ');
 }
 
 const STEPS = ['крок', 'кроки', 'кроків'] as const;
@@ -39,8 +40,8 @@ const STEPS = ['крок', 'кроки', 'кроків'] as const;
 /** «3 км · 40 хв, 1 км» */
 export function formatLaps(laps: readonly MovementLog[]): string {
   return laps.map((lap) => [
-    ...part(lap.km, ' км'),
-    ...part(lap.min, ' хв'),
+    ...part(lap.km, t(' км')),
+    ...part(lap.min, t(' хв')),
     ...(lap.steps === null ? [] : [`${formatNumber(lap.steps)} ${plural(lap.steps, STEPS)}`]),
   ].join(' · ')).join(', ');
 }

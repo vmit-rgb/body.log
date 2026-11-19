@@ -4,7 +4,8 @@ import { emoticonsHtml } from '../ui/emoticons';
 import { hideFlight } from '../ui/flight';
 import { iconSvg } from '../ui/icons';
 import { barMarkup, fillBar, wireDateNav, type BarState } from './bar';
-import { FOOTER, part } from './parts';
+import { FOOTER, LANGUAGE_SWITCH, part, wireLanguageSwitch } from './parts';
+import { t } from '../i18n/lang';
 
 /*
  * screen/menu (Figma 183:3210): `menu/top-bar` with the theme switch,
@@ -33,8 +34,8 @@ export interface MenuActions {
 }
 
 const THEME_SWITCH: Record<ThemeChoice, string> = {
-  dark: `<button type="button" class="ctl icon-btn icon-btn--secondary menu__theme" aria-label="світла тема">${iconSvg('sun')}</button>`,
-  light: `<button type="button" class="ctl icon-btn icon-btn--secondary menu__theme" aria-label="темна тема">${iconSvg('moon')}</button>`,
+  dark: `<button type="button" class="ctl icon-btn icon-btn--secondary menu__theme" aria-label="${t('світла тема')}">${iconSvg('sun')}</button>`,
+  light: `<button type="button" class="ctl icon-btn icon-btn--secondary menu__theme" aria-label="${t('темна тема')}">${iconSvg('moon')}</button>`,
 };
 
 /** `look`: «btn--primary menu__link» for menu/links, «btn--secondary menu__help» for menu/help-links. */
@@ -44,28 +45,28 @@ const LINK = 'btn--primary menu__link';
 const HELP = 'btn--secondary menu__help';
 
 // menu/backup warning: one bold line in place of the status (Olesia, 2026-11-11)
-const REMINDER = `<p class="t-2nd-bold" data-backup-reminder>${emoticonsHtml('давненько не було копії. збережи, поки все на місці :)')}</p>`;
+const REMINDER = `<p class="t-2nd-bold" data-backup-reminder>${emoticonsHtml(t('давненько не було копії. збережи, поки все на місці :)'))}</p>`;
 
 function markup(state: MenuState): string {
   return `
     <div class="menu">
-      <div class="menu__top">${THEME_SWITCH[state.theme]}</div>
-      <h1 class="visually-hidden">меню</h1>
+      <div class="menu__top">${THEME_SWITCH[state.theme]}${LANGUAGE_SWITCH}</div>
+      <h1 class="visually-hidden">${t('меню')}</h1>
       <div class="menu__content">
-        <nav class="menu__group menu__group--links" aria-label="розділи">
-          ${item(LINK, 'history', 'історія')}
-          ${item(LINK, 'settings', 'налаштування')}
-          ${item(LINK, 'search', 'пошук у нотатках')}
+        <nav class="menu__group menu__group--links" aria-label="${t('розділи')}">
+          ${item(LINK, 'history', t('історія'))}
+          ${item(LINK, 'settings', t('налаштування'))}
+          ${item(LINK, 'search', t('пошук у нотатках'))}
         </nav>
-        <section class="menu__backup" aria-label="копія">
+        <section class="menu__backup" aria-label="${t('копія')}">
           ${state.remind ? REMINDER : `<p class="t-3rd-regular muted" data-backup-line>${state.backupLine}</p>`}
-          <button type="button" class="ctl btn btn--tertiary" data-menu="backup">зберегти копію</button>
+          <button type="button" class="ctl btn btn--tertiary" data-menu="backup">${t('зберегти копію')}</button>
         </section>
-        <nav class="menu__group menu__group--help" aria-label="допомога">
-          ${item(HELP, 'whats-new', 'що нового в застосунку')}
-          ${item(HELP, 'how-to-use', 'як користуватись')}
-          ${item(HELP, 'share', 'поділитися застосунком')}
-          ${item(HELP, 'feedback', 'залишити відгук')}
+        <nav class="menu__group menu__group--help" aria-label="${t('допомога')}">
+          ${item(HELP, 'whats-new', t('що нового в застосунку'))}
+          ${item(HELP, 'how-to-use', t('як користуватись'))}
+          ${item(HELP, 'share', t('поділитися застосунком'))}
+          ${item(HELP, 'feedback', t('залишити відгук'))}
         </nav>
         ${FOOTER}
       </div>
@@ -88,6 +89,8 @@ export function showMenu(host: HTMLElement, state: MenuState, actions: MenuActio
     if (button) actions.choose(button.dataset.menu as MenuItem);
   });
   part(host, '.menu__theme').addEventListener('click', () => actions.switchTheme());
+  // «укр / eng» beside ☼ / ☾ (Olesia, 2026-11-19): the language can change after the first screen too
+  wireLanguageSwitch(host);
   part(host, '.bar__menu').addEventListener('click', () => actions.close());
 
   const listeners = new AbortController();

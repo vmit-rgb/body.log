@@ -5,6 +5,7 @@ import { dayBlocks, sessionName, type DayBlock } from './journal';
 import { formatNumber } from './numbers';
 import { dayPdf, gap, pdfLine, type PdfBlock } from './pdf-records';
 import type { ActivityKind, Exercise, Settings, WarmupItem, WorkoutEntry, WorkoutItem } from './settings';
+import { t } from '../i18n/lang';
 
 /*
  * «копія й експорт» → «експорт» (COPY.md, Menu; «бета 0.81» `exportAI`,
@@ -36,7 +37,7 @@ function recordDays(days: Diary['days'], settings: Settings): string[][] {
 
 /** Days with records, newest first, each as its date and one line per block. */
 export function recordsText(days: Diary['days'], settings: Settings, today: DayKey): string {
-  const head = `Мій щоденник руху й самопочуття (експорт з body.log, ${dotted(today)}). Це записи, а не діагнози: не інтерпретуй значення як медичні.`;
+  const head = `${t('Мій щоденник руху й самопочуття (експорт з body.log,')} ${dotted(today)}${t('). Це записи, а не діагнози: не інтерпретуй значення як медичні.')}`;
   const blocks = recordDays(days, settings).map(([date, ...lines]) => [date, ...lines.map((line) => `  ${line}`)].join('\n'));
   return [head, ...blocks].join('\n\n');
 }
@@ -45,11 +46,11 @@ export function recordsText(days: Diary['days'], settings: Settings, today: DayK
 
 /** «3 × 10, 5 кг», «30 с»; empty when nothing is set. */
 function prescription(item: WarmupItem | WorkoutItem): string {
-  const amount = item.seconds !== null ? `${formatNumber(item.seconds)} с` : item.reps;
+  const amount = item.seconds !== null ? `${formatNumber(item.seconds)} ${t('с')}` : item.reps;
   if (!amount) return '';
   const workout = 'weight' in item ? item : null;
   const sets = workout?.sets ? `${workout.sets} × ` : '';
-  const weight = workout?.weight != null ? `, ${formatNumber(workout.weight)} кг` : '';
+  const weight = workout?.weight != null ? `, ${formatNumber(workout.weight)} ${t('кг')}` : '';
   return ` — ${sets}${amount}${weight}`;
 }
 
@@ -57,12 +58,12 @@ function exerciseNotes(exercise: Exercise, indent: string): string[] {
   const how = exercise.how ? [`${indent}  ${exercise.how.replace(/\n+/g, ' ')}`] : [];
   const { source } = exercise;
   if (source.type !== 'link') return how;
-  return [...how, `${indent}  посилання${source.by === 'ai' ? ' (від ШІ, перевір)' : ''}: ${source.url}`];
+  return [...how, `${indent}  ${t('посилання')}${source.by === 'ai' ? t(' (від ШІ, перевір)') : ''}: ${source.url}`];
 }
 
 function exerciseLine(settings: Settings, item: WarmupItem | WorkoutItem, indent: string): string[] {
   const exercise = settings.exercises.find((x) => x.id === item.exercise);
-  const first = `${indent}• ${exercise?.name || 'вправа'}${prescription(item)}`;
+  const first = `${indent}• ${exercise?.name || t('вправа')}${prescription(item)}`;
   return exercise ? [first, ...exerciseNotes(exercise, indent)] : [first];
 }
 
@@ -70,24 +71,24 @@ const titled = (title: string, hint: string) => (hint ? `${title} — ${hint}` :
 const oneLine = (text: string) => text.replace(/\n+/g, ' ');
 
 function morningText(settings: Settings): string[] {
-  return ['ранкова розминка', ...settings.morningWarmup.levels.flatMap((level, i) => [
-    `  ${level.name || `рівень ${i + 1}`}${level.duration ? ` · ${level.duration}` : ''}`,
+  return [t('ранкова розминка'), ...settings.morningWarmup.levels.flatMap((level, i) => [
+    `  ${level.name || `${t('рівень')} ${i + 1}`}${level.duration ? ` · ${level.duration}` : ''}`,
     ...level.items.flatMap((item) => exerciseLine(settings, item, '    ')),
   ])];
 }
 
 function daytimeText(settings: Settings): string[] {
   const { hint, groups } = settings.daytimeWarmup;
-  return [titled('денна розминка', hint), ...groups.flatMap((group) => [
-    `  ${group.name || 'без назви'}`, ...group.items.flatMap((item) => exerciseLine(settings, item, '    ')),
+  return [titled(t('денна розминка'), hint), ...groups.flatMap((group) => [
+    `  ${group.name || t('без назви')}`, ...group.items.flatMap((item) => exerciseLine(settings, item, '    ')),
   ])];
 }
 
 function workoutText(settings: Settings): string[] {
   const entry = (item: WorkoutEntry) => ('set' in item
-    ? ['    група вправ:', ...item.set.flatMap((x) => exerciseLine(settings, x, '      '))]
+    ? [t('    група вправ:'), ...item.set.flatMap((x) => exerciseLine(settings, x, '      '))]
     : exerciseLine(settings, item, '    '));
-  return [titled('тренування', settings.workout.hint), ...settings.workout.sessions.flatMap((session) => [
+  return [titled(t('тренування'), settings.workout.hint), ...settings.workout.sessions.flatMap((session) => [
     `  ${sessionName(session.name)}`,
     ...(session.how ? [`    ${oneLine(session.how)}`] : []),
     ...session.items.flatMap(entry),
@@ -95,8 +96,8 @@ function workoutText(settings: Settings): string[] {
 }
 
 function movementText(settings: Settings): string[] {
-  return [titled('рух', settings.movement.hint), ...settings.movement.kinds.map((kind) =>
-    `  • ${kind.name || 'без назви'}${kind.source.type === 'link' ? ` — ${kind.source.url}` : ''}`)];
+  return [titled(t('рух'), settings.movement.hint), ...settings.movement.kinds.map((kind) =>
+    `  • ${kind.name || t('без назви')}${kind.source.type === 'link' ? ` — ${kind.source.url}` : ''}`)];
 }
 
 const SECTION_TEXTS: readonly [ActivityKind, (settings: Settings) => string[]][] = [
@@ -109,7 +110,7 @@ const exerciseSections = (settings: Settings) =>
 
 export function exercisesText(settings: Settings, today: DayKey): string {
   const sections = exerciseSections(settings).map((lines) => lines.join('\n'));
-  return [`Мої вправи (з body.log, ${dotted(today)}):`, ...sections].join('\n\n');
+  return [`${t('Мої вправи (з body.log,')} ${dotted(today)}):`, ...sections].join('\n\n');
 }
 
 /* ---- PDF: the same texts, laid out as «бета 0.81» `exportPDF` did ---- */
@@ -142,8 +143,8 @@ export function pdfDocument(tab: ExportTab, days: Diary['days'], settings: Setti
   return {
     name: `${records ? 'trekr-zapysy' : 'trekr-vpravy'}-${today}.pdf`,
     lines: [
-      pdfLine(records ? 'щоденник руху й самопочуття' : 'мої вправи', 16, true),
-      pdfLine(`експорт ${formatShort(today)}${records ? ' · це щоденник, а не медичний документ' : ''}`, 9),
+      pdfLine(records ? t('щоденник руху й самопочуття') : t('мої вправи'), 16, true),
+      pdfLine(`${t('експорт')} ${formatShort(today)}${records ? t(' · це щоденник, а не медичний документ') : ''}`, 9),
       gap(6),
       ...(records ? recordLines(days, settings) : exerciseLines(settings)),
       gap(8),

@@ -1,8 +1,7 @@
 {
   "name": "body.log",
   "short_name": "body.log",
-  "description": "щоденник руху й самопочуття. записи лишаються тільки на твоєму телефоні.",
-  "lang": "uk",
+  "description": "щоденник руху й самопочуття. записи лишаються тільки на твоєму телефоні. · a movement and wellbeing diary. your entries stay only on your phone.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

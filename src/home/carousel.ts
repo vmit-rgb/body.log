@@ -4,6 +4,7 @@ import { formatNumber, plural } from '../domain/numbers';
 import { pickFromList } from '../ui/dialog';
 import { esc } from '../ui/html';
 import { iconSvg } from '../ui/icons';
+import { t } from '../i18n/lang';
 
 /*
  * The carousel of averages (wave 9, Olesia 2026-11-18; layout from
@@ -20,12 +21,12 @@ export interface CarouselMemory { card: number }
 /** Dots up to this many cards; «3 / 14» from there on. */
 const MAX_PIPS = 7;
 
-const WEEKDAYS = ['нд', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
+const WEEKDAYS = [t('нд'), t('пн'), t('вт'), t('ср'), t('чт'), t('пт'), t('сб')];
 const dayMonth = (key: DayKey) => `${key.slice(8)}.${key.slice(5, 7)}`;
 const weekday = (key: DayKey) => WEEKDAYS[new Date(`${key}T12:00:00Z`).getUTCDay()]!;
 
 /** «з 1 запису», «з 6 записів»: the genitive after «з». */
-const records = (n: number) => (n % 10 === 1 && n % 100 !== 11 ? 'запису' : 'записів');
+const records = (n: number) => (n % 10 === 1 && n % 100 !== 11 ? t('запису') : t('записів'));
 
 /* ---- the chart ---- */
 
@@ -58,7 +59,7 @@ function chartData(chart: Chart): ChartData {
   const n = chart.starts.length;
   const ends = n > 7;
   const x = ends
-    ? [dayMonth(chart.starts[0]!), `${chart.weekly ? 'по тижнях · ' : ''}${dayMonth(chart.end)}`]
+    ? [dayMonth(chart.starts[0]!), `${chart.weekly ? t('по тижнях · ') : ''}${dayMonth(chart.end)}`]
     : chart.starts.map(weekday);
   return { min: chart.min, max: chart.max, lines: chart.lines.map((line) => line.points), x, ends };
 }
@@ -125,12 +126,12 @@ export function chartSvg(data: ChartData, width: number, textScale: number): str
 function body(card: TrackerCard): string {
   switch (card.kind) {
     case 'empty':
-      return '<p class="avg-card__empty t-2nd-regular muted">записів немає</p>';
+      return `<p class="avg-card__empty t-2nd-regular muted">${t('записів немає')}</p>`;
     case 'yesno':
       return `<ul class="avgs avgs--column" role="list">${card.rows.map((row) => `
-        <li class="avg"><span class="avg__label t-3rd-semibold">${esc(row.label)}:</span> <b class="t-2nd-bold">так у ${row.yes} з ${row.total}</b> <span class="avg__label t-3rd-regular">${records(row.total)}</span></li>`).join('')}</ul>`;
+        <li class="avg"><span class="avg__label t-3rd-semibold">${esc(row.label)}:</span> <b class="t-2nd-bold">${t('так у')} ${row.yes} ${t('з')} ${row.total}</b> <span class="avg__label t-3rd-regular">${records(row.total)}</span></li>`).join('')}</ul>`;
     case 'pairs':
-      return `<div class="avg-card__fill"><ul class="avg-card__list t-2nd-regular" role="list" tabindex="0" aria-label="записи: ${esc(card.name)}">${card.entries.map((entry) => `
+      return `<div class="avg-card__fill"><ul class="avg-card__list t-2nd-regular" role="list" tabindex="0" aria-label="${t('записи:')} ${esc(card.name)}">${card.entries.map((entry) => `
         <li><span class="muted">${weekday(entry.date)} ${dayMonth(entry.date)} · ${esc(entry.label)}</span> <b class="t-2nd-bold">${formatNumber(entry.a) || '—'}/${formatNumber(entry.b) || '—'}</b></li>`).join('')}</ul></div>`;
     case 'averages':
       return `<ul class="avgs" role="list">${card.rows.map((row) => `
@@ -141,7 +142,7 @@ function body(card: TrackerCard): string {
 
 function cardMarkup(card: TrackerCard, i: number, total: number): string {
   return `
-      <article class="avg-card" aria-label="${i + 1} з ${total}: ${esc(card.name)}">
+      <article class="avg-card" aria-label="${i + 1} ${t('з')} ${total}: ${esc(card.name)}">
         <h4 class="avg-card__heading"><button type="button" class="ctl avg-card__title t-1st-semibold" data-car="list" aria-haspopup="dialog">${esc(card.name)}</button></h4>
         ${body(card)}
       </article>`;
@@ -158,12 +159,12 @@ export function carouselMarkup(cards: readonly TrackerCard[], heading: string, i
   const at = Math.min(Math.max(index, 0), cards.length - 1);
   const nav = cards.length < 2 ? '' : `
       <div class="carousel__nav">
-        <button type="button" class="ctl icon-btn icon-btn--secondary" data-car="by" data-by="-1" aria-label="попередня картка"${at === 0 ? ' disabled' : ''}>${iconSvg('chevron-left')}</button>
+        <button type="button" class="ctl icon-btn icon-btn--secondary" data-car="by" data-by="-1" aria-label="${t('попередня картка')}"${at === 0 ? ' disabled' : ''}>${iconSvg('chevron-left')}</button>
         <div class="carousel__where" aria-hidden="true">${where(at, cards.length)}</div>
-        <button type="button" class="ctl icon-btn icon-btn--secondary" data-car="by" data-by="1" aria-label="наступна картка"${at === cards.length - 1 ? ' disabled' : ''}>${iconSvg('chevron-right')}</button>
+        <button type="button" class="ctl icon-btn icon-btn--secondary" data-car="by" data-by="1" aria-label="${t('наступна картка')}"${at === cards.length - 1 ? ' disabled' : ''}>${iconSvg('chevron-right')}</button>
       </div>`;
   return `
-    <section class="carousel" aria-roledescription="карусель" aria-labelledby="${id}" data-card="${at}">
+    <section class="carousel" aria-roledescription="${t('карусель')}" aria-labelledby="${id}" data-card="${at}">
       <h3 class="t-h5" id="${id}">${esc(heading)}</h3>
       <div class="carousel__track">${cards.map((card, i) => cardMarkup(card, i, cards.length)).join('')}</div>${nav}
     </section>`;
@@ -257,7 +258,7 @@ export function wireCarousels(root: HTMLElement, memory: CarouselMemory, signal:
     }
     // the name opens the list of questions; a name picked shows its card
     const names = cards.map((card) => card.querySelector('.avg-card__title')!.textContent ?? '');
-    void pickFromList({ title: 'самопочуття', items: names, current: memory.card }).then((picked) => {
+    void pickFromList({ title: t('самопочуття'), items: names, current: memory.card }).then((picked) => {
       if (picked === null) return;
       go(picked);
       cards[picked]?.querySelector<HTMLElement>('.avg-card__title')?.focus({ preventScroll: true });

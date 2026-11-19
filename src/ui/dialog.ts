@@ -1,6 +1,7 @@
 import { closesOnBack } from './back';
 import { esc } from './html';
 import { EASE, MS, play, whenDone } from './motion';
+import { t } from '../i18n/lang';
 
 /*
  * Two layers over a screen, both closed with Escape too:
@@ -175,8 +176,8 @@ export function editText(spec: TextEditSpec): Promise<string | null> {
   const { root, close } = layer(`
     <div class="text-edit${spec.long ? ' text-edit--long' : ''}" role="dialog" aria-modal="true" aria-label="${esc(spec.label)}">
       <div class="text-edit__actions">
-        <button type="button" class="ctl btn btn--destructive" data-answer="cancel">скасувати</button>
-        <button type="button" class="ctl btn btn--secondary" data-answer="done">готово</button>
+        <button type="button" class="ctl btn btn--destructive" data-answer="cancel">${t('скасувати')}</button>
+        <button type="button" class="ctl btn btn--secondary" data-answer="done">${t('готово')}</button>
       </div>
       <label class="text-edit__field">
         <span class="t-3rd-regular muted">${esc(spec.label)}</span>

@@ -3,6 +3,7 @@ import { changesNothing, describeChanges, type Changes, type PreviewNames } from
 import { readPaste, type Refusal } from '../paste/read';
 import { PROMPT } from '../prompt/prompt';
 import type { ToastMessage } from '../ui/toast';
+import { t } from '../i18n/lang';
 
 /*
  * «застосувати» on the first screen and in «налаштування через ШІ»: the
@@ -41,15 +42,15 @@ export interface PasteDeps {
   save(profile: JsonObject): void;
 }
 
-const COPIED: ToastMessage = { message: 'скопійовано — встав у чат зі своїм ШІ', showIcon: true };
-const NOT_COPIED: ToastMessage = { message: 'не вдалося скопіювати >_<', error: true };
+const COPIED: ToastMessage = { message: t('скопійовано — встав у чат зі своїм ШІ'), showIcon: true };
+const NOT_COPIED: ToastMessage = { message: `${t('не вдалося скопіювати')} >_<`, error: true };
 /** «відновити з копії» refuses a copy whose settings are russian (D-05). Serious: no emoticon. Нитка's draft. */
-export const RUSSIAN_COPY: ToastMessage = { message: 'копію не відновлено: налаштування в ній російською мовою.', error: true };
+export const RUSSIAN_COPY: ToastMessage = { message: t('копію не відновлено: налаштування в ній російською мовою.'), error: true };
 
 /** «скопіювати промпт»: the bundled prompt file goes to the clipboard; the toast names its version (Olesia, 2026-11-15). */
 export async function copyPrompt(copyText: (text: string) => Promise<boolean>, say: (message: ToastMessage) => void): Promise<boolean> {
   const copied = await copyText(PROMPT.text);
-  say(copied ? { message: `промпт ${PROMPT.version} скопійовано`, showIcon: true } : NOT_COPIED);
+  say(copied ? { message: `${t('промпт')} ${PROMPT.version} ${t('скопійовано')}`, showIcon: true } : NOT_COPIED);
   return copied;
 }
 

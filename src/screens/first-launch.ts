@@ -1,9 +1,10 @@
 import type { PasteAct } from '../app/paste-flow';
 import { pasteActOf, pasteResultBox, showPasteResult } from './paste-result';
-import { FOOTER, LANGUAGE_SWITCH, part, TAB_NOTE, wireRestore } from './parts';
+import { FOOTER, LANGUAGE_SWITCH, part, TAB_NOTE, wireLanguageSwitch, wireRestore } from './parts';
 import { wireTabNote } from './install-how';
 import { emoticonsHtml } from '../ui/emoticons';
 import { withGrip } from '../ui/grip';
+import { t } from '../i18n/lang';
 
 export interface FirstLaunchActions {
   copyPrompt(): void;
@@ -19,11 +20,11 @@ export interface FirstLaunchActions {
 /* screen/first-launch (390:9149). Texts: Figma, Нитка's draft (COPY.md). */
 
 const WARNINGS: readonly (readonly [marker: string, kind: string, label: string, text: string])[] = [
-  ['[i]', 'info', 'до відома', 'розмова з ШІ займає час. можна вийти й повернутися — застосунок відкриється одразу на полі для вставки.'],
-  ['[!]', 'warn', 'важливо', 'це розмова з ШІ про твоє здоровʼя. у налаштуваннях свого ШІ можна вимкнути навчання на твоїх розмовах.'],
-  ['[!]', 'warn', 'важливо', 'вправи від ШІ — не програма від фахівця. краще, коли вправи даєш ти: програму від фізіотерапевта чи лікаря передай своєму ШІ <3'],
-  ['[*]', 'ai', 'посилання від ШІ', 'посилання на вправи дає ШІ, і ніхто їх не перевіряв. вони позначені *.'],
-  ['[i]', 'info', 'до відома', 'застосунок нікуди не відправляє твої дані.'],
+  ['[i]', 'info', t('до відома'), t('розмова з ШІ займає час. можна вийти й повернутися — застосунок відкриється одразу на полі для вставки.')],
+  ['[!]', 'warn', t('важливо'), t('це розмова з ШІ про твоє здоровʼя. у налаштуваннях свого ШІ можна вимкнути навчання на твоїх розмовах.')],
+  ['[!]', 'warn', t('важливо'), `${t('вправи від ШІ — не програма від фахівця. краще, коли вправи даєш ти: програму від фізіотерапевта чи лікаря передай своєму ШІ')} <3`],
+  ['[*]', 'ai', t('посилання від ШІ'), t('посилання на вправи дає ШІ, і ніхто їх не перевіряв. вони позначені *.')],
+  ['[i]', 'info', t('до відома'), t('застосунок нікуди не відправляє твої дані.')],
 ];
 
 const consoleRows = WARNINGS.map(([marker, kind, label, text]) => `
@@ -34,23 +35,23 @@ const consoleRows = WARNINGS.map(([marker, kind, label, text]) => `
 
 /* wave 7a (Olesia, 2026-11-18): no «маю андроїд / маю айфон» here, the field shows at once;
    pasting is the same on both phones. The install screen keeps its switch. */
-const PASTE_HOW = 'у чаті з ШІ скопіюй його відповідь з налаштуваннями. тут натисни в полі → «вставити».';
+const PASTE_HOW = t('у чаті з ШІ скопіюй його відповідь з налаштуваннями. тут натисни в полі → «вставити».');
 
 const MARKUP = `
   <div class="screen screen--framed">
     ${LANGUAGE_SWITCH}
     <section class="screen__section" aria-labelledby="intro-title">
-      <h1 id="intro-title" class="t-h3">${emoticonsHtml('привіт! почнімо з налаштувань :)')}</h1>
+      <h1 id="intro-title" class="t-h3">${emoticonsHtml(t('привіт! почнімо з налаштувань :)'))}</h1>
       <ol class="steps t-1st-regular">
-        <li>скопіюй промпт і встав у чат зі своїм ШІ.</li>
-        <li>відповідай на його питання — він складе налаштування.</li>
-        <li>скопіюй його відповідь і встав нижче.</li>
+        <li>${t('скопіюй промпт і встав у чат зі своїм ШІ.')}</li>
+        <li>${t('відповідай на його питання — він складе налаштування.')}</li>
+        <li>${t('скопіюй його відповідь і встав нижче.')}</li>
       </ol>
-      <button type="button" class="ctl btn btn--primary btn--wide" data-copy-prompt>скопіювати промпт</button>
+      <button type="button" class="ctl btn btn--primary btn--wide" data-copy-prompt>${t('скопіювати промпт')}</button>
     </section>
 
     <section class="screen__section" aria-labelledby="warnings-title">
-      <h2 id="warnings-title" class="t-h4">перед початком</h2>
+      <h2 id="warnings-title" class="t-h4">${t('перед початком')}</h2>
       <div class="console">
         <p class="console__command t-2nd-bold" aria-hidden="true">$ cat before-you-start.txt</p>
         <ul class="console__rows">${consoleRows}</ul>
@@ -58,26 +59,26 @@ const MARKUP = `
     </section>
 
     <section class="screen__section" aria-labelledby="paste-title">
-      <h2 id="paste-title" class="t-h4">встав відповідь ШІ</h2>
+      <h2 id="paste-title" class="t-h4">${t('встав відповідь ШІ')}</h2>
       <div class="paste" data-paste>
         <p class="t-1st-regular" data-paste-how>${PASTE_HOW}</p>
-        ${withGrip('<textarea class="field paste__field" rows="3" aria-label="відповідь ШІ" placeholder="встав сюди відповідь ШІ" data-paste-field></textarea>')}
-        <button type="button" class="ctl btn btn--primary btn--wide" data-apply disabled>застосувати</button>
-        <p class="t-3rd-regular muted">кнопка стане активною, щойно встав текст.</p>
+        ${withGrip(`<textarea class="field paste__field" rows="3" aria-label="${t('відповідь ШІ')}" placeholder="${t('встав сюди відповідь ШІ')}" data-paste-field></textarea>`)}
+        <button type="button" class="ctl btn btn--primary btn--wide" data-apply disabled>${t('застосувати')}</button>
+        <p class="t-3rd-regular muted">${t('кнопка стане активною, щойно встав текст.')}</p>
         ${pasteResultBox({ kind: 'none' })}
       </div>
     </section>
 
     <section class="screen__section screen__section--tight" aria-labelledby="other-title">
-      <h2 id="other-title" class="t-2nd-bold muted">або</h2>
+      <h2 id="other-title" class="t-2nd-bold muted">${t('або')}</h2>
       <div class="option">
-        <button type="button" class="ctl btn btn--tertiary" data-restore>відновити з копії</button>
-        <p class="t-3rd-regular muted">якщо переїжджаєш на новий телефон.</p>
+        <button type="button" class="ctl btn btn--tertiary" data-restore>${t('відновити з копії')}</button>
+        <p class="t-3rd-regular muted">${t('якщо переїжджаєш на новий телефон.')}</p>
         <input type="file" accept=".json,application/json,text/plain" hidden data-restore-file />
       </div>
       <div class="option">
-        <button type="button" class="ctl btn btn--tertiary" data-start-without-ai>почати без ШІ</button>
-        <p class="t-3rd-regular muted">з прикладами замість твоїх вправ. усе можна змінити в налаштуваннях.</p>
+        <button type="button" class="ctl btn btn--tertiary" data-start-without-ai>${t('почати без ШІ')}</button>
+        <p class="t-3rd-regular muted">${t('з прикладами замість твоїх вправ. усе можна змінити в налаштуваннях.')}</p>
       </div>
     </section>
     ${FOOTER}
@@ -116,6 +117,7 @@ function wireOtherWays(host: HTMLElement, actions: FirstLaunchActions): void {
 /** `inTab`: the app runs in a browser tab, so the screen says that records won't stay (A-04). */
 export function showFirstLaunch(host: HTMLElement, actions: FirstLaunchActions, inTab = false): void {
   host.innerHTML = MARKUP;
+  wireLanguageSwitch(host);
   if (inTab) {
     part(host, '.lang').insertAdjacentHTML('afterend', TAB_NOTE);
     wireTabNote(host);

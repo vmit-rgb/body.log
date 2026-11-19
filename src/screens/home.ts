@@ -28,6 +28,7 @@ import type { ToastMessage } from '../ui/toast';
 import { barMarkup, fillBar, goalText, TO_TOP, wireDateNav, wireScroll } from './bar';
 import { FOOTER, part, TAB_NOTE } from './parts';
 import { wireTabNote } from './install-how';
+import { t } from '../i18n/lang';
 
 /*
  * Home (Figma `screen/home-default` 73:2601 open, 338:16522 closed;
@@ -80,13 +81,13 @@ const BODIES: Record<SectionId, (ctx: SectionContext) => string> = {
 };
 
 /* Olesia, MY-FIXES: the line of a section where something is done; <3 in the accent, as every emoticon (E-17). */
-const GOOD_JOB = 'хороша робота <3';
+const GOOD_JOB = `${t('хороша робота')} <3`;
 
 /** The section's line as HTML: its description, or «хороша робота <3» once something in it is done. */
 const leadOf = (description: string, done: boolean) => emoticonsHtml(done ? GOOD_JOB : description);
 
 /* Olesia, 2026-11-17: a done section has a tick at the start of its header; said as «зроблено» before the title. */
-const TICK = `<span class="accordion__done">${iconSvg('check')}<span class="visually-hidden">зроблено: </span></span>`;
+const TICK = `<span class="accordion__done">${iconSvg('check')}<span class="visually-hidden">${t('зроблено:')} </span></span>`;
 
 function sectionMarkup({ id, title, description }: SectionSpec, open: boolean, ctx: SectionContext): string {
   const done = sectionDone(id, ctx.day, ctx.settings);
@@ -100,7 +101,7 @@ function sectionMarkup({ id, title, description }: SectionSpec, open: boolean, c
       <div class="home-section__body" id="sec-${id}"${open ? '' : ' hidden'}>
         ${sectionTop(id, ctx)}<p class="t-1st-regular" data-lead>${leadOf(description, done)}</p>
         ${BODIES[id](ctx)}
-        <div class="home-section__end"${done ? '' : ' hidden'}><button type="button" class="ctl btn btn--tertiary" data-collapse="${id}" aria-label="згорнути секцію: ${title}">згорнути секцію</button></div>
+        <div class="home-section__end"${done ? '' : ' hidden'}><button type="button" class="ctl btn btn--tertiary" data-collapse="${id}" aria-label="${t('згорнути секцію:')} ${title}">${t('згорнути секцію')}</button></div>
       </div>
     </section>`;
 }
@@ -138,10 +139,10 @@ function markup(state: HomeState, actions: HomeActions): string {
   const sections = homeSections(state.settings).map((section) => sectionMarkup(section, actions.sectionOpen(section.id), ctx));
   return `
     <div class="home">
-      <h1 class="visually-hidden">головна</h1>
+      <h1 class="visually-hidden">${t('головна')}</h1>
       ${HERO_FADE}<header class="hero">${SCENE}<div class="hero__words"><p class="hero__text"></p></div></header>${state.inTab ? TAB_NOTE : ''}
       <div class="home__sections">${sections.join('')}</div>
-      <section class="cal-block" aria-label="календар">${calendarMarkup(calendarView(state, 'home'))}</section>
+      <section class="cal-block" aria-label="${t('календар')}">${calendarMarkup(calendarView(state, 'home'))}</section>
       ${FOOTER}
     </div>
     ${barMarkup('menu')}${TO_TOP}`;
@@ -306,7 +307,7 @@ function wireCalendar(host: HTMLElement, state: HomeState, go: (date: DayKey) =>
   function openSheet(): void {
     host.querySelector('.cal-sheet--closing')?.remove();
     host.insertAdjacentHTML('beforeend', `
-      <div class="cal-sheet" role="dialog" aria-modal="true" aria-label="календар">
+      <div class="cal-sheet" role="dialog" aria-modal="true" aria-label="${t('календар')}">
         <div class="cal-sheet__scrim"></div>
         <div class="cal-sheet__panel"><div class="cal-block" data-place="sheet">${calendarMarkup(calendarView(current, 'sheet'))}</div></div>
       </div>`);

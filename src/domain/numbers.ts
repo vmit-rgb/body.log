@@ -1,4 +1,5 @@
-/* Numbers as people type and read them in Ukrainian: «2,5», not «2.5». */
+import { englishPlural, lang, t } from '../i18n/lang';
+/* Numbers as people type and read them: «2,5» in Ukrainian, «2.5» in English; both are read either way. */
 
 /** What a number field holds: nothing, a number, or text that isn't one (and why). */
 export type NumberRead =
@@ -33,17 +34,21 @@ export function parseNumber(input: string): number | null {
 
 /* COPY.md, «Drafts from MY-FIXES» (D-01): small text under the field. */
 export const NUMBER_ERRORS: Record<'negative' | 'not-a-number', string> = {
-  negative: 'число не може бути відʼємним',
-  'not-a-number': 'тут потрібне число, наприклад 10 або 1,5',
+  negative: t('число не може бути відʼємним'),
+  'not-a-number': t('тут потрібне число, наприклад 10 або 1,5'),
 };
 
 /** «2,5», at most two decimals; an empty string for no number. */
 export function formatNumber(value: number | null): string {
-  return value === null ? '' : String(Math.round(value * 100) / 100).replace('.', ',');
+  if (value === null) return '';
+  const shown = String(Math.round(value * 100) / 100);
+  return lang() === 'en' ? shown : shown.replace('.', ',');
 }
 
-/** The word for a count: [1, 2–4, 5+] («коло, кола, кіл»); 11–14 take the third. */
+/** The word for a count: [1, 2–4, 5+] («коло, кола, кіл»); 11–14 take the third. In English: 1 or the rest (i18n/en.ts). */
 export function plural(n: number, [one, few, many]: readonly [string, string, string]): string {
+  const english = lang() === 'en' ? englishPlural(one) : undefined;
+  if (english) return Math.abs(n) === 1 ? english[0] : english[1];
   const lastTwo = Math.abs(n) % 100;
   const last = lastTwo % 10;
   if (lastTwo > 10 && lastTwo < 15) return many;

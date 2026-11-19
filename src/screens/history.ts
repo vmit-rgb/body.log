@@ -20,6 +20,7 @@ import type { ToastMessage } from '../ui/toast';
 import { pagesBarMarkup, TO_TOP, wirePagesBar, wireScroll } from './bar';
 import { FOOTER, part } from './parts';
 import { openSearch } from './search';
+import { t } from '../i18n/lang';
 
 /*
  * «історія» (Figma screen/log-history 165:2758): the week line and the month
@@ -51,7 +52,7 @@ export interface HistoryActions {
 }
 
 /* «бета 0.81»'s words for a calendar day with nothing in it. */
-const NO_RECORDS: ToastMessage = { message: 'за цей день записів немає' };
+const NO_RECORDS: ToastMessage = { message: t('за цей день записів немає') };
 
 /* ---- one day card ---- */
 
@@ -90,7 +91,7 @@ function card(day: Day, open: boolean, state: HistoryState): string {
     </h2>
     <div class="day-card__body" id="${id}-body"${open ? '' : ' hidden'}>
       ${dayBlocks(day, state.days, state.settings).map(block).join('')}
-      <button type="button" class="ctl btn btn--tertiary day-card__edit" data-edit="${day.date}">редагувати цей день</button>
+      <button type="button" class="ctl btn btn--tertiary day-card__edit" data-edit="${day.date}">${t('редагувати цей день')}</button>
     </div>
   </article>`;
 }
@@ -131,17 +132,17 @@ function content(state: HistoryState, view: View, tips: TipMemory | undefined): 
     card: view.carousel.card, period: view.period, picking: view.picking, periodTip: !view.tipQuiet && (tips?.open(PERIOD_TIP) ?? false),
   });
   return `
-    <section class="screen__section history__period" aria-label="період">
+    <section class="screen__section history__period" aria-label="${t('період')}">
       <div class="history__lines">
         ${goal === null ? '' : `<p class="history__goal t-3rd-bold">${goal}</p>`}
         ${summary === null ? '' : `<p class="history__summary t-3rd-regular">${summary}</p>`}
       </div>
     </section>
-    <section class="cal-block" data-place="history" aria-label="календар">${calendar}</section>
-    <section class="history__days" aria-label="дні">
+    <section class="cal-block" data-place="history" aria-label="${t('календар')}">${calendar}</section>
+    <section class="history__days" aria-label="${t('дні')}">
       ${keys.length
     ? keys.map((key) => card(dayAt(key), view.open.has(key), state)).join('')
-    : `<p class="history__empty t-2nd-regular muted">${emoticonsHtml('цього місяця записів немає. зате попереду ще купа днів :3')}</p>`}
+    : `<p class="history__empty t-2nd-regular muted">${emoticonsHtml(t('цього місяця записів немає. зате попереду ще купа днів :3'))}</p>`}
     </section>`;
 }
 
@@ -154,7 +155,7 @@ export function showHistory(host: HTMLElement, state: HistoryState, actions: His
   host.innerHTML = `
     <div class="screen page history">
       <section class="screen__section" aria-labelledby="page-title">
-        <h1 id="page-title" class="t-h3">історія</h1>
+        <h1 id="page-title" class="t-h3">${t('історія')}</h1>
       </section>
       <div class="history__content"></div>
       ${FOOTER}
@@ -209,7 +210,7 @@ export function showHistory(host: HTMLElement, state: HistoryState, actions: His
     actions.tips?.succeed?.(PERIOD_TIP);
     render();
     focus('[data-cal="period-reset"]');
-    announce(`обрано період ${periodName(view.period)}`);
+    announce(`${t('обрано період')} ${periodName(view.period)}`);
   }
 
   function tapDay(date: DayKey): void {
@@ -233,7 +234,7 @@ export function showHistory(host: HTMLElement, state: HistoryState, actions: His
     view.picking = null;
     if (action === 'period-reset') {
       view.period = null;
-      announce('період скинуто');
+      announce(t('період скинуто'));
     }
     render();
     focus('[data-cal="period-pick"]');

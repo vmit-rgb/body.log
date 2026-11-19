@@ -15,6 +15,7 @@ import type { Toast, ToastMessage } from '../ui/toast';
 import { focusBack, focusHeading, selectorOf, titleFor } from '../ui/screen-focus';
 import type { BackSteps, BrowserSteps } from './back-steps';
 import { settingsPage, type SettingsEnv, type SettingsPage } from './settings-page';
+import { t } from '../i18n/lang';
 
 /*
  * The screens that open over home: the menu and its two pages (stage 6a),
@@ -74,19 +75,19 @@ export interface Home {
 }
 
 /* COPY.md, Toasts; «не вдалося зберегти файл» as «бета 0.81» says it. */
-const COPY_SAVED: ToastMessage = { message: 'копію збережено', showIcon: true };
-const FILE_NOT_SAVED: ToastMessage = { message: 'не вдалося зберегти файл >_<', error: true };
-const LINK_COPIED: ToastMessage = { message: 'посилання скопійовано — надішли, кому хочеш :)', showIcon: true };
+const COPY_SAVED: ToastMessage = { message: t('копію збережено'), showIcon: true };
+const FILE_NOT_SAVED: ToastMessage = { message: `${t('не вдалося зберегти файл')} >_<`, error: true };
+const LINK_COPIED: ToastMessage = { message: t('посилання скопійовано — надішли, кому хочеш :)'), showIcon: true };
 /* Нитка's drafts (stage 6a): what the menu offers before it is built. */
-const NOT_SHARED: ToastMessage = { message: 'не вдалося поділитися >_<', error: true };
+const NOT_SHARED: ToastMessage = { message: `${t('не вдалося поділитися')} >_<`, error: true };
 /* A-02: «скоро» speaks about the screen it came on and goes with it. */
 const soon = (message: string): ToastMessage => ({ message: `${message} :)`, local: true });
-const FEEDBACK_SOON = soon('форму для відгуків ще робимо, скоро буде');
+const FEEDBACK_SOON = soon(t('форму для відгуків ще робимо, скоро буде'));
 
 /** «поділитися застосунком» (Figma caption, Нитка's draft): the landing page, not the app itself. */
 export const SHARE: ShareData = {
   title: 'body.log',
-  text: 'щоденник руху, який підлаштовується під твоє тіло: твої вправи, твої питання про самопочуття, твої шкали. налаштовує твій ШІ за одну розмову, а змінити можна все й будь-коли. без сповіщень, записи лишаються тільки на телефоні.',
+  text: t('щоденник руху, який підлаштовується під твоє тіло: твої вправи, твої питання про самопочуття, твої шкали. налаштовує твій ШІ за одну розмову, а змінити можна все й будь-коли. без сповіщень, записи лишаються тільки на телефоні.'),
   url: 'https://vmit-rgb.github.io/body.log-landing/',
 };
 
@@ -126,12 +127,12 @@ export type Page = 'menu' | 'whats-new' | 'how-to-use' | 'history' | 'search' | 
 
 /** B-05: what the page is called while each screen shows. */
 const TITLES: Record<Page, string> = {
-  menu: 'меню',
-  'whats-new': 'що нового',
-  'how-to-use': 'як користуватись',
-  history: 'історія',
-  search: 'історія',
-  settings: 'налаштування',
+  menu: t('меню'),
+  'whats-new': t('що нового'),
+  'how-to-use': t('як користуватись'),
+  history: t('історія'),
+  search: t('історія'),
+  settings: t('налаштування'),
 };
 
 /** A screen over home: a page, or home itself on a day opened from the history (A-11). */
