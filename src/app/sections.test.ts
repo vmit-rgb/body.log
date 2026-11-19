@@ -277,7 +277,7 @@ describe('ранкова розминка', () => {
     await tap('розгорнути: рівень 1');
     await tap('30 с');
     await type('-45');
-    expect(toastSays()).toBe('число не може бути від’ємним >_<');
+    expect(toastSays()).toBe('число не може бути відʼємним >_<');
     expect(host.textContent).toContain('30 с');
     await tap('30 с');
     await type('1 000 с');
@@ -543,7 +543,7 @@ describe('тренування', () => {
 
   it('makes a group through «створити групу»', async () => {
     await tap('створити групу');
-    expect(host.textContent).toContain('вибери 2–3 вправи для групи');
+    expect(host.textContent).toContain('обери 2–3 вправи для групи');
     expect(button('зібрати групу').disabled).toBe(true);
     // example/settings-create-group: ✓ before ×; an exercise shows its name, «n разів» and how-to (п. 30)
     expect([...host.querySelectorAll('.st-picking .icon-btn')].map((b) => b.getAttribute('aria-label'))).toEqual(['зібрати групу', 'скасувати групу']);
@@ -591,8 +591,8 @@ describe('тренування', () => {
   it('groups, takes out and moves through the menu', async () => {
     await tap('дії: вправа 8');
     expect([...host.querySelectorAll('.st-menu button')].map((b) => b.textContent))
-      .toEqual(['об’єднати в групу з…', 'вище', 'скасувати']);
-    await tap('об’єднати в групу з…');
+      .toEqual(['обʼєднати в групу з…', 'вище', 'скасувати']);
+    await tap('обʼєднати в групу з…');
     await choose('вправа 6');
     expect(toastSays()).toBe('✓ групу зібрано :)');
     await tap('дії: вправа 8');
@@ -623,7 +623,7 @@ describe('тренування', () => {
     const depth = device.depth();
     await tap('дії: вправа 8');
     expect(device.depth()).toBe(depth + 1);
-    await tap('об’єднати в групу з…');
+    await tap('обʼєднати в групу з…');
     device.pressBack();
     await settle();
     expect(host.querySelector('.st-menu')).toBeNull();
@@ -642,7 +642,7 @@ describe('тренування', () => {
     await tap('додати вправу');
     await type('четверта');
     await tap('дії: четверта');
-    await tap('об’єднати в групу з…');
+    await tap('обʼєднати в групу з…');
     await choose('група: вправа 6 + вправа 7 + вправа 8');
     expect(toastSays()).toBe('у групі вже 3 вправи — більше не влізе >_<');
     expect(buttons('скасувати').filter((b) => b.closest('.toast'))).toHaveLength(0);
@@ -650,7 +650,7 @@ describe('тренування', () => {
 
   it('removes an exercise from a group, which then dissolves', async () => {
     await tap('дії: вправа 8');
-    await tap('об’єднати в групу з…');
+    await tap('обʼєднати в групу з…');
     await choose('вправа 7');
     await tap('видалити вправу: вправа 8');
     expect(document.querySelector('.dialog')!.textContent).toContain('видалити «вправа 8»?');

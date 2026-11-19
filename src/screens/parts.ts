@@ -42,15 +42,27 @@ const INSTALL_STEPS: Record<Phone, readonly string[]> = {
   ],
 };
 
-/** The platform toggles in `host` fill its `[data-steps]` list; starts on `phone`. */
+/**
+ * Under the steps (Olesia, 2026-11-19): the browsers to use, a soft warning about
+ * the others, and that menu labels differ. Chrome 150 renamed its Android item
+ * (press, July 2026); iOS 16.4+ lets Chrome, Firefox and Edge add to the home screen.
+ */
+export const INSTALL_NOTES: Record<Phone, string> = {
+  android: 'краще встановлювати з chrome. з firefox і з samsung internet на телефонах samsung теж має вийти, а з інших браузерів може не встановитися. назва пункту в меню залежить від версії браузера: шукай «встановити» або «на головний екран».',
+  iphone: 'краще встановлювати з safari. на нових айфонах так само можна з chrome, firefox чи edge: «поділитися» → «на початковий екран». з інших браузерів може не вийти. назви пунктів залежать від версії системи.',
+};
+
+/** The platform toggles in `host` fill its `[data-steps]` list and `[data-steps-note]`; starts on `phone`. */
 export function wireInstallSteps(host: HTMLElement, phone: Phone): void {
   const steps = part<HTMLOListElement>(host, '[data-steps]');
+  const note = part<HTMLElement>(host, '[data-steps-note]');
   const choose = wirePlatformToggles(host, (chosen) => {
     steps.replaceChildren(...INSTALL_STEPS[chosen].map((text) => {
       const item = document.createElement('li');
       item.textContent = text;
       return item;
     }));
+    note.textContent = INSTALL_NOTES[chosen];
   });
   choose(phone);
 }

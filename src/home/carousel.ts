@@ -257,7 +257,7 @@ export function wireCarousels(root: HTMLElement, memory: CarouselMemory, signal:
     }
     // the name opens the list of questions; a name picked shows its card
     const names = cards.map((card) => card.querySelector('.avg-card__title')!.textContent ?? '');
-    void pickFromList({ title: 'трекери', items: names, current: memory.card }).then((picked) => {
+    void pickFromList({ title: 'самопочуття', items: names, current: memory.card }).then((picked) => {
       if (picked === null) return;
       go(picked);
       cards[picked]?.querySelector<HTMLElement>('.avg-card__title')?.focus({ preventScroll: true });

@@ -234,7 +234,7 @@ describe('settings: deleting, ⋯ and boxes (Olesia, MY-FIXES; B-06)', () => {
 
   it('⋯ opens the same menu as a long press, and says how in small text (with ⋯ on, wave 7a)', async () => {
     await openSettings({ ...EXAMPLE_DIARY, profile: { ...EXAMPLE_DIARY.profile, accessibility: { showDots: true } } } as Diary);
-    expect(host.querySelector('.settings__intro')!.textContent).toContain('натисни ⋯ біля запису або затримай на ньому палець і відпусти');
+    expect(host.querySelector('.settings__intro')!.textContent).toContain('натисни ⋯ біля запису або затисни запис');
     await tap('ранкова розминка');
     const dots = buttons('дії: рівень 1')[0]!;
     expect(dots.classList.contains('st-actions')).toBe(true);

@@ -33,7 +33,7 @@ export function parseNumber(input: string): number | null {
 
 /* COPY.md, «Drafts from MY-FIXES» (D-01): small text under the field. */
 export const NUMBER_ERRORS: Record<'negative' | 'not-a-number', string> = {
-  negative: 'число не може бути від’ємним',
+  negative: 'число не може бути відʼємним',
   'not-a-number': 'тут потрібне число, наприклад 10 або 1,5',
 };
 

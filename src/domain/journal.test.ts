@@ -83,11 +83,16 @@ describe('dayMeta (the line under the date, as «бета 0.81» wrote it)', () 
       mw: { ticks: ['a', 'b'] }, dw: ['back'], wo: { session: 'A', ex: { x: [{ w: 5, r: 10 }] } },
       mv: { walk: { min: 20 } }, note: 'текст',
     });
-    expect(dayMeta(full, settings)).toBe('розминка: рівень 2 · денна розминка · тренування · рух · нотатка');
+    expect(dayMeta(full, settings)).toBe('ранкова розминка: рівень 2 · денна розминка · тренування · рух · нотатка');
   });
 
   it('says «частково» for ticks without a whole level', () => {
-    expect(dayMeta(day('2026-11-10', { mw: { ticks: ['b'] } }), settings)).toBe('розминка: частково');
+    expect(dayMeta(day('2026-11-10', { mw: { ticks: ['b'] } }), settings)).toBe('ранкова розминка: частково');
+  });
+
+  it('says just «розминка» when the daytime warm-up is off (as the stat cards)', () => {
+    const one = { ...settings, daytimeWarmup: { ...settings.daytimeWarmup, enabled: false } };
+    expect(dayMeta(day('2026-11-10', { mw: { ticks: ['a', 'b'] } }), one)).toBe('розминка: рівень 2');
   });
 
   it('leaves the warm-up out when it is switched off', () => {

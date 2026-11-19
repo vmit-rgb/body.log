@@ -142,7 +142,7 @@ describe('export, copy for AI, a copy of the settings: the fill and a light vibr
     expect(filled('export-pdf')).toBe(true);
   });
 
-  it('doesn’t buzz with «вимкнути вібровідгук»', async () => {
+  it('doesn’t buzz with «вимкнути вібрацію»', async () => {
     const profile = { ...EXAMPLE_DIARY.profile, accessibility: { noVibration: true } };
     start({ ...EXAMPLE_DIARY, profile });
     tap('меню');

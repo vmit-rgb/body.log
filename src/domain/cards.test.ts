@@ -10,7 +10,7 @@ const key = (text: string) => text as DayKey;
 
 const settings = readSettings({
   trackers: [
-    { id: 'pain', name: 'біль у зап’ястках', kind: 'scale', min: 0, max: 10, ask: ['morning', 'afterMorningWarmup', 'evening'] },
+    { id: 'pain', name: 'біль у запʼястках', kind: 'scale', min: 0, max: 10, ask: ['morning', 'afterMorningWarmup', 'evening'] },
     { id: 'pulse', name: 'пульс', kind: 'number', units: ['уд/хв'], ask: ['morning'] },
     { id: 'bp', name: 'тиск', kind: 'numbers', units: ['мм', 'мм'], ask: ['morning', 'evening'] },
     { id: 'slept', name: 'спала добре?', kind: 'yesno', ask: ['morning'] },
@@ -29,14 +29,14 @@ const WEEK = weekTo(key('2026-11-18'));
 
 describe('trackerCards', () => {
   it('gives a card to every question but the notes, in the settings order', () => {
-    expect(trackerCards(WEEK, dayAt, settings).map((card) => card.name)).toEqual(['біль у зап’ястках', 'пульс', 'тиск', 'спала добре?', 'запаморочення']);
+    expect(trackerCards(WEEK, dayAt, settings).map((card) => card.name)).toEqual(['біль у запʼястках', 'пульс', 'тиск', 'спала добре?', 'запаморочення']);
   });
 
   it('averages a slider per moment, with «—» left for a moment without answers', () => {
     const [pain] = trackerCards(WEEK, dayAt, settings);
     expect(pain!.kind).toBe('averages');
     if (pain!.kind !== 'averages') return;
-    expect(pain!.rows.map((row) => [row.label, row.value])).toEqual([['зранку', 3], ['після розминки', 2], ['ввечері', 2]]);
+    expect(pain!.rows.map((row) => [row.label, row.value])).toEqual([['зранку', 3], ['після ранкової', 2], ['ввечері', 2]]);
   });
 
   it('draws a line per moment over the 7 days, a point per day, with gaps for days without answers', () => {
@@ -46,7 +46,7 @@ describe('trackerCards', () => {
     expect(chart.starts).toEqual(WEEK);
     expect(chart.weekly).toBe(false);
     expect([chart.min, chart.max]).toEqual([0, 10]);
-    expect(chart.lines.map((line) => line.label)).toEqual(['зранку', 'після розминки', 'ввечері']);
+    expect(chart.lines.map((line) => line.label)).toEqual(['зранку', 'після ранкової', 'ввечері']);
     expect(chart.lines[0]!.points).toEqual([null, null, null, null, 4, 3, 2]);
     expect(chart.lines[1]!.points).toEqual([null, null, null, null, null, 2, null]);
   });

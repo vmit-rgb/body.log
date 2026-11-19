@@ -69,7 +69,7 @@ describe('⋯ in «доступність» (wave 7a, Olesia 2026-11-18)', () =>
     await openSettings();
     expect(host.querySelector('.st-actions')).toBeNull();
     expect(host.querySelector('.st-item--movable')).not.toBeNull();
-    expect(intro()).toContain('без перетягування: затримай палець на записі й відпусти.');
+    expect(intro()).toContain('без перетягування: затисни запис.');
     expect(intro()).not.toContain('⋯');
   });
 

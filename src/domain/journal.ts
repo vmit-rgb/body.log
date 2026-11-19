@@ -15,7 +15,7 @@ import { monthName, monthOf, type MonthKey } from './stats';
 
 export const MOMENT_TITLES: Record<Moment, string> = {
   morning: 'самопочуття зранку',
-  afterMorningWarmup: 'самопочуття після розминки',
+  afterMorningWarmup: 'самопочуття після ранкової розминки',
   beforeDaytimeWarmup: 'самопочуття до денної розминки',
   afterDaytimeWarmup: 'самопочуття після денної розминки',
   beforeWorkout: 'самопочуття до тренування',
@@ -65,9 +65,11 @@ const levelReached = (day: Day, settings: Settings) =>
 
 function warmupMeta(day: Day, settings: Settings): string[] {
   if (!settings.morningWarmup.enabled) return [];
+  // «розминка» alone only when it is the one warm-up, as in the stat cards (stats.ts)
+  const name = settings.daytimeWarmup.enabled ? 'ранкова розминка' : 'розминка';
   const level = levelReached(day, settings);
-  if (level) return [`розминка: рівень ${level}`];
-  return day.mw.ticks.length ? ['розминка: частково'] : [];
+  if (level) return [`${name}: рівень ${level}`];
+  return day.mw.ticks.length ? [`${name}: частково`] : [];
 }
 
 /** «розминка: рівень 2 · тренування · нотатка» */

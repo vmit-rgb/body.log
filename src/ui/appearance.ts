@@ -11,7 +11,7 @@ export interface Appearance {
   readonly theme: Theme;
   /** «збільшити розмір тексту»: all text × 1.2 */
   readonly largerText: boolean;
-  /** «збільшені зони тапу»: 56 px instead of 48 */
+  /** «збільшити зони натискання»: 56 px instead of 48 */
   readonly largerTargets: boolean;
   /** «вимкнути всі анімації»: motion is instant, as with the phone's «reduce motion» */
   readonly noMotion: boolean;

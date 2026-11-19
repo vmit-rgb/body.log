@@ -113,7 +113,7 @@ describe('upgradeProfile: settings older than format 0.1', () => {
   it('writes down the goal that used to be implied: on, 5 days', () => {
     expect(upgraded.goal).toEqual({ enabled: true, days: 5, done: [] });
     expect(upgradeProfile({ goal: { enabled: false, days: 3, done: ['workout'], note: 'x' } }).goal).toEqual({ enabled: false, days: 3, done: ['workout'], note: 'x' });
-    expect(upgradeProfile({ goal: { days: 'п’ять' } }).goal).toEqual({ enabled: true, days: 5, done: [] });
+    expect(upgradeProfile({ goal: { days: 'пʼять' } }).goal).toEqual({ enabled: true, days: 5, done: [] });
     expect(readSettings(upgradeProfile({})).goal).toEqual({ enabled: true, days: 5, done: [], any: false });
   });
 

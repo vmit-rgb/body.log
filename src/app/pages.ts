@@ -81,12 +81,12 @@ const LINK_COPIED: ToastMessage = { message: 'посилання скопійо�
 const NOT_SHARED: ToastMessage = { message: 'не вдалося поділитися >_<', error: true };
 /* A-02: «скоро» speaks about the screen it came on and goes with it. */
 const soon = (message: string): ToastMessage => ({ message: `${message} :)`, local: true });
-const FEEDBACK_SOON = soon('форму для фідбеку ще робимо, скоро буде');
+const FEEDBACK_SOON = soon('форму для відгуків ще робимо, скоро буде');
 
 /** «поділитися застосунком» (Figma caption, Нитка's draft): the landing page, not the app itself. */
 export const SHARE: ShareData = {
   title: 'body.log',
-  text: 'щоденник руху й самопочуття: розминка, вправи й самопочуття в одному місці, без сповіщень, дані лишаються на телефоні',
+  text: 'щоденник руху й самопочуття: розминка, тренування й рух поруч із тим, як почувається тіло. без сповіщень, записи лишаються тільки на телефоні.',
   url: 'https://vmit-rgb.github.io/body.log-landing/',
 };
 

@@ -129,7 +129,7 @@ describe('readSettings: missing or broken parts', () => {
 
   it('leaves out entries without an id and unknown values', () => {
     const settings = readSettings({
-      goal: { enabled: false, days: 'п’ять', done: ['workout', 'yoga'] },
+      goal: { enabled: false, days: 'пʼять', done: ['workout', 'yoga'] },
       encouragement: ['  ', 'ок', 7],
       workout: { enabled: true, weeklyTarget: 2, sessions: [
         { name: 'без id', items: [] },

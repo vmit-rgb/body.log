@@ -37,9 +37,9 @@
       "properties": {
         "noMotion": { "title": "вимкнути всі анімації", "type": "boolean" },
         "noBackgroundMotion": { "title": "вимкнути фонові анімації", "type": "boolean" },
-        "noVibration": { "title": "вимкнути вібровідгук", "type": "boolean" },
+        "noVibration": { "title": "вимкнути вібрацію", "type": "boolean" },
         "noSound": { "title": "вимкнути звук", "type": "boolean" },
-        "largerTargets": { "title": "збільшені зони тапу", "type": "boolean" },
+        "largerTargets": { "title": "збільшити зони натискання", "type": "boolean" },
         "largerText": { "title": "збільшити розмір тексту", "type": "boolean" },
         "mirrored": { "title": "віддзеркалити нижню панель", "type": "boolean" },
         "keepToasts": {

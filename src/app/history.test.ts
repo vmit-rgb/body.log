@@ -115,7 +115,7 @@ describe('«історія» (Figma screen/log-history 165:2758)', () => {
   it('lists the days with records, newest first, the first one open', () => {
     expect(cards().map(cardTitle)).toEqual(['неділя, 08.11.2026', 'четвер, 05.11.2026', 'вівторок, 03.11.2026']);
     expect(cards().map(isOpen)).toEqual([true, false, false]);
-    expect(cards()[0]!.querySelector('.accordion__meta')!.textContent).toBe('розминка: рівень 1 · нотатка');
+    expect(cards()[0]!.querySelector('.accordion__meta')!.textContent).toBe('ранкова розминка: рівень 1 · нотатка');
   });
 
   it('shows what was logged inside an open card', () => {
@@ -245,9 +245,9 @@ describe('«обрати період» (wave 9)', () => {
 
   it('chooses with two taps after the button, in any order, and counts the period', () => {
     tap('обрати період');
-    expect(host.querySelector('.cal__period [role="status"]')!.textContent).toBe('торкнись першого дня періоду');
+    expect(host.querySelector('.cal__period [role="status"]')!.textContent).toBe('натисни перший день періоду');
     calDay('2026-11-08').click();
-    expect(host.querySelector('.cal__period [role="status"]')!.textContent).toBe('від 08.11: торкнись останнього дня');
+    expect(host.querySelector('.cal__period [role="status"]')!.textContent).toBe('від 08.11: натисни останній день');
     // a tap while choosing doesn't open the day: only the newest card is open, as at first
     expect(cards().filter(isOpen).map(cardTitle)).toEqual(['неділя, 08.11.2026']);
     calDay('2026-11-03').click();
@@ -288,7 +288,7 @@ describe('«обрати період» (wave 9)', () => {
       calDay('2026-11-03').dispatchEvent(new Event('pointerdown', { bubbles: true }));
       vi.advanceTimersByTime(HOLD_MS);
       calDay('2026-11-03').click();
-      expect(host.querySelector('.cal__period [role="status"]')!.textContent).toBe('від 03.11: торкнись останнього дня');
+      expect(host.querySelector('.cal__period [role="status"]')!.textContent).toBe('від 03.11: натисни останній день');
       calDay('2026-11-09').click();
       expect(texts('.cal__period p')).toEqual(['період 03.11–09.11']);
     } finally {
@@ -313,7 +313,7 @@ describe('«обрати період» (wave 9)', () => {
   });
 
   it('tells about the long tap under the button until three periods are chosen; a tap hides it', () => {
-    expect(host.querySelector('.cal__period .tip')!.textContent).toBe('швидше: затисни перший день періоду, а потім торкнись останнього.');
+    expect(host.querySelector('.cal__period .tip')!.textContent).toBe('швидше: затисни перший день періоду, а потім натисни останній.');
     document.body.dispatchEvent(new Event('pointerdown', { bubbles: true }));
     expect(host.querySelector('.cal__period .tip')).toBeNull();
     for (let i = 0; i < 3; i++) {

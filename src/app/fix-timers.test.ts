@@ -154,7 +154,7 @@ describe('F-06: the start of a stopwatch with vibration, sound and the flash', (
     expect(flashes()).toBe(1);
   });
 
-  it('with «вимкнути вібровідгук» and «вимкнути звук» the flash still shows the start', () => {
+  it('with «вимкнути вібрацію» and «вимкнути звук» the flash still shows the start', () => {
     start({ ...profile, accessibility: { noVibration: true, noSound: true } });
     button().click();
     vi.advanceTimersByTime(3_000);

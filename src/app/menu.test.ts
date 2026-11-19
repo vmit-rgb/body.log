@@ -63,7 +63,7 @@ describe('the menu (Figma screen/menu 183:3210)', () => {
 
   it('opens from ≡ with its links, the copy and the help links', () => {
     expect(heading()).toBe('меню');
-    for (const name of ['історія', 'налаштування', 'пошук у нотатках', 'зберегти копію', 'що нового в застосунку', 'як користуватись', 'поділитися застосунком', 'додати фідбек']) {
+    for (const name of ['історія', 'налаштування', 'пошук у нотатках', 'зберегти копію', 'що нового в застосунку', 'як користуватись', 'поділитися застосунком', 'залишити відгук']) {
       expect(button(name), name).toBeTruthy();
     }
     expect(host.querySelector('footer')!.textContent).toContain('бета 0.9');
@@ -124,13 +124,13 @@ describe('the menu (Figma screen/menu 183:3210)', () => {
   });
 
   it('says what is not there yet', () => {
-    tap('додати фідбек');
-    expect(toastSays()).toBe('форму для фідбеку ще робимо, скоро буде :)');
+    tap('залишити відгук');
+    expect(toastSays()).toBe('форму для відгуків ще робимо, скоро буде :)');
     expect(heading()).toBe('меню');
   });
 
   it('A-02: «скоро» does not follow to another screen', () => {
-    tap('додати фідбек');
+    tap('залишити відгук');
     tap('історія');
     expect(heading()).toBe('історія');
     expect(toastSays()).toBeUndefined();
@@ -275,7 +275,7 @@ describe('«що нового» and «як користуватись»', () => 
     tap('як користуватись');
     const answer = button('як збільшити текст чи вимкнути анімації?');
     const text = host.querySelector(`#${answer.getAttribute('aria-controls')}`)!.textContent!;
-    for (const word of ['текст', 'зони тапу', 'всі анімації', 'фонові', 'вібрацію', 'звук', 'нижню панель', 'повідомлення', '⋯']) {
+    for (const word of ['текст', 'зони натискання', 'всі анімації', 'фонові', 'вібрацію', 'звук', 'нижню панель', 'повідомлення', '⋯']) {
       expect(text).toContain(word);
     }
   });

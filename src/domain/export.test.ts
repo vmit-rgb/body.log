@@ -23,7 +23,7 @@ describe('recordsText', () => {
   const text = recordsText(DIARY.days, SETTINGS, TODAY);
 
   it('starts with what it is and that values are not diagnoses', () => {
-    expect(text.split('\n')[0]).toBe('Мій щоденник руху й самопочуття (експорт з трекера, 09.11.2026). Це записи, а не діагнози: не інтерпретуй значення як медичні.');
+    expect(text.split('\n')[0]).toBe('Мій щоденник руху й самопочуття (експорт з body.log, 09.11.2026). Це записи, а не діагнози: не інтерпретуй значення як медичні.');
   });
 
   it('lists days with records, newest first, one line per block', () => {
@@ -45,7 +45,7 @@ describe('recordsText', () => {
 describe('exercisesText', () => {
   it('lists every section that is on with its exercises', () => {
     const text = exercisesText(SETTINGS, TODAY);
-    expect(text).toContain('Мої вправи (з трекера, 09.11.2026):');
+    expect(text).toContain('Мої вправи (з body.log, 09.11.2026):');
     expect(text).toContain('ранкова розминка\n  рівень 1 · 5 хв\n    • вправа 1 — 10\n      тут буде коротко, як її робити.');
     expect(text).toContain('    • вправа 2 — 30 с');
     expect(text).toContain('денна розминка — коли довго сидиш\n  для спини');
@@ -72,7 +72,7 @@ describe('exercisesText', () => {
   });
 
   it('leaves out sections that are off', () => {
-    expect(exercisesText(readSettings({}), TODAY)).toBe('Мої вправи (з трекера, 09.11.2026):');
+    expect(exercisesText(readSettings({}), TODAY)).toBe('Мої вправи (з body.log, 09.11.2026):');
   });
 });
 

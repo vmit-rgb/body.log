@@ -5,7 +5,7 @@ import { circleOver, EASE, moving, MS, play, stagger, STAGGER_MS } from '../ui/m
  * в налаштуваннях», «легке тремтіння в режимі групи»; ported from 0.81's
  * liftFx, settleFx, groupFx, amenuIn). The entry rises with a spring, the
  * other workout exercises shake lightly while a group can be made, and once
- * let go it settles where it landed. «об’єднати в групу» and the action menu
+ * let go it settles where it landed. «обʼєднати в групу» and the action menu
  * were TODO in the spec: Нитка's drafts (Н), from 0.81.
  * The page draws itself anew after every change, so a moved entry is found
  * again by its `data-key` (screens/settings-sections.ts entryKey).

@@ -91,7 +91,7 @@ describe('russianReason (D-05)', () => {
   });
 
   it('does not take Ukrainian for russian', () => {
-    expect(russianReason({ lang: 'uk', exercises: [{ name: 'присідання', how: 'їжак ґанок є і об’єм' }] })).toBeNull();
+    expect(russianReason({ lang: 'uk', exercises: [{ name: 'присідання', how: 'їжак ґанок є і обʼєм' }] })).toBeNull();
     expect(russianReason(example)).toBeNull();
   });
 });
@@ -341,8 +341,8 @@ describe('goal.any in the paste and the preview (Olesia, 2026-11-19)', () => {
 
   it('the preview names the mode when the goal has two or more sections', () => {
     expect(goalLine(goal({ any: true }))).toBe('тижнева ціль: днів на тиждень — 5, будь-яка активність');
-    expect(goalLine(goal({ any: false }))).toBe('тижнева ціль: днів на тиждень — 5, усі розділи');
-    expect(goalLine(goal({}))).toBe('тижнева ціль: днів на тиждень — 5, усі розділи');
+    expect(goalLine(goal({ any: false }))).toBe('тижнева ціль: днів на тиждень — 5, усе обране');
+    expect(goalLine(goal({}))).toBe('тижнева ціль: днів на тиждень — 5, усе обране');
     expect(goalLine({ ...copyOf(), goal: { enabled: true, days: 5, done: ['workout'], any: true } })).toBe('тижнева ціль: днів на тиждень — 5');
     // a switched-off section does not count as one of the two
     const off = goal({ any: true });
@@ -352,6 +352,6 @@ describe('goal.any in the paste and the preview (Olesia, 2026-11-19)', () => {
 
   it('a change of the mode alone is «змінено»', () => {
     expect(describeChanges(goal({}), goal({ any: true }), names).changed).toEqual(['тижнева ціль: днів на тиждень — 5, будь-яка активність']);
-    expect(describeChanges(goal({ any: true }), goal({ any: false }), names).changed).toEqual(['тижнева ціль: днів на тиждень — 5, усі розділи']);
+    expect(describeChanges(goal({ any: true }), goal({ any: false }), names).changed).toEqual(['тижнева ціль: днів на тиждень — 5, усе обране']);
   });
 });

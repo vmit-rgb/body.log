@@ -172,13 +172,13 @@ const WEEKS = 6;
 
 /** The tip about the long tap; it stops after three periods chosen. */
 export const PERIOD_TIP = 'period';
-const PERIOD_TIP_TEXT = 'швидше: затисни перший день періоду, а потім торкнись останнього.';
+const PERIOD_TIP_TEXT = 'швидше: затисни перший день періоду, а потім натисни останній.';
 
 /** History only: «обрати період», what to tap while choosing, the period and «скинути період». */
 function periodRow(view: CalendarView): string {
   if (view.place !== 'history') return '';
   if (view.picking) {
-    const says = view.picking.from ? `від ${dayMonth(view.picking.from)}: торкнись останнього дня` : 'торкнись першого дня періоду';
+    const says = view.picking.from ? `від ${dayMonth(view.picking.from)}: натисни останній день` : 'натисни перший день періоду';
     return `<div class="cal__period"><p class="t-2nd-regular" role="status">${says}</p><button type="button" class="ctl btn btn--tertiary" data-cal="period-cancel">скасувати</button></div>`;
   }
   if (view.period) {

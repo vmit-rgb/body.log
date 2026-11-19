@@ -22,7 +22,7 @@ function landing(key: string, list: string): string {
 
 /** A choice in the action menu: another list of choices, or the entry moved or grouped. */
 function afterMenuItem(key: string, root: HTMLElement): After {
-  // the second list is always there: «об’єднати…» and «перемістити…» show only when they have choices
+  // the second list is always there: «обʼєднати…» and «перемістити…» show only when they have choices
   if (key === 'group' || key === 'move') return () => menuChoices(menuNow()!);
   const item = root.querySelector('.st-menu')!.closest<HTMLElement>('.st-item')!;
   if (key === 'cancel') return nothing;
