@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import example from '../format/example-profile.json';
 import schema from '../format/profile.schema.json';
 import { readPaste } from '../paste/read';
-import { PROMPT, readPrompt } from './prompt';
+import { PROMPT, PROMPT_MAX_LENGTH, readPrompt } from './prompt';
 
 describe('the prompt file', () => {
   it('has its own version and is marked as a draft for now', () => {
@@ -24,10 +24,14 @@ describe('the prompt file', () => {
   });
 
   it('carries the same schema and example the paste check reads, with no placeholder left', () => {
-    expect(PROMPT.text).toContain(JSON.stringify(schema, null, 1));
-    expect(PROMPT.text).toContain(JSON.stringify(example, null, 1));
+    expect(PROMPT.text).toContain(JSON.stringify(schema));
+    expect(PROMPT.text).toContain(JSON.stringify(example));
     expect(PROMPT.text).not.toContain('{{');
     expect(PROMPT.text).not.toContain('---');
+  });
+
+  it('fits in what free Gemini takes in one paste (it cut the prompt at about 32 100 characters, 2026-11-19)', () => {
+    expect(PROMPT.text.length).toBeLessThan(PROMPT_MAX_LENGTH);
   });
 
   it('asks for lowercase texts in the settings, in every language, and its own example keeps to it (ChatGPT wrote «Біль у кисті», 2026-11-19)', () => {
