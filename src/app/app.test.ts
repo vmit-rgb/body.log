@@ -8,6 +8,7 @@ import { PROMPT } from '../prompt/prompt';
 import PASTED from '../format/example-profile.json';
 import { BEFORE_FORMAT_KEY, browserChoice, DIARY_KEY, diaryStore, sectionMemory, type KeyValue } from '../storage/store';
 import { mountToast } from '../ui/toast';
+import { INSTALL_NOTES } from '../screens/parts';
 import { startApp, type AppEnv } from './app';
 
 // Invented data only.
@@ -312,6 +313,15 @@ describe('a phone in the browser', () => {
     expect(host.querySelector('[data-steps]')!.textContent).toContain('chrome');
   });
 
+  it('names the browsers to use under the steps, with the note for the chosen phone (here and in «як?»)', () => {
+    start({ platform: 'iphone', installed: false });
+    const note = () => host.querySelector('[data-steps-note]')!.textContent;
+    expect(note()).toBe(INSTALL_NOTES.iphone);
+    click('[data-platform="android"]');
+    expect(note()).toBe(INSTALL_NOTES.android);
+    expect(note()).toContain('назва пункту в меню залежить від версії браузера');
+  });
+
   it('lets the person go on in the browser and remembers it', () => {
     start({ platform: 'android', installed: false });
     click('[data-use-browser]');
@@ -344,6 +354,7 @@ describe('in a browser tab the app says that records will not stay (A-04)', () =
     expect(steps()[0]).toBe('відкрий цю сторінку в chrome.');
     popup()!.querySelector<HTMLElement>('[data-platform="iphone"]')!.click();
     expect(steps()[1]).toBe('«поділитися» → «на початковий екран».');
+    expect(popup()!.querySelector('[data-steps-note]')!.textContent).toBe(INSTALL_NOTES.iphone);
     expect(popup()!.querySelector('[data-platform="iphone"]')!.getAttribute('aria-pressed')).toBe('true');
     popup()!.querySelector<HTMLElement>('.btn[data-close]')!.click();
     // gone, or fading out and taking no taps

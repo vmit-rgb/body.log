@@ -17,6 +17,7 @@ const MARKUP = `
     <section class="screen__section" aria-label="як встановити">
       ${platformToggles()}
       <ol class="steps t-1st-regular" data-steps></ol>
+      <p class="t-3rd-regular muted" data-steps-note></p>
       <p class="t-3rd-regular muted">телефон визначено автоматично. якщо не той — перемкни.</p>
     </section>
     <section class="screen__section screen__section--tight" aria-label="без встановлення">

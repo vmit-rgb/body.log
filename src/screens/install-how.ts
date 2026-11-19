@@ -16,6 +16,7 @@ const MARKUP = `
       <h2 class="t-1st-bold" id="install-how-title">як встановити застосунок</h2>
       ${platformToggles()}
       <ol class="steps t-2nd-regular" data-steps></ol>
+      <p class="t-3rd-regular muted" data-steps-note></p>
       <p class="t-3rd-regular muted">телефон визначено автоматично. якщо не той — перемкни.</p>
       <div class="dialog__actions">
         <button type="button" class="ctl btn btn--secondary" data-close>зрозуміло</button>
