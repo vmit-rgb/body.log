@@ -207,7 +207,8 @@
   box-shadow: none;
 }
 .tab-note__how:focus-visible::after {
-  inset: calc((var(--tap) - 1.3em) / 2 - 4px) -6px;
+  /* the button is --tap wide; the ring hugs the word, 3ch in the monospace font, plus 6px a side */
+  inset: calc((var(--tap) - 1.3em) / 2 - 4px) calc(50% - 1.5ch - 6px);
   border-radius: 0;
   box-shadow: var(--focus-ring);
 }
