@@ -37,10 +37,16 @@
   color: var(--muted);
   font-size: calc(14px * var(--text-scale));
 }
-/* the language on now is plain text colour; the other one stays an accent link to tap (Нитка, 2026-11-19) */
+/*
+ * the language on now: text colour, bold, no underline (Olesia, 2026-11-19);
+ * nothing to tap there, so no hover pill either. The other one stays an accent link.
+ */
 .lang .ctl[aria-current='true'] {
   color: var(--ink);
+  font-weight: 700;
+  text-decoration: none;
   cursor: default;
+  pointer-events: none;
 }
 
 .btn--wide {
