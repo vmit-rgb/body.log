@@ -30,6 +30,21 @@ describe('the prompt file', () => {
     expect(PROMPT.text).not.toContain('---');
   });
 
+  it('asks for lowercase texts in the settings, in every language, and its own example keeps to it (ChatGPT wrote «Біль у кисті», 2026-11-19)', () => {
+    expect(PROMPT.text).toContain('Every text in the settings starts with a lowercase letter, in any language');
+    expect(PROMPT.text).toContain('"name": "біль у кисті", not "Біль у кисті"');
+    const texts: string[] = [];
+    const walk = (value: unknown, key: string): void => {
+      if (typeof value === 'string') {
+        if (!['id', 'type', 'by', 'url', 'version', 'format', 'lang', 'accent', 'exercise'].includes(key)) texts.push(value);
+      } else if (Array.isArray(value)) value.forEach((item) => walk(item, key));
+      else if (value && typeof value === 'object') for (const [k, v] of Object.entries(value)) walk(v, k);
+    };
+    walk(example, '');
+    expect(texts.length).toBeGreaterThan(10);
+    expect(texts.filter((text) => /^\p{Lu}|[.!?]\s+\p{Lu}/u.test(text))).toEqual([]);
+  });
+
   it('gives an example the paste accepts as it is', () => {
     expect(readPaste(JSON.stringify(example, null, 1)).kind).toBe('accepted');
   });

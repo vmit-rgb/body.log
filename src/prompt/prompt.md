@@ -112,6 +112,7 @@ Give the settings as one JSON code block, with nothing inside the block except t
 - ids: lowercase Latin letters, digits, hyphens; no repeats within their list, and they never change over time.
 - Only keys from the format below: the app will not read or save any others.
 - Settings only: no diary entries, thresholds, norms or judgements of values. Texts are plain text, no HTML or code.
+- Every text in the settings starts with a lowercase letter, in any language, even at the start of a phrase or a sentence: names of exercises, levels, areas, workouts and movement, well-being questions, hints, "how to do it" explanations, phrases. Only proper names and abbreviations keep their capitals (e.g. NHS, PDF). Example: "name": "біль у кисті", not "Біль у кисті"; "name": "wrist pain", not "Wrist pain". This is the app's style, not a typo. It applies only to the settings, not to your messages in the conversation.
 
 Settings format (JSON Schema):
 
