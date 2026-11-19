@@ -42,10 +42,7 @@
 .acc-body--group > .btn--tertiary {
   align-self: flex-start;
 }
-/* «хороша робота <3»: the <3 in the accent; «згорнути секцію» on the right (Olesia, MY-FIXES) */
-.good-job__heart {
-  color: var(--accent);
-}
+/* «згорнути секцію» on the right (Olesia, MY-FIXES); the <3 of «хороша робота <3» is an `.emoticon` (components.css) */
 .home-section__end {
   display: flex;
   justify-content: flex-end;

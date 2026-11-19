@@ -572,7 +572,8 @@ body:has(.bar:not(.bar--hidden)) .toast {
   flex: 1;
   color: var(--ink);
 }
-.toast__emoticon {
+/* Every text emoticon («:)», «<3», «>_<»…) anywhere: in the accent (COPY.md rules; E-17, one way: `emoticonsHtml`) */
+.emoticon {
   color: var(--accent);
 }
 .toast__action[hidden] {

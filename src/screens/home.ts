@@ -19,6 +19,7 @@ import { endSignal, startSignal } from '../home/signal';
 import { monthOf, shiftMonth, type MonthKey } from '../domain/stats';
 import { wireAccordions } from '../ui/accordion';
 import { esc } from '../ui/html';
+import { emoticonsHtml } from '../ui/emoticons';
 import { announce } from '../ui/announce';
 import { iconSvg } from '../ui/icons';
 import { closesOnBack } from '../ui/back';
@@ -77,11 +78,11 @@ const BODIES: Record<SectionId, (ctx: SectionContext) => string> = {
   note: noteBody,
 };
 
-/* Olesia, MY-FIXES: the line of a section where something is done; <3 in the accent. */
-const GOOD_JOB = 'хороша робота <span class="good-job__heart">&lt;3</span>';
+/* Olesia, MY-FIXES: the line of a section where something is done; <3 in the accent, as every emoticon (E-17). */
+const GOOD_JOB = 'хороша робота <3';
 
-/** The section's line: its description, or «хороша робота <3» once something in it is done. */
-const leadOf = (description: string, done: boolean) => (done ? GOOD_JOB : description);
+/** The section's line as HTML: its description, or «хороша робота <3» once something in it is done. */
+const leadOf = (description: string, done: boolean) => emoticonsHtml(done ? GOOD_JOB : description);
 
 /* Olesia, 2026-11-17: a done section has a tick at the start of its header; said as «зроблено» before the title. */
 const TICK = `<span class="accordion__done">${iconSvg('check')}<span class="visually-hidden">зроблено: </span></span>`;
@@ -174,7 +175,8 @@ function roomOf(text: HTMLElement): number {
 function fillHero(host: HTMLElement, state: HomeState): () => void {
   const text = part<HTMLElement>(host, '.hero__text');
   const hero = heroFor(state.date, state.today, state.settings);
-  text.textContent = hero.text;
+  // the phrase comes from the settings: escaped, its emoticons in the accent (E-17)
+  text.innerHTML = emoticonsHtml(hero.text);
   if (hero.kind === 'past') {
     // the date in bold, as example/home-past-day; built from text nodes, never HTML
     const [before, after] = hero.text.split(hero.bold) as [string, string];
