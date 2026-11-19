@@ -1001,9 +1001,11 @@ describe('settings: «будь-яка активність зараховує д
     const { goal: _goal, ...profile } = EXAMPLE_DIARY.profile;
     return { ...WITH_A_DAY, profile };
   };
+  // a goal stored before `any` existed
+  const oldGoal = (): Diary => ({ ...WITH_A_DAY, profile: { ...EXAMPLE_DIARY.profile, goal: { enabled: true, days: 5, done: ['morningWarmup'] } } });
 
   it('shows only with two or more sections ticked, under the list, as a labelled checkbox', async () => {
-    await openSettings();
+    await openSettings(oldGoal());
     await openPart('тижнева ціль');
     expect(anyBox()).toBeUndefined();
     await tick('денна розминка');
@@ -1020,8 +1022,18 @@ describe('settings: «будь-яка активність зараховує д
     expect(anyBox()).toBeUndefined();
   });
 
-  it('saves `any`, keeps the focus on it after the redraw and says it in the closed row', async () => {
+  it('the «почати без ШІ» example finds it ticked once a second section is ticked', async () => {
     await openSettings();
+    await openPart('тижнева ціль');
+    expect(anyBox()).toBeUndefined();
+    await tick('денна розминка');
+    expect(checkbox('будь-яка активність зараховує день').checked).toBe(true);
+    await tap('зберегти налаштування');
+    expect(storedProfile().goal).toMatchObject({ done: ['morningWarmup', 'daytimeWarmup'], any: true });
+  });
+
+  it('saves `any`, keeps the focus on it after the redraw and says it in the closed row', async () => {
+    await openSettings(oldGoal());
     await openPart('тижнева ціль');
     await tick('денна розминка');
     checkbox('будь-яка активність зараховує день').focus();

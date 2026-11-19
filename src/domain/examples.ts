@@ -23,7 +23,8 @@ const EXAMPLE_PROFILE = {
   version: PROFILE_VERSION,
   lang: 'uk',
   theme: { accent: DEFAULT_ACCENT },
-  goal: { enabled: true, days: 5, done: ['morningWarmup'] },
+  // `any` changes nothing with one section; a second one ticked in the settings finds «будь-яка активність» on (Olesia, 2026-11-19)
+  goal: { enabled: true, days: 5, done: ['morningWarmup'], any: true },
   encouragement: ['ти можеш налаштувати все в налаштуваннях :)'],
   morningWarmup: {
     enabled: true,
