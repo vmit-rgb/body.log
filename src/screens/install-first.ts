@@ -12,7 +12,7 @@ const MARKUP = `
     ${LANGUAGE_SWITCH}
     <section class="screen__section" aria-labelledby="install-title">
       <h1 id="install-title" class="t-h3">спершу встанови застосунок</h1>
-      <p class="t-1st-regular">зараз він відкритий у браузері. налаштовуй уже у встановленому: на айфоні браузер і застосунок зберігають дані окремо, і налаштування звідси туди не перейдуть.</p>
+      <p class="t-1st-regular">зараз він відкритий у браузері. налаштовуй уже у встановленому.</p>
     </section>
     <section class="screen__section" aria-label="як встановити">
       ${platformToggles()}

@@ -97,9 +97,10 @@ const SETS_TIP_TEXT = 'зайвий підхід прибирає × право�
 export const SLIDER_TIP = 'slider';
 export const SLIDER_TIP_TEXT = 'значення запишеться, коли натиснеш «зберегти».';
 export const REMOVE_TIP = 'remove';
-const REMOVE_TIP_TEXT = '× нічого не стирає одразу: натисни ✓, щоб видалити.';
+/** Olesia, 2026-11-19: the tip names what goes: a round or lap («коло») or a set («підхід»). */
+const removeTipText = (what: 'коло' | 'підхід') => `× не стирає ${what} одразу: натисни ✓, щоб видалити.`;
 export const ROUNDS_TIP = 'rounds';
-const ROUNDS_TIP_TEXT = '«ще раз» додає ще один таймер, щоб записати вправу ще раз.';
+const ROUNDS_TIP_TEXT = '«ще раз» додає ще одне коло.';
 
 /**
  * A bubble over the content (wave 5c): under its row it hangs from a
@@ -114,8 +115,8 @@ export function tip(id: string, text: string, above = false): string {
 const tipOpen = (ctx: SectionContext, id: string) => ctx.tipOpen?.(id) ?? false;
 
 /** Under a row whose × has turned into ✓: what the ✓ does. `quiet` where the sets tip already says it. */
-function armedTip(ctx: SectionContext, target: string, quiet = false): string {
-  return !quiet && ctx.session.armed === dayKey(ctx, target) && tipOpen(ctx, REMOVE_TIP) ? tip(REMOVE_TIP, REMOVE_TIP_TEXT) : '';
+function armedTip(ctx: SectionContext, target: string, what: 'коло' | 'підхід', quiet = false): string {
+  return !quiet && ctx.session.armed === dayKey(ctx, target) && tipOpen(ctx, REMOVE_TIP) ? tip(REMOVE_TIP, removeTipText(what)) : '';
 }
 
 /** The first slider with a value not saved yet gets the tip above its «зберегти» (one at a time). */
@@ -397,7 +398,7 @@ function timerRounds(ctx: SectionContext, item: WarmupItem): string {
     const target = `round|${item.exercise}|${i}`;
     const label = n > 1 ? `видалити таймер ${i + 1}` : 'скинути таймер до нуля';
     // one round has no number (stopwatch 157:2903)
-    return `<div class="set-row"><span class="set-row__n t-2nd-regular">${n > 1 ? i + 1 : ''}</span>${stopwatch(ctx, target, times[i] ?? null, i + 1)}${removeButton(ctx, target, label, idleTimer(ctx, target, n, times[i] ?? null))}</div>${armedTip(ctx, target)}`;
+    return `<div class="set-row"><span class="set-row__n t-2nd-regular">${n > 1 ? i + 1 : ''}</span>${stopwatch(ctx, target, times[i] ?? null, i + 1)}${removeButton(ctx, target, label, idleTimer(ctx, target, n, times[i] ?? null))}</div>${armedTip(ctx, target, 'коло')}`;
   });
   // checklist/exercise: the rows on the right, «ще раз» under them; the tip under the first «ще раз» of the warm-up
   const showTip = tipOpen(ctx, ROUNDS_TIP) && firstTimed(ctx) === item;
@@ -444,7 +445,7 @@ function levelMarkup(ctx: SectionContext, level: Level, index: number): string {
   const ticked = level.items.filter((item) => ctx.day.mw.ticks.includes(item.exercise)).length;
   const meta = [level.duration, done ? 'готово' : `${ticked} з ${level.items.length}`].filter(Boolean).map(esc).join(' · ');
   const markAll = `<button type="button" class="ctl btn btn--tertiary" data-act="level" data-level="${esc(level.id)}" data-done="${!done}">${
-    done ? 'зняти позначки з рівня' : 'позначити весь рівень'}</button>`;
+    done ? 'зняти позначку з рівня' : 'позначити весь рівень'}</button>`;
   // accordion/subsection: the button under the «5 хв · 1 з 2» line, on the left
   const body = `${markAll}<ul class="ex-list">${level.items.map((item) => warmupItem(ctx, item)).join('')}</ul>`;
   const open = remembered(ctx, `level|${level.id}`, !done);
@@ -515,7 +516,7 @@ function setRow(ctx: SectionContext, item: WorkoutItem, i: number, n: number, qu
   const seconds = ctx.day.wo?.ex[item.exercise]?.[i]?.s ?? null;
   const remove = setRemove(ctx, target, timed, i, n, seconds);
   return `<div class="set-row${timed ? ' set-row--timed' : ''}"><span class="set-row__n t-2nd-regular">${n > 1 ? i + 1 : ''}</span>
-    <div class="set-row__main">${timed ? stopwatch(ctx, target, seconds, i + 1) : ''}${setFields(ctx, item, i)}</div>${remove}</div>${armedTip(ctx, target, quiet)}`;
+    <div class="set-row__main">${timed ? stopwatch(ctx, target, seconds, i + 1) : ''}${setFields(ctx, item, i)}</div>${remove}</div>${armedTip(ctx, target, 'підхід', quiet)}`;
 }
 
 /** × from the second set; a timer has × always, and the only timer's × resets it. */
@@ -634,7 +635,7 @@ function lapRow(ctx: SectionContext, kind: MovementKind, i: number, n: number): 
     });
   });
   const remove = i > 0 ? removeButton(ctx, `lap|${kind.id}|${i}`, `видалити коло ${i + 1}`) : NO_REMOVE;
-  return `<div class="set-row"><span class="set-row__n t-2nd-regular">${n > 1 ? i + 1 : ''}</span><div class="set-row__main lap">${fields.join('')}</div>${remove}</div>${armedTip(ctx, `lap|${kind.id}|${i}`)}`;
+  return `<div class="set-row"><span class="set-row__n t-2nd-regular">${n > 1 ? i + 1 : ''}</span><div class="set-row__main lap">${fields.join('')}</div>${remove}</div>${armedTip(ctx, `lap|${kind.id}|${i}`, 'коло')}`;
 }
 
 function movementKind(ctx: SectionContext, kind: MovementKind): string {
