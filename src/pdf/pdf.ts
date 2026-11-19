@@ -1,4 +1,4 @@
-import type { PdfLine } from '../domain/export';
+import { isTable, type PdfBlock, type PdfLine, type PdfTable } from '../domain/pdf-records';
 
 /*
  * A PDF written in code, no library («бета 0.81» `buildPDF`; brief, Export:
@@ -82,24 +82,98 @@ class FontUse {
   }
 }
 
-/** Lays the lines out on A4 pages: each page is a list of text operators. */
-function layOut(lines: readonly PdfLine[], fonts: readonly FontUse[]): string[][] {
-  const pages: string[][] = [[]];
-  let y = PAGE_H - MARGIN;
-  for (const line of lines) {
-    const max = Math.max(10, Math.floor((PAGE_W - 2 * MARGIN - line.indent) / (line.size * CHAR_W)));
+/** Letters that fit `width` points at `size`. */
+const lettersIn = (width: number, size: number) => Math.max(1, Math.floor(width / (size * CHAR_W)));
+/** Inside a table cell, points. */
+const PAD_X = 4;
+const PAD_Y = 3;
+const GRID = '0.5 w 0.6 G';
+
+/** Pages as lists of drawing operators, filled from the top. */
+class Pages {
+  readonly pages: string[][] = [[]];
+  y = PAGE_H - MARGIN;
+
+  constructor(private readonly fonts: readonly FontUse[]) {}
+
+  /** Starts a new page unless `height` still fits on this one; says whether it did. */
+  room(height: number): boolean {
+    if (this.y - height >= MARGIN) return false;
+    this.pages.push([]);
+    this.y = PAGE_H - MARGIN;
+    return true;
+  }
+
+  text(row: string, size: number, bold: boolean, x: number, y: number): void {
+    const f = bold ? 1 : 0;
+    if (row) this.pages.at(-1)!.push(`BT /F${f + 1} ${size} Tf ${x.toFixed(2)} ${y.toFixed(2)} Td <${this.fonts[f]!.hex(row)}> Tj ET`);
+  }
+
+  draw(op: string): void {
+    this.pages.at(-1)!.push(op);
+  }
+
+  line(line: PdfLine): void {
+    const hang = line.hang ?? 0;
+    const max = Math.max(10, lettersIn(PAGE_W - 2 * MARGIN - line.indent - hang, line.size));
     const height = line.size * LEADING;
-    const f = line.bold ? 1 : 0;
-    for (const row of wrapLine(line.text, max)) {
-      if (y - height < MARGIN) {
-        pages.push([]);
-        y = PAGE_H - MARGIN;
-      }
-      y -= height;
-      if (row) pages.at(-1)!.push(`BT /F${f + 1} ${line.size} Tf ${(MARGIN + line.indent).toFixed(2)} ${y.toFixed(2)} Td <${fonts[f]!.hex(row)}> Tj ET`);
+    wrapLine(line.text, max).forEach((row, i) => {
+      this.room(height);
+      this.y -= height;
+      this.text(row, line.size, line.bold, MARGIN + line.indent + (i ? hang : 0), this.y);
+    });
+  }
+
+  table(table: PdfTable): void {
+    const widths = columnWidths(table);
+    const header = table.header.map((cell) => [cell]);
+    const cells = (row: readonly string[]) => row.map((cell, i) => wrapLine(cell, lettersIn(widths[i]! - 2 * PAD_X, table.size)));
+    this.row(header, widths, table, true);
+    for (const row of table.rows) {
+      const wrapped = cells(row);
+      if (this.room(this.rowHeight(wrapped, table.size))) this.row(header, widths, table, true);
+      this.row(wrapped, widths, table, false);
     }
   }
-  return pages;
+
+  private rowHeight(cells: readonly (readonly string[])[], size: number): number {
+    return Math.max(...cells.map((rows) => rows.length)) * size * LEADING + 2 * PAD_Y;
+  }
+
+  /** One row of cells with its grid; the header row is bold. */
+  private row(cells: readonly (readonly string[])[], widths: readonly number[], table: PdfTable, bold: boolean): void {
+    const height = this.rowHeight(cells, table.size);
+    this.room(height);
+    const top = this.y;
+    let x = MARGIN + table.indent;
+    cells.forEach((rows, i) => {
+      this.draw(`${GRID} ${x.toFixed(2)} ${(top - height).toFixed(2)} ${widths[i]!.toFixed(2)} ${height.toFixed(2)} re S`);
+      rows.forEach((row, r) => this.text(row, table.size, bold, x + PAD_X, top - PAD_Y - (r + 1) * table.size * LEADING + table.size * 0.3));
+      x += widths[i]!;
+    });
+    this.y = top - height;
+  }
+}
+
+/** Each column as wide as its longest cell; the first one gives way, down to ten letters, when the page is too narrow. */
+export function columnWidths(table: PdfTable): number[] {
+  const letter = table.size * CHAR_W;
+  const natural = table.header.map((title, i) =>
+    Math.max(...[title, ...table.rows.map((row) => row[i]!)].map((cell) => [...cell].length)) * letter + 2 * PAD_X);
+  const room = PAGE_W - 2 * MARGIN - table.indent;
+  const rest = natural.slice(1).reduce((sum, w) => sum + w, 0);
+  const first = natural[0]!;
+  return [Math.max(Math.min(first, 10 * letter + 2 * PAD_X), Math.min(first, room - rest)), ...natural.slice(1)];
+}
+
+/** Lays the blocks out on A4 pages: each page is a list of drawing operators. */
+function layOut(blocks: readonly PdfBlock[], fonts: readonly FontUse[]): string[][] {
+  const pages = new Pages(fonts);
+  for (const block of blocks) {
+    if (isTable(block)) pages.table(block);
+    else pages.line(block);
+  }
+  return pages.pages;
 }
 
 function bytesOf(base64: string): Uint8Array {
@@ -175,7 +249,7 @@ function writeFont(out: Writer, n: number, use: FontUse, bold: boolean): void {
  * The whole file. Objects: 1 catalog, 2 page list, 3–12 the two fonts,
  * then a page and its content for each page.
  */
-export function buildPdf(lines: readonly PdfLine[], fonts: PdfFonts): Uint8Array<ArrayBuffer> {
+export function buildPdf(lines: readonly PdfBlock[], fonts: PdfFonts): Uint8Array<ArrayBuffer> {
   const uses = [new FontUse(fonts.R), new FontUse(fonts.B)];
   const pages = layOut(lines, uses);
   const first = 13;

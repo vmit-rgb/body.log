@@ -3,6 +3,7 @@ import { hasData, type Day } from './day';
 import { writeDays, type Diary, type JsonObject } from './diary';
 import { dayBlocks, sessionName, type DayBlock } from './journal';
 import { formatNumber } from './numbers';
+import { dayPdf, gap, pdfLine, type PdfBlock } from './pdf-records';
 import type { ActivityKind, Exercise, Settings, WarmupItem, WorkoutEntry, WorkoutItem } from './settings';
 
 /*
@@ -113,30 +114,21 @@ export function exercisesText(settings: Settings, today: DayKey): string {
 
 /* ---- PDF: the same texts, laid out as «бета 0.81» `exportPDF` did ---- */
 
-export interface PdfLine {
-  readonly text: string;
-  /** Points. */
-  readonly size: number;
-  readonly bold: boolean;
-  /** Points from the left margin. */
-  readonly indent: number;
-}
+export type { PdfBlock, PdfLine, PdfTable } from './pdf-records';
 
 export interface PdfDocument {
   readonly name: string;
-  readonly lines: readonly PdfLine[];
+  readonly lines: readonly PdfBlock[];
 }
 
-const pdfLine = (text: string, size: number, bold = false, indent = 0): PdfLine => ({ text, size, bold, indent });
-const gap = (size: number) => pdfLine('', size);
-
-function recordLines(days: Diary['days'], settings: Settings): PdfLine[] {
-  return recordDays(days, settings).flatMap(([date, ...blocks]) =>
-    [pdfLine(date!, 12, true), ...blocks.map((block) => pdfLine(block, 9.5, false, 12)), gap(6)]);
+/** Days with records, newest first, each under its date (Olesia, 2026-11-19). */
+function recordLines(days: Diary['days'], settings: Settings): PdfBlock[] {
+  return Object.values(days).filter(hasData).sort((a, b) => b.date.localeCompare(a.date))
+    .flatMap((day) => dayPdf(day, formatShort(day.date), days, settings));
 }
 
 /** Depth from the leading spaces: sections large, their first level (levels, sessions) bold, items («•») plain. */
-function exerciseLines(settings: Settings): PdfLine[] {
+function exerciseLines(settings: Settings): PdfBlock[] {
   return exerciseSections(settings).flatMap((lines, i) => [...(i ? [gap(6)] : []), ...lines.map((line) => {
     const text = line.trim();
     const depth = line.length - line.trimStart().length;

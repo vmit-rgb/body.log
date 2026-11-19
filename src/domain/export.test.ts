@@ -3,7 +3,7 @@ import type { DayKey } from './dates';
 import { readDay } from './day';
 import type { Diary, JsonObject } from './diary';
 import { EXAMPLE_DIARY } from './examples';
-import { exercisesText, exportFile, pdfDocument, recordsText, type PdfLine } from './export';
+import { exercisesText, exportFile, pdfDocument, recordsText, type PdfBlock } from './export';
 import { readSettings } from './settings';
 
 // Invented data only.
@@ -101,22 +101,24 @@ describe('exportFile', () => {
 
 describe('pdfDocument', () => {
   const FOOT = 'body.log · бета 0.9';
-  const texts = (lines: readonly PdfLine[]) => lines.map((line) => line.text);
+  const texts = (lines: readonly PdfBlock[]) => lines.map((line) => ('text' in line ? line.text : 'table'));
 
-  it('lays out the records as «бета 0.81» did: title, days in bold, blocks indented, the app at the bottom', () => {
+  it('lays out the records: title, each day under its date, each block under its heading, the app at the bottom', () => {
     const pdf = pdfDocument('records', DIARY.days, SETTINGS, TODAY, FOOT);
     expect(pdf.name).toBe('trekr-zapysy-2026-11-09.pdf');
-    expect(pdf.lines.slice(0, 4)).toEqual([
+    expect(pdf.lines.slice(0, 6)).toEqual([
       { text: 'щоденник руху й самопочуття', size: 16, bold: true, indent: 0 },
       { text: 'експорт пн, 09.11.2026 · це щоденник, а не медичний документ', size: 9, bold: false, indent: 0 },
       { text: '', size: 6, bold: false, indent: 0 },
-      { text: 'нд, 08.11.2026', size: 12, bold: true, indent: 0 },
+      { text: 'нд, 08.11.2026', size: 13, bold: true, indent: 0 },
+      { text: '', size: 4, bold: false, indent: 0 },
+      { text: 'ранкова розминка', size: 10.5, bold: true, indent: 0 },
     ]);
-    expect(pdf.lines[4]).toEqual({ text: 'ранкова розминка: рівень 1 (вправа 1)', size: 9.5, bold: false, indent: 12 });
+    expect(pdf.lines[6]).toEqual({ text: '• рівень 1 (вправа 1)', size: 9.5, bold: false, indent: 8, hang: 11.4 });
     expect(texts(pdf.lines)).toEqual([
       'щоденник руху й самопочуття', 'експорт пн, 09.11.2026 · це щоденник, а не медичний документ', '',
-      'нд, 08.11.2026', 'ранкова розминка: рівень 1 (вправа 1)', 'нотатка: перший рядок / другий', '',
-      'сб, 07.11.2026', 'самопочуття зранку: енергія 4', 'денна розминка: для спини', '',
+      'нд, 08.11.2026', '', 'ранкова розминка', '• рівень 1 (вправа 1)', '', 'нотатка', 'перший рядок', 'другий', '',
+      'сб, 07.11.2026', '', 'самопочуття зранку', '• енергія: 4', '', 'денна розминка', '• для спини', '',
       '', 'body.log · бета 0.9',
     ]);
     expect(pdf.lines.at(-1)).toEqual({ text: FOOT, size: 8, bold: false, indent: 0 });
@@ -135,7 +137,7 @@ describe('pdfDocument', () => {
       { text: 'тут буде коротко, як її робити.', size: 9.5, bold: false, indent: 18 },
     ]);
     expect(texts(pdf.lines)).toContain('денна розминка — коли довго сидиш');
-    expect(pdf.lines.find((l) => l.text === '• рух 1')).toEqual({ text: '• рух 1', size: 9.5, bold: false, indent: 6 });
+    expect(pdf.lines.find((l) => 'text' in l && l.text === '• рух 1')).toEqual({ text: '• рух 1', size: 9.5, bold: false, indent: 6 });
     expect(texts(pdf.lines).at(-1)).toBe(FOOT);
   });
 

@@ -115,7 +115,7 @@ function unitOf(tracker: Tracker | undefined): string {
   return a === b ? a : `${a}/${b}`;
 }
 
-function answerRow(tracker: Tracker | undefined, answer: Answer): ValueRow {
+export function answerRow(tracker: Tracker | undefined, answer: Answer): ValueRow {
   const label = tracker ? tracker.name || 'без назви' : GONE_QUESTION;
   const unit = unitOf(tracker);
   if (Array.isArray(answer)) return { label, value: numbers(answer), unit, text: false };
@@ -134,7 +134,8 @@ function checkIn(day: Day, settings: Settings, moment: Moment): DayBlock[] {
 const seconds = (times: readonly (number | null)[] = []) =>
   times.filter((x) => x !== null).map((x) => `${formatNumber(x)} с`).join(', ');
 
-function morningWarmup(day: Day, days: readonly Day[], settings: Settings): DayBlock[] {
+/** The ticked warm-up exercises, by level, then those no level has any more. */
+export function warmupGroups(day: Day, days: readonly Day[], settings: Settings): CheckGroup[] {
   const ticked = (id: string) => day.mw.ticks.includes(id);
   const item = (id: string) => ({ name: exerciseName(settings, days, id), times: seconds(day.mw.times[id]) });
   const groups: CheckGroup[] = settings.morningWarmup.levels.flatMap((level, i) => {
@@ -145,16 +146,25 @@ function morningWarmup(day: Day, days: readonly Day[], settings: Settings): DayB
   const inLevels = new Set(settings.morningWarmup.levels.flatMap((level) => level.items.map((x) => x.exercise)));
   const other = day.mw.ticks.filter((id) => !inLevels.has(id)).map(item);
   if (other.length) groups.push({ title: 'інші вправи', items: other });
+  return groups;
+}
+
+function morningWarmup(day: Day, days: readonly Day[], settings: Settings): DayBlock[] {
+  const groups = warmupGroups(day, days, settings);
   return groups.length ? [{ kind: 'checklist', title: 'ранкова розминка', groups }] : [];
+}
+
+/** The daytime warm-up zones done, by name. */
+export function zoneNames(day: Day, settings: Settings): string[] {
+  return day.dw.map((id) => {
+    const group = settings.daytimeWarmup.groups.find((g) => g.id === id);
+    return group ? group.name || 'без назви' : 'зона, якої вже немає';
+  });
 }
 
 function daytimeWarmup(day: Day, settings: Settings): DayBlock[] {
   if (day.dw.length === 0) return [];
-  const name = (id: string) => {
-    const group = settings.daytimeWarmup.groups.find((g) => g.id === id);
-    return group ? group.name || 'без назви' : 'зона, якої вже немає';
-  };
-  return [{ kind: 'text', title: 'денна розминка', text: day.dw.map(name).join(', ') }];
+  return [{ kind: 'text', title: 'денна розминка', text: zoneNames(day, settings).join(', ') }];
 }
 
 function workout(day: Day, days: readonly Day[], settings: Settings): DayBlock[] {
