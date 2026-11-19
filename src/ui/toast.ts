@@ -168,6 +168,10 @@ export function mountToast(host: HTMLElement): Toast {
     if (!next.action && held.focus && document.activeElement === button) closeButton.focus({ preventScroll: true });
     button.textContent = next.action?.label ?? '';
     button.hidden = !next.action;
+    // «скасувати» is red, «оновити» and the rest stay in the accent (Olesia, 2026-11-19)
+    const cancels = next.action?.label === 'скасувати';
+    button.classList.toggle('btn--destructive', cancels);
+    button.classList.toggle('btn--tertiary', !cancels);
     rise();
     typeIn(text);
     clearTimeout(settling);

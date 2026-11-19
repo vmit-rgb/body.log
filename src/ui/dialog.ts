@@ -175,7 +175,7 @@ export function editText(spec: TextEditSpec): Promise<string | null> {
   const { root, close } = layer(`
     <div class="text-edit${spec.long ? ' text-edit--long' : ''}" role="dialog" aria-modal="true" aria-label="${esc(spec.label)}">
       <div class="text-edit__actions">
-        <button type="button" class="ctl btn btn--tertiary" data-answer="cancel">скасувати</button>
+        <button type="button" class="ctl btn btn--destructive" data-answer="cancel">скасувати</button>
         <button type="button" class="ctl btn btn--secondary" data-answer="done">готово</button>
       </div>
       <label class="text-edit__field">

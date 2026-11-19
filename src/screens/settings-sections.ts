@@ -102,7 +102,7 @@ function toggle(id: string, name: string, open: boolean): string {
 function menuMarkup(ctx: Ctx, slot: Slot, name: string): string {
   const { menu } = ctx.view;
   if (!menu || menu.slot.list !== slot.list || menu.slot.index !== slot.index) return '';
-  const items = menu.items.map((item) => `<button type="button" role="menuitem" class="ctl btn btn--tertiary" ${act('menu-item', `data-key="${esc(item.key)}"`)}>${esc(item.label)}</button>`);
+  const items = menu.items.map((item) => `<button type="button" role="menuitem" class="ctl btn ${item.key === 'cancel' ? 'btn--destructive' : 'btn--tertiary'}"${act('menu-item', `data-key="${esc(item.key)}"`)}>${esc(item.label)}</button>`);
   return `<div class="st-menu" role="menu" aria-label="дії: ${esc(shown(name))}">${items.join('')}</div>`;
 }
 
