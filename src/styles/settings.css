@@ -562,8 +562,9 @@
   background: var(--accent);
 }
 
-/* small text under a checkbox, on one line with its label ([ ] is three characters and a gap wide) */
-.st-hint {
+/* small text under a checkbox, on one line with its label ([ ] is three characters and a gap wide);
+   «.settings» in front, or «.settings p { margin: 0 }» wins and the text drops 26 px lower */
+.settings .st-hint {
   margin: calc(-1 * var(--gap-group) - 10px) 0 0;
   padding-left: calc(17px * var(--text-scale) * 0.6 * 3 + var(--gap-items));
 }
