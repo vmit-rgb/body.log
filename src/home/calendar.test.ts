@@ -381,7 +381,7 @@ describe('pulse timer (wave 6: field on one row, timer on the next, «готов
     // the timer goes; «готово» (first level) and «скасувати» (third) take its place
     expect(pulse().querySelector('.sw')).toBeNull();
     expect(byText('готово', pulse()).className).toContain('btn--primary');
-    expect(byText('скасувати', pulse()).className).toContain('btn--tertiary');
+    expect(byText('скасувати', pulse()).className).toContain('btn--destructive');
     expect(pulse().textContent).toContain('скільки ударів за 30 с?');
     expect(heard()).toBe('скільки ударів за 30 с?');
     expect(document.activeElement).toBe(beats());

@@ -8,8 +8,8 @@ import { emoticonsHtml } from '../ui/emoticons';
  * Texts: COPY.md «Pasting settings»; Нитка's drafts where it has none.
  */
 
-const button = (order: 'primary' | 'secondary', act: PasteAct, label: string) =>
-  `<button type="button" class="ctl btn btn--${order} btn--wide" data-paste-act="${act}">${label}</button>`;
+const button = (order: 'primary' | 'secondary', act: PasteAct, label: string, extra = '') =>
+  `<button type="button" class="ctl btn btn--${order} btn--wide${extra}" data-paste-act="${act}">${label}</button>`;
 
 const list = (lines: readonly string[]) =>
   (lines.length ? `<ul class="paste-result__lines t-2nd-regular">${lines.map((line) => `<li>${emoticonsHtml(line)}</li>`).join('')}</ul>` : '');
@@ -32,7 +32,7 @@ function previewMarkup(view: PasteView & { kind: 'preview' }): string {
     : `${group('додано', changes.added)}${group('змінено', changes.changed)}${group('прибрано', changes.removed)}
        <p class="t-2nd-regular">записи лишаються як були</p>`;
   return `${title(changes.first ? 'ось що буде в налаштуваннях' : 'ось що зміниться')}${body}
-    ${button('primary', 'save', 'зберегти')}${button('secondary', 'cancel', 'скасувати')}`;
+    ${button('primary', 'save', 'зберегти')}${button('secondary', 'cancel', 'скасувати', ' btn--cancel')}`;
 }
 
 /** The inside of `[data-paste-result]`; empty when there is nothing to say. */

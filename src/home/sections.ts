@@ -291,7 +291,7 @@ function beatsField(run: PulseRun): string {
 function pulseEnd(data: string): string {
   return `<div class="pulse__end">
       <button type="button" class="ctl btn btn--primary" data-act="pulse-done" ${data}>готово</button>
-      <button type="button" class="ctl btn btn--tertiary" data-act="pulse-cancel" ${data}>скасувати</button></div>`;
+      <button type="button" class="ctl btn btn--destructive" data-act="pulse-cancel" ${data}>скасувати</button></div>`;
 }
 
 /** «приготуйся» / «рахуй удари» / «скільки ударів за 30 с?»; nothing after «готово» (Olesia, 2026-11-17). */

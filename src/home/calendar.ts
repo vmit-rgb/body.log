@@ -179,7 +179,7 @@ function periodRow(view: CalendarView): string {
   if (view.place !== 'history') return '';
   if (view.picking) {
     const says = view.picking.from ? `від ${dayMonth(view.picking.from)}: натисни останній день` : 'натисни перший день періоду';
-    return `<div class="cal__period"><p class="t-2nd-regular" role="status">${says}</p><button type="button" class="ctl btn btn--tertiary" data-cal="period-cancel">скасувати</button></div>`;
+    return `<div class="cal__period"><p class="t-2nd-regular" role="status">${says}</p><button type="button" class="ctl btn btn--destructive" data-cal="period-cancel">скасувати</button></div>`;
   }
   if (view.period) {
     return `<div class="cal__period"><p class="t-2nd-regular">період ${periodName(view.period)}</p><button type="button" class="ctl btn btn--tertiary" data-cal="period-reset">скинути період</button></div>`;

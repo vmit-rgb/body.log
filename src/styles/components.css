@@ -100,6 +100,13 @@
   font-stretch: 98%;
   line-height: 1.3;
 }
+/* «скасувати» is red everywhere it drops what was begun (Olesia, 2026-11-19); a framed one keeps its frame, in red */
+.btn--secondary.btn--cancel {
+  --fg-0: var(--err);
+  --fg-hover: var(--err);
+  --ring-0: var(--err);
+  --ring-hover: var(--err);
+}
 /* tertiary and destructive: text only; hover draws a 3 px pill around it */
 .btn--tertiary,
 .btn--destructive {
