@@ -30,7 +30,7 @@ describe('readSettings: the example settings («почати без ШІ»)', ()
   });
 
   it('reads the goal and the phrases', () => {
-    expect(settings.goal).toEqual({ enabled: true, days: 5, done: ['morningWarmup'], any: false });
+    expect(settings.goal).toEqual({ enabled: true, days: 5, done: ['morningWarmup'], any: true });
     expect(settings.encouragement).toEqual(['ти можеш налаштувати все в налаштуваннях :)']);
     expect(settings.accent).toBe('pink');
   });

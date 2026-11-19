@@ -27,6 +27,11 @@ interface NewsEntry {
 /** Newest on top. */
 const NEWS: readonly NewsEntry[] = [
   {
+    // Olesia chose draft B (2026-11-19)
+    version: 'бета 0.9 · 19.11.2026',
+    changes: ['тижнева ціль: галочка «будь-яка активність зараховує день»'],
+  },
+  {
     version: 'бета 0.9 · 09.11.2026',
     changes: [
       'трекер тепер називається body.log, а живе за новою адресою: vmit-rgb.github.io/body.log',
