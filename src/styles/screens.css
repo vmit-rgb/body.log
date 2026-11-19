@@ -172,6 +172,24 @@
   box-shadow: 0 0 0 var(--stroke-focus) var(--tab-note-bg);
   color: var(--tab-note-ink);
 }
+.tab-note p {
+  margin: 0;
+}
+/* «як?»: a text button in the plate's black, not the accent; the hover pill and focus ring black too */
+.tab-note__how {
+  --fg-0: var(--tab-note-ink);
+  --fg-hover: var(--tab-note-ink);
+  --fg-pressed: var(--tab-note-ink);
+  --accent: var(--tab-note-ink);
+  --focus-ring: 0 0 0 var(--stroke-focus) var(--tab-note-ink);
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+/* the «як?» popup: the install steps in a dialog panel */
+.install-how h2 {
+  margin: 0;
+}
 .option {
   display: flex;
   flex-direction: column;

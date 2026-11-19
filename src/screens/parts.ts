@@ -23,7 +23,37 @@ export const FOOTER = `
  * tab is closed (storage/store.ts, `storageFor`), and the screen must say so.
  */
 export const TAB_NOTE = `
-  <p class="tab-note t-2nd-bold" role="note">це вкладка браузера: закриєш її — і записи зникнуть. встанови застосунок, щоб вони лишилися.</p>`;
+  <div class="tab-note t-2nd-bold" role="note">
+    <p>це вкладка браузера: закриєш її — і записи зникнуть. встанови застосунок, щоб вони лишилися.</p>
+    <button type="button" class="ctl btn btn--tertiary tab-note__how" aria-haspopup="dialog" data-install-how>як?</button>
+  </div>`;
+
+/** How to install, per phone: the landing page's steps (screen install-first, the «як?» of the tab note). */
+const INSTALL_STEPS: Record<Phone, readonly string[]> = {
+  android: [
+    'відкрий цю сторінку в chrome.',
+    'меню ⋮ → «встановити застосунок».',
+    'відкрий застосунок з головного екрана. налаштовуй уже в ньому.',
+  ],
+  iphone: [
+    'відкрий цю сторінку в safari.',
+    '«поділитися» → «на початковий екран».',
+    'відкрий застосунок з головного екрана. налаштовуй уже в ньому, не в safari: у них окремі сховища.',
+  ],
+};
+
+/** The platform toggles in `host` fill its `[data-steps]` list; starts on `phone`. */
+export function wireInstallSteps(host: HTMLElement, phone: Phone): void {
+  const steps = part<HTMLOListElement>(host, '[data-steps]');
+  const choose = wirePlatformToggles(host, (chosen) => {
+    steps.replaceChildren(...INSTALL_STEPS[chosen].map((text) => {
+      const item = document.createElement('li');
+      item.textContent = text;
+      return item;
+    }));
+  });
+  choose(phone);
+}
 
 export const PHONE_NAMES: Record<Phone, string> = {
   android: 'андроїд',
