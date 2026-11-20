@@ -23,7 +23,10 @@ export interface MenuState extends BarState {
 }
 
 /** What a button in the menu asks for; the app decides what happens. */
-export type MenuItem = 'history' | 'settings' | 'search' | 'backup' | 'whats-new' | 'how-to-use' | 'share' | 'feedback';
+export type MenuItem = 'history' | 'settings' | 'search' | 'backup' | 'whats-new' | 'how-to-use' | 'share';
+
+/** «залишити відгук»: the Google Form (Olesia, 2026-11-20), anonymous, no sign-in. */
+export const FEEDBACK_FORM = 'https://docs.google.com/forms/d/e/1FAIpQLSff2YaIvCN_g1dgKyqziqDTOQf4xPDlzDmwjEfTByY70w4SIg/viewform';
 
 export interface MenuActions {
   choose(item: MenuItem): void;
@@ -66,7 +69,7 @@ function markup(state: MenuState): string {
           ${item(HELP, 'whats-new', t('що нового в застосунку'))}
           ${item(HELP, 'how-to-use', t('як користуватись'))}
           ${item(HELP, 'share', t('поділитися застосунком'))}
-          ${item(HELP, 'feedback', t('залишити відгук'))}
+          <a class="ctl btn ${HELP}" href="${FEEDBACK_FORM}" target="_blank" rel="noopener noreferrer">${t('залишити відгук')}</a>
         </nav>
         ${FOOTER}
       </div>

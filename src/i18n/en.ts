@@ -19,7 +19,6 @@ export const EN: Readonly<Record<string, string>> = {
   "копію збережено": "backup saved",
   "посилання скопійовано — надішли, кому хочеш :)": "link copied — send it to anyone you like :)",
   "не вдалося поділитися": "couldn't share",
-  "форму для відгуків ще робимо, скоро буде": "the feedback form is still in the works, coming soon",
   "щоденник руху, який підлаштовується під твоє тіло: твої вправи, твої питання про самопочуття, твої шкали. налаштовує твій ШІ за одну розмову, а змінити можна все й будь-коли. без сповіщень, записи лишаються тільки на телефоні.": "a movement diary that adapts to your body: your exercises, your wellbeing questions, your scales. your AI sets it up in one conversation, and you can change anything, anytime. no notifications, and your entries stay only on your phone.",
   "меню": "menu",
   "що нового": "what's new",

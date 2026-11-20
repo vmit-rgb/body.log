@@ -80,9 +80,6 @@ const FILE_NOT_SAVED: ToastMessage = { message: `${t('не вдалося збе
 const LINK_COPIED: ToastMessage = { message: t('посилання скопійовано — надішли, кому хочеш :)'), showIcon: true };
 /* Нитка's drafts (stage 6a): what the menu offers before it is built. */
 const NOT_SHARED: ToastMessage = { message: `${t('не вдалося поділитися')} >_<`, error: true };
-/* A-02: «скоро» speaks about the screen it came on and goes with it. */
-const soon = (message: string): ToastMessage => ({ message: `${message} :)`, local: true });
-const FEEDBACK_SOON = soon(t('форму для відгуків ще робимо, скоро буде'));
 
 /** «поділитися застосунком» (Figma caption, Нитка's draft): the landing page, not the app itself. */
 export const SHARE: ShareData = {
@@ -151,7 +148,6 @@ interface Entry {
 export function pagesOverHome(env: DeviceEnv, home: Home, steps: BackSteps): { open(page: Page): void } {
   let pages: Entry[] = [];
   let settings: SettingsPage | null = null;
-  const say = (message: ToastMessage) => () => home.toast.show(message);
 
   function open(page: Page | 'day', date?: DayKey): void {
     // home opens only the menu, from ≡, even where a tap focuses nothing (iPhone)
@@ -297,7 +293,6 @@ export function pagesOverHome(env: DeviceEnv, home: Home, steps: BackSteps): { o
     history: () => open('history'),
     settings: openSettings,
     search: () => open('search'),
-    feedback: say(FEEDBACK_SOON),
     backup: () => {
       if (!saveCopy()) return;
       draw();
