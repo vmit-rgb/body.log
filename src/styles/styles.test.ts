@@ -127,6 +127,13 @@ describe('stylesheets', () => {
     expect(block(read('./settings.css'), '.text-edit')).toContain('background: var(--bg);');
   });
 
+  it('colours the full-screen text edit from the theme, so it reads on the light background too', () => {
+    const css = read('./settings.css');
+    expect(block(css, '.text-edit__input')).toContain('color: var(--ink);');
+    expect(block(css, '.text-edit__actions .btn--secondary')).toContain('color: var(--ink);');
+    expect(css).not.toMatch(/\.text-edit[^{]*\{[^}]*color: #e9e9e9/);
+  });
+
   it('drop the browser’s button padding and keep 8 px inside the settings boxes (п. 27, 32)', () => {
     expect(block(read('./components.css'), '.ctl')).toContain('padding: 0;');
     expect(read('./settings.css')).toMatch(/\.st-item\.st-box \{[^}]*padding: 4px 8px 8px;/);

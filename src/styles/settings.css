@@ -474,8 +474,9 @@
   gap: var(--gap-items);
   padding: max(8px, env(safe-area-inset-top)) 16px 0;
 }
+/* follows the theme: the overlay background is var(--bg) now (light theme audit п. 7) */
 .text-edit__actions .btn--secondary {
-  color: #e9e9e9;
+  color: var(--ink);
 }
 .text-edit__field {
   display: flex;
@@ -491,7 +492,7 @@
   width: 100%;
   border: 0;
   background: none;
-  color: #e9e9e9;
+  color: var(--ink);
   caret-color: var(--accent);
   font: inherit;
   font-size: calc(24px * var(--text-scale));
