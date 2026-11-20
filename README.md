@@ -35,6 +35,8 @@ npm run check   # типи, тести, збірка
 
 Код відкритий для перегляду, але копіювати, змінювати чи використовувати його без дозволу не можна. Користуватися самим застосунком можна вільно.
 
+Source is public for transparency. All rights reserved — no reuse without permission. You are free to use the app itself.
+
 Шрифт Noto Sans Mono поширюється за ліцензією SIL Open Font License 1.1: [public/fonts/OFL-NotoSansMono.txt](public/fonts/OFL-NotoSansMono.txt). Та сама ліцензія стосується його частини, що вбудовується в PDF-експорт ([src/pdf/noto-sans-mono-pdf.json](src/pdf/noto-sans-mono-pdf.json)).
 
 (Олеся + Нитка / AI)
