@@ -63,7 +63,7 @@ describe('the menu (Figma screen/menu 183:3210)', () => {
 
   it('opens from ≡ with its links, the copy and the help links', () => {
     expect(heading()).toBe('меню');
-    for (const name of ['історія', 'налаштування', 'пошук у нотатках', 'зберегти копію', 'що нового в застосунку', 'як користуватись', 'поділитися застосунком', 'залишити відгук']) {
+    for (const name of ['історія', 'налаштування', 'пошук у нотатках', 'зберегти копію', 'що нового в застосунку', 'як користуватись', 'поділитися застосунком']) {
       expect(button(name), name).toBeTruthy();
     }
     expect(host.querySelector('footer')!.textContent).toContain('бета 0.9');
@@ -123,17 +123,12 @@ describe('the menu (Figma screen/menu 183:3210)', () => {
     expect(document.querySelector('#announcer')!.textContent).toBe('неділя, 08.11.2026');
   });
 
-  it('says what is not there yet', () => {
-    tap('залишити відгук');
-    expect(toastSays()).toBe('форму для відгуків ще робимо, скоро буде :)');
-    expect(heading()).toBe('меню');
-  });
-
-  it('A-02: «скоро» does not follow to another screen', () => {
-    tap('залишити відгук');
-    tap('історія');
-    expect(heading()).toBe('історія');
-    expect(toastSays()).toBeUndefined();
+  it('«залишити відгук» is a link to the Google Form in a new tab', () => {
+    const link = [...host.querySelectorAll<HTMLAnchorElement>('a')].find((a) => a.textContent!.trim() === 'залишити відгук')!;
+    expect(link.href).toMatch(/^https:\/\/docs\.google\.com\/forms\/d\/e\/[\w-]+\/viewform$/);
+    expect(link.target).toBe('_blank');
+    expect(link.rel).toBe('noopener noreferrer');
+    expect(link.classList.contains('menu__help')).toBe(true);
   });
 
   it('A-02: a toast about something done stays when the screen changes', () => {
