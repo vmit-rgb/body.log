@@ -18,6 +18,15 @@ describe('emoticonsHtml (E-17)', () => {
     }
   });
 
+  it('marks the name body.log, but not inside an address (copy fix A10)', () => {
+    const NAME = '<b class="brand">body.log</b>';
+    expect(emoticonsHtml('цей файл не схожий на копію з body.log')).toBe(`цей файл не схожий на копію з ${NAME}`);
+    expect(emoticonsHtml('body.log, привіт :)')).toBe(`${NAME}, привіт ${SPAN(':)')}`);
+    expect(emoticonsHtml('«body.log»')).toBe(`«${NAME}»`);
+    expect(emoticonsHtml('vmit-rgb.github.io/body.log')).toBe('vmit-rgb.github.io/body.log');
+    expect(emoticonsHtml('body.logs')).toBe('body.logs');
+  });
+
   it('takes one at the start and one before a sign', () => {
     expect(emoticonsHtml(':) привіт')).toBe(`${SPAN(':)')} привіт`);
     expect(emoticonsHtml('привіт :)!')).toBe(`привіт ${SPAN(':)')}!`);

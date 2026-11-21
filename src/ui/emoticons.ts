@@ -21,17 +21,28 @@ const EMOTICON = /(^|\s)(<3|>_<|\^_\^|\^\^|~\(˘▾˘~\)|[:;=]-?[)(]+|:[D3P])(?=
 
 const span = (emoticon: string) => `<span class="emoticon" aria-hidden="true">${esc(emoticon)}</span>`;
 
-/** The text, safe inside HTML, with each emoticon in an accent span. */
+/*
+ * The app's name in running text is bold and in the accent (Olesia,
+ * 2026-11-21, copy fix A10), the same one way as the emoticons. Only the
+ * name standing alone: not inside an address like «github.io/body.log».
+ * Unlike an emoticon, a screen reader keeps it. Not in the PDF or the
+ * texts copied for the AI: those never go through here.
+ */
+const NAME = /(^|[^\w/.-])(body\.log)(?![\w/-])/g;
+
+const withName = (html: string) => html.replace(NAME, '$1<b class="brand">$2</b>');
+
+/** The text, safe inside HTML, with each emoticon in an accent span and the name body.log marked. */
 export function emoticonsHtml(text: string): string {
   let html = '';
   let from = 0;
   for (const found of text.matchAll(EMOTICON)) {
     const start = found.index + found[1]!.length;
     const emoticon = found[2]!;
-    html += esc(text.slice(from, start)) + span(emoticon);
+    html += withName(esc(text.slice(from, start))) + span(emoticon);
     from = start + emoticon.length;
   }
-  return html + esc(text.slice(from));
+  return html + withName(esc(text.slice(from)));
 }
 
 /** What a screen reader hears: the text without its emoticons. */

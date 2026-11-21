@@ -216,12 +216,12 @@ describe('calendar block on home', () => {
   });
 
   it('explains in the legend what is switched on, as shapes', () => {
-    expect(texts('.legend li', block())).toEqual(['під числом: виконані рівні ранкової розминки, з 6 — число', 'тренування', 'рух']);
+    expect(texts('.legend li', block())).toEqual(['під числом: виконані рівні ранкової розминки', 'тренування', 'рух']);
     // its own class: the settings' colour «.swatch» made these 48 px circles (VISUAL-AUDIT п. 2)
     expect(block().querySelector('.legend .swatch')).toBeNull();
     expect(block().querySelector('.legend__swatch')).toBeNull();
     start({}, { ...profile, workout: { enabled: false } });
-    expect(texts('.legend li', block())).toEqual(['під числом: виконані рівні ранкової розминки, з 6 — число', 'рух']);
+    expect(texts('.legend li', block())).toEqual(['під числом: виконані рівні ранкової розминки', 'рух']);
   });
 
   it('opens a day from the calendar', () => {
@@ -253,7 +253,7 @@ describe('calendar block on home', () => {
   it('starts «почати без ШІ» with the legend and no marks (Olesia, 2026-11-09)', () => {
     start(EXAMPLE_DIARY.days, EXAMPLE_DIARY.profile);
     expect(texts('.legend li', block())).toEqual([
-      'під числом: виконані рівні ранкової розминки, з 6 — число', 'над числом: виконані групи денної розминки', 'тренування', 'рух',
+      'під числом: виконані рівні ранкової розминки', 'над числом: виконані групи денної розминки', 'тренування', 'рух',
     ]);
     expect(all('.cal-day__dots, .cal-day__mark', block())).toHaveLength(0);
   });

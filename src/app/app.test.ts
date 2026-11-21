@@ -70,7 +70,7 @@ describe('first launch in the installed app', () => {
     expect(heading()).toBe('привіт! почнімо з налаштувань :)');
     expect(host.querySelector('[data-restore]')!.textContent).toBe('відновити з копії');
     expect(host.querySelector('[data-start-without-ai]')!.textContent).toBe('почати без ШІ');
-    expect(host.querySelector('footer')!.textContent).toContain('бета 0.9');
+    expect(host.querySelector('footer')!.textContent).toContain('бета 1.0');
   });
 
   it('shows the paste field at once, with no choice of phone (wave 7a)', () => {
@@ -308,9 +308,9 @@ describe('a phone in the browser', () => {
   it('asks to install first, with the steps for the detected phone', () => {
     start({ platform: 'iphone', installed: false });
     expect(heading()).toBe('спершу встанови застосунок');
-    expect(host.querySelector('[data-steps]')!.textContent).toContain('safari');
+    expect(host.querySelector('[data-steps]')!.textContent).toContain('Safari');
     click('[data-platform="android"]');
-    expect(host.querySelector('[data-steps]')!.textContent).toContain('chrome');
+    expect(host.querySelector('[data-steps]')!.textContent).toContain('Chrome');
   });
 
   it('names the browsers to use under the steps, with the note for the chosen phone (here and in «як?»)', () => {
@@ -351,7 +351,7 @@ describe('in a browser tab the app says that records will not stay (A-04)', () =
     start({ platform: 'unknown', installed: false });
     click('[data-install-how]');
     expect(popup()?.getAttribute('role')).toBe('dialog');
-    expect(steps()[0]).toBe('відкрий цю сторінку в chrome.');
+    expect(steps()[0]).toBe('відкрий цю сторінку в Chrome.');
     popup()!.querySelector<HTMLElement>('[data-platform="iphone"]')!.click();
     expect(steps()[1]).toBe('«поділитися» → «на початковий екран».');
     expect(popup()!.querySelector('[data-steps-note]')!.textContent).toBe(INSTALL_NOTES.iphone);

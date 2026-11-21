@@ -4,7 +4,7 @@ import type { Diary } from '../domain/diary';
 import { dayBlocks, dayMeta, monthDays, monthSummary, searchNotes, type DayBlock, type ValueRow } from '../domain/journal';
 import { weekGoal } from '../domain/progress';
 import type { Settings } from '../domain/settings';
-import { monthOf, shiftMonth, type MonthKey } from '../domain/stats';
+import { monthName, monthOf, shiftMonth, type MonthKey } from '../domain/stats';
 import { calendarMarkup, PERIOD_TIP, periodName, type Period, type Picking } from '../home/calendar';
 import { mountCarousels, wireCarousels, type CarouselMemory } from '../home/carousel';
 import { wireMonthSwipe } from '../home/month-swipe';
@@ -122,6 +122,15 @@ export interface HistoryMemory {
 /** The first card of a month is open (0.81). */
 const firstOpen = (state: HistoryState, month: MonthKey) => new Set(monthDays(state.days, month, state.today).slice(0, 1));
 
+/**
+ * A month without entries (copy fix A5, Olesia, 2026-11-20): this month still
+ * has days ahead; a past one is «просто місяць», named as on the cards.
+ */
+export function emptyMonth(month: MonthKey, today: DayKey): string {
+  if (month >= monthOf(today)) return t('цього місяця записів ще немає. зате попереду купа днів :3');
+  return t('за {month} записів немає. пропущений місяць — просто місяць :)').replace('{month}', monthName(month, today));
+}
+
 function content(state: HistoryState, view: View, tips: TipMemory | undefined): string {
   const dayAt = (key: DayKey): Day => state.days[key] ?? emptyDay(key);
   const goal = goalLine(weekGoal(view.date, state.today, dayAt, state.settings));
@@ -142,7 +151,7 @@ function content(state: HistoryState, view: View, tips: TipMemory | undefined): 
     <section class="history__days" aria-label="${t('дні')}">
       ${keys.length
     ? keys.map((key) => card(dayAt(key), view.open.has(key), state)).join('')
-    : `<p class="history__empty t-2nd-regular muted">${emoticonsHtml(t('цього місяця записів немає. зате попереду ще купа днів :3'))}</p>`}
+    : `<p class="history__empty t-2nd-regular muted">${emoticonsHtml(emptyMonth(view.month, state.today))}</p>`}
     </section>`;
 }
 

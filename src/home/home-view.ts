@@ -17,7 +17,7 @@ export interface SectionSpec {
   readonly description: string;
 }
 
-const CHECK_IN = t('відміть, як ти зараз. правильних відповідей тут немає.');
+const CHECK_IN = t('познач, як ти зараз. правильних відповідей тут немає.');
 const LISTEN_TO_BODY = `${t('слухай тіло. якщо щось не так — зупинись')} <3`;
 
 const asked = (settings: Settings, moment: Moment) => settings.trackers.some((tracker) => tracker.ask.includes(moment));

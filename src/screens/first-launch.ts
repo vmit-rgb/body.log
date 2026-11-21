@@ -64,7 +64,7 @@ const MARKUP = `
         <p class="t-1st-regular" data-paste-how>${PASTE_HOW}</p>
         ${withGrip(`<textarea class="field paste__field" rows="3" aria-label="${t('відповідь ШІ')}" placeholder="${t('встав сюди відповідь ШІ')}" data-paste-field></textarea>`)}
         <button type="button" class="ctl btn btn--primary btn--wide" data-apply disabled>${t('застосувати')}</button>
-        <p class="t-3rd-regular muted">${t('кнопка стане активною, щойно встав текст.')}</p>
+        <p class="t-3rd-regular muted">${t('кнопка стане активною, щойно вставиш текст.')}</p>
         ${pasteResultBox({ kind: 'none' })}
       </div>
     </section>

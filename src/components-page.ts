@@ -88,7 +88,7 @@ const controls = `
 
 const sheet = document.querySelector<HTMLElement>('#sheet')!;
 sheet.innerHTML = `
-  <header class="sheet__block"><h1 class="t-h4">компоненти · бета 0.9</h1><div class="sheet__row">${controls}</div></header>
+  <header class="sheet__block"><h1 class="t-h4">компоненти · бета 1.0</h1><div class="sheet__row">${controls}</div></header>
   ${block('typography', `<div>${typography}</div>`)}
   ${block('icon', icons)}
   ${block('button', buttons)}
