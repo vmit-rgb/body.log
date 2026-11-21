@@ -68,6 +68,32 @@ describe('the loading screen that never ended (D-10)', () => {
     expect(WATCH.exec(index)![1]).toContain('location.reload()');
   });
 
+  it('shows what broke the start, as text, and the browser it happened in', () => {
+    open();
+    window.dispatchEvent(new ErrorEvent('error', { message: 'TypeError: x is not a function', filename: 'https://site/body.log/assets/app-1.js', lineno: 3, colno: 14 }));
+    const script = document.createElement('script');
+    script.src = 'https://site/body.log/assets/app-2.js';
+    document.body.append(script);
+    script.dispatchEvent(new Event('error'));
+    window.dispatchEvent(Object.assign(new Event('unhandledrejection'), { reason: new RangeError('<b>bad</b>') }));
+    vi.advanceTimersByTime(7000);
+    const details = layer()!.querySelector('.ld-e')!;
+    expect(details.textContent).toBe([
+      'TypeError: x is not a function @ app-1.js:3:14',
+      'not loaded: app-2.js',
+      'promise: RangeError: <b>bad</b>',
+      navigator.userAgent,
+    ].join('\n'));
+    expect(details.querySelector('b')).toBeNull();
+    expect(layer()!.querySelector('button')!.textContent).toBe('оновити');
+  });
+
+  it('says so when it caught no error', () => {
+    open();
+    vi.advanceTimersByTime(7000);
+    expect(layer()!.querySelector('.ld-e')!.textContent).toBe(`no error caught\n${navigator.userAgent}`);
+  });
+
   it('says nothing when the app took the loading screen away', () => {
     open();
     document.documentElement.dataset.noMotion = '';

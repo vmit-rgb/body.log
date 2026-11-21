@@ -40,6 +40,8 @@
       #loading[data-stuck] p { margin: 0; width: 100%; max-width: 30ch; }
       #loading .ld-h { font-size: 16px; font-weight: 600; color: var(--ink, #e9e9e9); }
       #loading .ld-b { font-size: 14px; line-height: 1.5; }
+      /* what broke the start, for a screenshot: small, selectable, long words wrap */
+      #loading[data-stuck] .ld-e { max-width: 40ch; font-size: 12px; line-height: 1.5; text-align: left; white-space: pre-wrap; overflow-wrap: anywhere; user-select: text; -webkit-user-select: text; }
       #loading button { min-height: 48px; margin-top: 12px; padding: 0 24px; border: 2px solid currentColor; border-radius: 0; background: none; color: var(--ink, #e9e9e9); font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; }
       #loading button:focus-visible { outline: 3px solid currentColor; outline-offset: 3px; }
       @media (prefers-color-scheme: light) {
@@ -90,6 +92,31 @@
        * when that code does not. If the app arrives later, it removes the layer as usual.
        */
       (function () {
+        /*
+         * What broke the start, shown on the stuck screen so a screenshot tells
+         * the cause (2026-11-21: the iPhone got stuck while desktop WebKit didn't).
+         * Script errors, files that did not load (capture: their error doesn't
+         * bubble), refused promises and what the Content-Security-Policy blocked.
+         */
+        var errors = [];
+        function note(text) {
+          if (errors.length < 4) errors.push(String(text).slice(0, 300));
+        }
+        function where(file, line, col) {
+          return file ? ' @ ' + String(file).split('/').pop() + ':' + line + ':' + col : '';
+        }
+        addEventListener('error', function (e) {
+          var t = e.target;
+          if (t && t !== window && (t.src || t.href)) note('not loaded: ' + (t.src || t.href).split('/').pop());
+          else note((e.message || 'error') + where(e.filename, e.lineno, e.colno));
+        }, true);
+        addEventListener('unhandledrejection', function (e) {
+          var r = e.reason;
+          note('promise: ' + (r && (r.name ? r.name + ': ' : '') + (r && r.message || r)));
+        });
+        document.addEventListener('securitypolicyviolation', function (e) {
+          note('csp: ' + e.effectiveDirective + ' ' + (e.blockedURI || '') + where(e.sourceFile, e.lineNumber, e.columnNumber));
+        }, true);
         /* the loading screen in the app's language, before its code arrives (i18n/lang.ts: the link, the saved choice, then the phone) */
         var lang = new URLSearchParams(location.search).get('lang');
         try {
@@ -117,6 +144,10 @@
             : '<p class="ld-h">щось пішло не так: застосунок не може дочекатися даних &gt;_&lt;</p>'
               + '<p class="ld-b">онови сторінку. якщо повторюється — перевір, чи браузер не блокує збереження даних для цього сайту.</p>'
               + '<button type="button">оновити</button>';
+          var details = document.createElement('p');
+          details.className = 'ld-e';
+          details.textContent = (errors.length ? errors.join('\n') : 'no error caught') + '\n' + navigator.userAgent;
+          layer.appendChild(details);
           layer.querySelector('button').addEventListener('click', function () { location.reload(); });
         }, 7000);
       })();
