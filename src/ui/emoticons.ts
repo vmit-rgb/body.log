@@ -11,8 +11,13 @@ import { esc } from './html';
  * punctuation, and the toast already kept it out of what is heard (Нитка, E-17).
  */
 
-/** A known emoticon standing alone: after a space or the start, before a space, the end or a sign. */
-const EMOTICON = /(?<=^|\s)(?:<3|>_<|\^_\^|\^\^|~\(˘▾˘~\)|[:;=]-?[)(]+|:[D3P])(?=$|\s|[.,!?…])/g;
+/**
+ * A known emoticon standing alone: after a space or the start (group 1, kept
+ * as text), before a space, the end or a sign. No lookbehind: Safari
+ * before 16.4 can't parse it, and one such regex stopped the whole app on
+ * iOS 16.3 (the D-10 screen, Olesia's iPhone 12 mini, 2026-11-21).
+ */
+const EMOTICON = /(^|\s)(<3|>_<|\^_\^|\^\^|~\(˘▾˘~\)|[:;=]-?[)(]+|:[D3P])(?=$|\s|[.,!?…])/g;
 
 const span = (emoticon: string) => `<span class="emoticon" aria-hidden="true">${esc(emoticon)}</span>`;
 
@@ -21,13 +26,15 @@ export function emoticonsHtml(text: string): string {
   let html = '';
   let from = 0;
   for (const found of text.matchAll(EMOTICON)) {
-    html += esc(text.slice(from, found.index)) + span(found[0]);
-    from = found.index + found[0].length;
+    const start = found.index + found[1]!.length;
+    const emoticon = found[2]!;
+    html += esc(text.slice(from, start)) + span(emoticon);
+    from = start + emoticon.length;
   }
   return html + esc(text.slice(from));
 }
 
 /** What a screen reader hears: the text without its emoticons. */
 export function withoutEmoticons(text: string): string {
-  return text.replace(EMOTICON, '').replace(/\s{2,}/g, ' ').replace(/\s+([.,!?…])/g, '$1').trim();
+  return text.replace(EMOTICON, '$1').replace(/\s{2,}/g, ' ').replace(/\s+([.,!?…])/g, '$1').trim();
 }
