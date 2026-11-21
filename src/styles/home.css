@@ -113,7 +113,8 @@
   text-shadow: 0 0 2px #000, 0 1px 3px rgb(0 0 0 / 95%), 0 2px 10px rgb(0 0 0 / 90%), 0 0 28px rgb(0 0 0 / 85%);
 }
 /* an emoticon in the phrase stands on the dark scene in both themes: the dark theme's accent (E-17) */
-.hero__text .emoticon {
+.hero__text .emoticon,
+.hero__text .brand {
   color: rgb(var(--scene-accent-rgb));
 }
 .hero__text--past {

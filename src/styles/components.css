@@ -583,6 +583,11 @@ body:has(.bar:not(.bar--hidden)) .toast {
 .emoticon {
   color: var(--accent);
 }
+/* The name body.log in running text: bold, in the accent, like the emoticons (Olesia, 2026-11-21, copy fix A10; `emoticonsHtml`) */
+.brand {
+  font-weight: 700;
+  color: var(--accent);
+}
 .toast__action[hidden] {
   display: none;
 }

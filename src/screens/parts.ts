@@ -44,14 +44,14 @@ export const TAB_NOTE = `
 /** How to install, per phone: the landing page's steps (screen install-first, the «як?» of the tab note). */
 const INSTALL_STEPS: Record<Phone, readonly string[]> = {
   android: [
-    t('відкрий цю сторінку в chrome.'),
+    t('відкрий цю сторінку в Chrome.'),
     t('меню ⋮ → «встановити застосунок».'),
     t('відкрий застосунок з головного екрана. налаштовуй уже в ньому.'),
   ],
   iphone: [
-    t('відкрий цю сторінку в safari.'),
+    t('відкрий цю сторінку в Safari.'),
     t('«поділитися» → «на початковий екран».'),
-    t('відкрий застосунок з головного екрана. налаштовуй уже в ньому, не в safari: у них окремі сховища.'),
+    t('відкрий застосунок з головного екрана. налаштовуй уже в ньому, не в Safari: у них окремі сховища.'),
   ],
 };
 
@@ -61,8 +61,8 @@ const INSTALL_STEPS: Record<Phone, readonly string[]> = {
  * (press, July 2026); iOS 16.4+ lets Chrome, Firefox and Edge add to the home screen.
  */
 export const INSTALL_NOTES: Record<Phone, string> = {
-  android: t('краще встановлювати з chrome. з firefox і з samsung internet на телефонах samsung теж має вийти, а з інших браузерів може не встановитися. назва пункту в меню залежить від версії браузера: шукай «встановити» або «на головний екран».'),
-  iphone: t('краще встановлювати з safari. на нових айфонах так само можна з chrome, firefox чи edge: «поділитися» → «на початковий екран». з інших браузерів може не вийти. назви пунктів залежать від версії системи.'),
+  android: t('краще встановлювати з Chrome. з Firefox і з Samsung Internet на телефонах Samsung теж має вийти, а з інших браузерів може не встановитися. назва пункту в меню залежить від версії браузера: шукай «встановити» або «на головний екран».'),
+  iphone: t('краще встановлювати з Safari. на нових айфонах так само можна з Chrome, Firefox чи Edge: «поділитися» → «на початковий екран». з інших браузерів може не вийти. назви пунктів залежать від версії системи.'),
 };
 
 /** The platform toggles in `host` fill its `[data-steps]` list and `[data-steps-note]`; starts on `phone`. */

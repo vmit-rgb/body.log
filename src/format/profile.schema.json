@@ -64,7 +64,7 @@
         "enabled": { "title": "рахувати тижневу ціль", "type": "boolean" },
         "days": { "title": "днів на тиждень", "type": "integer", "minimum": 0, "maximum": 7 },
         "done": {
-          "title": "що треба виконати, щоб день був «зроблено»",
+          "title": "що треба виконати, щоб день зарахувався",
           "type": "array",
           "uniqueItems": true,
           "maxItems": 4,

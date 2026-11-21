@@ -34,7 +34,7 @@ export interface SectionContext {
 }
 
 
-const CHECK_IN = t('відміть, як ти зараз. правильних відповідей тут немає.');
+const CHECK_IN = t('познач, як ти зараз. правильних відповідей тут немає.');
 const AI_LINK = t('це посилання дав ШІ. перевір його, перш ніж повторювати.');
 
 /** A key for things the session remembers about the day shown. */

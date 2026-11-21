@@ -206,7 +206,7 @@ describe('«історія» (Figma screen/log-history 165:2758)', () => {
     expect(texts('.history .avg-card__empty')).toHaveLength(4);
     expect(document.activeElement).toBe(button('попередній місяць'));
     tap('попередній місяць');
-    expect(host.querySelector('.history__empty')!.textContent).toBe('цього місяця записів немає. зате попереду ще купа днів :3');
+    expect(host.querySelector('.history__empty')!.textContent).toBe('за вересень записів немає. пропущений місяць — просто місяць :)');
   });
 
   it('goes to the menu with ≡, home with ✕ and back with the phone', () => {

@@ -280,7 +280,7 @@ describe('settings: the weekly goal', () => {
   });
 
   it('lists the kinds that are on and changes what makes a day «зроблено»', async () => {
-    expect(host.textContent).toContain('що треба виконати, щоб день був «зроблено»');
+    expect(host.textContent).toContain('що треба виконати, щоб день зарахувався');
     expect(checkbox('ранкова розминка').checked).toBe(true);
     await tick('денна розминка');
     await tap('зберегти налаштування');

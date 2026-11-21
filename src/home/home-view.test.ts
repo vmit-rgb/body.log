@@ -28,7 +28,7 @@ describe('homeSections', () => {
   it('gives the sections with exercises the same reminder (Olesia, 2026-11-08)', () => {
     const settings = readSettings({ morningWarmup: { enabled: true }, daytimeWarmup: { enabled: true }, movement: { enabled: true }, trackers: [{ id: 'm', ask: ['morning'] }] });
     expect(homeSections(settings).map((section) => section.description)).toEqual([
-      'відміть, як ти зараз. правильних відповідей тут немає.',
+      'познач, як ти зараз. правильних відповідей тут немає.',
       'слухай тіло. якщо щось не так — зупинись <3',
       'слухай тіло. якщо щось не так — зупинись <3',
       'запиши, скільки вийшло.',

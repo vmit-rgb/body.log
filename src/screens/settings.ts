@@ -167,7 +167,7 @@ function goalBody({ goal, ...settings }: Settings): string {
   const on = ACTIVITY_KINDS.filter((kind) => settings[kind].enabled);
   const details = `
       <div class="st-indent">
-        <p class="t-2nd-bold">${t('що треба виконати, щоб день був «зроблено»')}</p>
+        <p class="t-2nd-bold">${t('що треба виконати, щоб день зарахувався')}</p>
         ${on.map((kind) => checkbox(KIND_NAMES[kind], goal.done.includes(kind), `${act('goal-kind')} data-kind="${kind}"`)).join('')}
         ${goalKinds({ goal, ...settings }).length > 1 ? checkbox(GOAL_ANY, goal.any, act('goal-any')) : ''}
         ${daysSlider({ label: t('ціль: днів на тиждень'), value: goal.days, name: 'goal-days', spoken: t('днів на тиждень') })}
