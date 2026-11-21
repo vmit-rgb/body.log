@@ -449,7 +449,7 @@ function movementKind(ctx: Ctx, kind: MovementKind, index: number): string {
         ${removeButton(slot, kind.name, 'movement')}
         ${linkField(`${path}.source`, kind.source)}
         <div class="st-fields">${fields.join('')}</div>`;
-  return entry(ctx, 'mv', slot, kind.id, kind.name, inner);
+  return entry(ctx, 'mv', slot, kind.id, kind.name, inner, ' st-mv');
 }
 
 export function movementBody(ctx: Ctx): string {

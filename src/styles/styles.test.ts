@@ -235,10 +235,11 @@ describe('stylesheets', () => {
       expect(block(css, '.menu__help')).not.toContain('100% + 4px');
     });
 
-    it('put 8 px between neighbouring targets (C-12)', () => {
+    it('put 8 px between neighbouring targets (C-12); inside one entry 4 px (Olesia, 2026-11-21)', () => {
       const css = read('./settings.css');
-      for (const selector of ['.swatches', '.st-backup', '.st-box', '.st-item']) expect(block(css, selector)).toContain('gap: var(--gap-items);');
-      expect(css).toMatch(/\.st-pair,\s*\.st-asks,\s*\.st-fields \{[^}]*gap: var\(--gap-items\);/);
+      for (const selector of ['.swatches', '.st-backup', '.st-box', '.st-list']) expect(block(css, selector)).toContain('gap: var(--gap-items);');
+      expect(block(css, '.st-item')).toContain('gap: var(--gap-micro);');
+      expect(css).toMatch(/\.st-pair,\s*\.st-asks,\s*\.st-fields \{[^}]*gap: var\(--gap-micro\);/);
       expect(block(read('./screens.css'), '.segmented')).toContain('gap: var(--gap-items);');
     });
 
@@ -279,7 +280,7 @@ describe('wave 5: sections (Olesia, MY-FIXES)', () => {
     expect(block(home, '.wo-group')).toContain('border: var(--stroke-1) solid var(--accent-mid);');
     expect(block(home, '.wo-group')).not.toContain('background');
     const settings = read('./settings.css');
-    expect(block(settings, '.st-item.st-ex')).toContain('background: var(--surface);');
+    expect(settings).toMatch(/\.st-item\.st-ex,\s*\.st-item\.st-mv \{[^}]*background: var\(--surface\);/);
     expect(block(settings, '.st-item.st-group')).toContain('border: var(--stroke-1) solid var(--accent-mid);');
     expect(block(settings, '.st-item.st-group')).not.toContain('background');
   });

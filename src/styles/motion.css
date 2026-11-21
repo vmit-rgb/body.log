@@ -29,6 +29,8 @@
 
 /* ---- glyph frames (ui/motion.ts glyphs): drawn over the usual look, so nothing shifts ---- */
 .checkbox__box[data-g]::before { content: attr(data-g); }
+/* while its frames run, the box is in the accent, as under the finger (Olesia, 2026-11-21) */
+.checkbox__box[data-g] { color: var(--accent); }
 :is(.accordion__icon, .toast__check)[data-g] {
   position: relative;
 }
