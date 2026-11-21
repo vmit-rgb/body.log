@@ -3,6 +3,7 @@ import example from '../format/example-profile.json';
 import schema from '../format/profile.schema.json';
 import { readPaste } from '../paste/read';
 import { PROMPT, PROMPT_MAX_LENGTH, readPrompt } from './prompt';
+import { PROMPT_FILE, promptFile } from './read';
 
 describe('the prompt file', () => {
   it('has its own version and is marked as a draft for now', () => {
@@ -74,5 +75,12 @@ describe('readPrompt', () => {
     expect(() => readPrompt('просто текст', {})).toThrow('no header');
     expect(() => readPrompt('---\nstatus: чернетка\n---\nтекст', {})).toThrow('no version');
     expect(() => readPrompt('---\nversion: 1\n---\n{{nope}}', {})).toThrow('unknown part');
+  });
+});
+
+describe('prompt.json for the landing', () => {
+  it('holds the same version and text the app copies', () => {
+    expect(JSON.parse(promptFile(PROMPT))).toEqual({ version: PROMPT.version, text: PROMPT.text });
+    expect(PROMPT_FILE).toBe('prompt.json');
   });
 });

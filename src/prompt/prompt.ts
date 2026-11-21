@@ -1,6 +1,9 @@
 import example from '../format/example-profile.json';
 import schema from '../format/profile.schema.json';
 import file from './prompt.md?raw';
+import { type Prompt, readPrompt } from './read';
+
+export { type Prompt, readPrompt } from './read';
 
 /*
  * The prompt a person gives their AI (brief, How it works, step 2). Its
@@ -8,35 +11,9 @@ import file from './prompt.md?raw';
  * «скопіювати промпт» works offline. The file starts with its own
  * version (separate from the app's) and status; `{{schema}}` and
  * `{{example}}` are filled from the files the paste check reads, so the
- * format is described once.
+ * format is described once. The build also writes it as prompt.json for
+ * the landing (vite.config.ts, src/prompt/read.ts).
  */
-
-export interface Prompt {
-  /** The prompt's own version, e.g. «0.1»: shown in the toast after copying. */
-  readonly version: string;
-  /** «чернетка» until the real text is written. */
-  readonly draft: boolean;
-  /** What is copied. */
-  readonly text: string;
-}
-
-/** Reads a prompt file: `---`, `key: value` lines, `---`, then the text with its placeholders filled. */
-export function readPrompt(source: string, parts: Readonly<Record<string, string>>): Prompt {
-  const match = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/.exec(source.replace(/\r\n/g, '\n'));
-  if (!match) throw new Error('prompt.md: no header');
-  const header = new Map(match[1]!.split('\n').map((line) => {
-    const [key, ...value] = line.split(':');
-    return [key!.trim(), value.join(':').trim()] as const;
-  }));
-  const version = header.get('version');
-  if (!version) throw new Error('prompt.md: no version');
-  const text = match[2]!.replace(/\{\{(\w+)\}\}/g, (_, name: string) => {
-    const part = parts[name];
-    if (part === undefined) throw new Error(`prompt.md: unknown part {{${name}}}`);
-    return part;
-  });
-  return { version, draft: header.get('status') === 'чернетка', text: text.trim() };
-}
 
 /**
  * Most characters a pasted prompt may have. Free Gemini silently cut a
