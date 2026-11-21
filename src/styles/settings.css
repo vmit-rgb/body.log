@@ -160,7 +160,7 @@
 .st-timer {
   display: flex;
   flex-direction: column;
-  gap: var(--gap-items);
+  gap: var(--gap-micro);
 }
 .st-lengths {
   box-shadow: none;
@@ -243,7 +243,8 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: var(--gap-items);
+  /* inside one entry the rows sit closer than the entries (Olesia, 2026-11-21) */
+  gap: var(--gap-micro);
   padding: 4px 0;
   touch-action: pan-y;
   -webkit-user-select: none;
@@ -254,13 +255,14 @@
 .st-item.st-box {
   padding: 4px 8px 8px;
 }
-/* C-12: the text buttons in an entry are targets too, 8 px apart */
+/* C-12: the text buttons in an entry are targets too, apart; 4 px since
+   Olesia, 2026-11-21 (the rows are --tap high, so the targets still don't touch) */
 .st-pair,
 .st-asks,
 .st-fields {
   display: flex;
   flex-direction: column;
-  gap: var(--gap-items);
+  gap: var(--gap-micro);
 }
 .st-pair {
   flex-direction: row;
@@ -275,8 +277,10 @@
   align-items: baseline;
 }
 
-/* every exercise, in a warm-up or a workout, in a filled box (Olesia, MY-FIXES) */
-.st-item.st-ex {
+/* every exercise, in a warm-up or a workout, in a filled box (Olesia, MY-FIXES);
+   every kind of movement too (Olesia, 2026-11-21) */
+.st-item.st-ex,
+.st-item.st-mv {
   padding: 4px 8px 12px;
   background: var(--surface);
 }
@@ -301,6 +305,7 @@
   z-index: 1;
 }
 .st-item.st-ex > .st-actions,
+.st-item.st-mv > .st-actions,
 .st-item.st-group > .st-actions,
 .st-item.st-box > .st-actions {
   right: 4px;

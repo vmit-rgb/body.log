@@ -112,8 +112,9 @@
 .news {
   gap: var(--gap-group);
 }
+/* the questions sit close: each is --tap high anyway (Olesia, 2026-11-21) */
 .faq {
-  gap: var(--gap-items);
+  gap: 0;
 }
 .faq__item {
   display: flex;
