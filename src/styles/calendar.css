@@ -606,6 +606,7 @@ button.cal-day--today {
   flex-direction: column;
   gap: var(--gap-micro);
   max-width: var(--content-max);
+  max-height: calc(100vh - 48px); /* Chrome before 108 has no dvh */
   max-height: calc(100dvh - 48px);
   margin: 0 auto;
   padding: var(--gap-group) var(--pad-screen-x) calc(var(--gap-section) + env(safe-area-inset-bottom));
