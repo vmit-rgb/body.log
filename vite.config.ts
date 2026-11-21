@@ -4,6 +4,7 @@ import { join, relative, sep } from 'node:path';
 import type { Plugin, Rollup } from 'vite';
 import { defineConfig } from 'vitest/config';
 import { fillWorker, precacheList } from './src/pwa/cache';
+import { PROMPT_FILE, promptFile, readPrompt } from './src/prompt/read';
 import { withCsp } from './src/pwa/csp';
 
 const PUBLIC_DIR = 'public';
@@ -54,6 +55,26 @@ function serviceWorkerManifest(): Plugin {
 }
 
 /**
+ * Writes the prompt into the build as prompt.json, so the landing's
+ * «скопіювати промпт» copies the same text as the app (same origin on
+ * GitHub Pages). Read from the same files as src/prompt/prompt.ts.
+ */
+function promptForLanding(): Plugin {
+  const read = (file: string) => readFileSync(file, 'utf8');
+  return {
+    name: 'prompt-for-landing',
+    apply: 'build',
+    generateBundle() {
+      const prompt = readPrompt(read('src/prompt/prompt.md'), {
+        schema: JSON.stringify(JSON.parse(read('src/format/profile.schema.json'))),
+        example: JSON.stringify(JSON.parse(read('src/format/example-profile.json'))),
+      });
+      this.emitFile({ type: 'asset', fileName: PROMPT_FILE, source: promptFile(prompt) });
+    },
+  };
+}
+
+/**
  * Puts the Content-Security-Policy into every built page (src/pwa/csp.ts),
  * hashing the inline scripts as they are in the final HTML. Build only:
  * the dev server injects its own client and talks to it over a socket.
@@ -70,7 +91,7 @@ function contentSecurityPolicy(): Plugin {
 // GitHub Pages serves the app from /<repo-name>/ (the repo is body.log since 2026-11-17).
 export default defineConfig({
   base: '/body.log/',
-  plugins: [serviceWorkerManifest(), contentSecurityPolicy()],
+  plugins: [promptForLanding(), serviceWorkerManifest(), contentSecurityPolicy()],
   build: {
     // older phones too: iOS 15.4+ (iPhone 6s and newer), Chrome 105+
     target: ['safari15.4', 'chrome105', 'firefox110'],
