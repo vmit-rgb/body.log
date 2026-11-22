@@ -15,6 +15,11 @@ export interface ToastMessage {
   readonly error?: boolean;
   /** Speaks about the screen it came on: goes when another screen comes (A-02). */
   readonly local?: boolean;
+  /**
+   * Stays until ×, though it is a success: «встановлено :)» asks the person
+   * to do something next (Olesia, 2026-11-22, the one exception to the 4 s; FIXES-1.0.1.md, A2).
+   */
+  readonly stay?: boolean;
 }
 
 export interface ToastAction {
@@ -85,7 +90,7 @@ function slideUnderBar(box: HTMLElement): { rise(): void; hide(): void } {
  * How long it stays (ACCESSIBILITY.md rule 7, Olesia 2026-11-14):
  * - success and neutral messages: 4 s, shown by the bar on top that melts;
  * - with «скасувати»: until ×, the next change or another screen (wave 7a, even with «вимкнути зникання повідомлень»);
- * - with another button («оновити») or an error: until ×;
+ * - with another button («оновити»), an error or «встановлено :)» (`stay`): until ×;
  * - never while the focus, a finger or the pointer is on it (B-09); when the
  *   focus leaves, it goes;
  * - with «вимкнути зникання повідомлень»: always until ×.
@@ -118,7 +123,7 @@ export function mountToast(host: HTMLElement): Toast {
   let settling: ReturnType<typeof setTimeout> | undefined;
   const held = { focus: false, pointer: false };
 
-  const timed = (message: ToastMessage) => !keepAll && !message.action && !message.error;
+  const timed = (message: ToastMessage) => !keepAll && !message.action && !message.error && !message.stay;
 
   function write(next: ToastMessage): void {
     // innerHTML on the toast's own element, never a global document: the settle timer can fire after a test file's page is gone (it broke two deploys)

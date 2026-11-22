@@ -236,8 +236,8 @@ describe('«що нового» and «як користуватись»', () => 
   it('shows what is new, newest on top', () => {
     tap('що нового в застосунку');
     expect(heading()).toBe('що нового');
-    expect(host.querySelectorAll('.news__entry')).toHaveLength(1);
-    expect(host.querySelector('.news__entry h2')!.textContent).toContain('бета 1.0');
+    expect(host.querySelectorAll('.news__entry')).toHaveLength(2);
+    expect(host.querySelector('.news__entry h2')!.textContent).toContain('бета 1.0.1 · 22.11.2026');
     // the name in bold and the accent, the emoticon in the accent (copy fix A9, A10)
     expect(host.querySelector('.news__changes .brand')!.textContent).toBe('body.log');
     expect(host.querySelector('.news__changes .emoticon')!.textContent).toBe(':)');

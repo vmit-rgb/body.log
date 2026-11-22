@@ -19,6 +19,7 @@ export const BEFORE_FORMAT_KEY = `${DIARY_KEY}/before-format-0.1`;
 /** The diary as it was stored before its morning levels got their own exercises (F-07, wave 6). */
 export const BEFORE_SPLIT_KEY = `${DIARY_KEY}/before-own-level-exercises`;
 const BROWSER_KEY = 'phys-activity-tracking-app/browser-chosen';
+const WELCOME_KEY = 'phys-activity-tracking-app/installed-welcome';
 const SECTION_KEY = 'phys-activity-tracking-app/section-closed/';
 const TIP_KEY = 'phys-activity-tracking-app/tip-closed/';
 const TIP_DONE_KEY = 'phys-activity-tracking-app/tip-done/';
@@ -90,6 +91,14 @@ export function browserChoice(storage: KeyValue): { chosen(): boolean; choose():
   return {
     chosen: () => storage.getItem(BROWSER_KEY) === 'yes',
     choose: () => storage.setItem(BROWSER_KEY, 'yes'),
+  };
+}
+
+/** Whether the installed app already said «встановлено :)» (or had no need to: FIXES-1.0.1.md, A2a). */
+export function welcomeMemory(storage: KeyValue): { seen(): boolean; mark(): void } {
+  return {
+    seen: () => storage.getItem(WELCOME_KEY) === 'yes',
+    mark: () => storage.setItem(WELCOME_KEY, 'yes'),
   };
 }
 

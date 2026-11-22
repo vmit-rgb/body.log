@@ -26,7 +26,7 @@ import { closesOnBack } from '../ui/back';
 import { mountHeroScene } from '../ui/hero-scene';
 import type { ToastMessage } from '../ui/toast';
 import { barMarkup, fillBar, goalText, TO_TOP, wireDateNav, wireScroll } from './bar';
-import { FOOTER, part, TAB_NOTE } from './parts';
+import { FOOTER, part, tabNote } from './parts';
 import { wireTabNote } from './install-how';
 import { t } from '../i18n/lang';
 
@@ -140,7 +140,7 @@ function markup(state: HomeState, actions: HomeActions): string {
   return `
     <div class="home">
       <h1 class="visually-hidden">${t('головна')}</h1>
-      ${HERO_FADE}<header class="hero">${SCENE}<div class="hero__words"><p class="hero__text"></p></div></header>${state.inTab ? TAB_NOTE : ''}
+      ${HERO_FADE}<header class="hero">${SCENE}<div class="hero__words"><p class="hero__text"></p></div></header>${state.inTab ? tabNote() : ''}
       <div class="home__sections">${sections.join('')}</div>
       <section class="cal-block" aria-label="${t('календар')}">${calendarMarkup(calendarView(state, 'home'))}</section>
       ${FOOTER}

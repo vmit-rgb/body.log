@@ -1,7 +1,8 @@
 import { detectPlatform, type Phone } from '../app/start';
 import { layer } from '../ui/dialog';
 import { EASE, MS, play } from '../ui/motion';
-import { platformToggles, wireInstallSteps } from './parts';
+import { chromeIntent } from '../app/in-app';
+import { INSTALL_BUTTON, platformToggles, wireInAppNote, wireInstallSteps } from './parts';
 import { t } from '../i18n/lang';
 
 /*
@@ -16,6 +17,7 @@ const MARKUP = `
     <div class="dialog__panel">
       <h2 class="t-1st-bold" id="install-how-title">${t('як встановити застосунок')}</h2>
       ${platformToggles()}
+      ${INSTALL_BUTTON}
       <ol class="steps t-2nd-regular" data-steps></ol>
       <p class="t-3rd-regular muted" data-steps-note></p>
       <p class="t-3rd-regular muted">${t('телефон визначено автоматично. якщо не той — перемкни.')}</p>
@@ -42,9 +44,10 @@ export function showInstallHow(phone: Phone): void {
   });
 }
 
-/** The tab note's «як?», if the screen has the note. */
+/** The tab note's «як?», or the in-app note's buttons, if the screen has the note. */
 export function wireTabNote(host: ParentNode): void {
   host.querySelector('[data-install-how]')?.addEventListener('click', () => {
     showInstallHow(detectPlatform(navigator) === 'iphone' ? 'iphone' : 'android');
   });
+  wireInAppNote(host, chromeIntent(location.href));
 }

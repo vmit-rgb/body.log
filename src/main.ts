@@ -16,7 +16,9 @@ import './styles/typography.css';
 import { startApp } from './app/app';
 import { detectPlatform, isInstalled } from './app/start';
 import { dayKeyOf } from './domain/dates';
-import { backupMemory, browserChoice, diaryStore, sectionMemory, storageFor, themeMemory, tipMemory } from './storage/store';
+import { backupMemory, browserChoice, diaryStore, sectionMemory, storageFor, themeMemory, tipMemory, welcomeMemory } from './storage/store';
+import { isInAppBrowser } from './app/in-app';
+import { useInstallOffer, watchInstallOffer } from './pwa/install-offer';
 import { DEFAULT_APPEARANCE, lookOf, startAppearance, type Appearance } from './ui/appearance';
 import { trackNumberFill } from './ui/number-fill';
 import { watchForUpdates } from './pwa/updates';
@@ -64,6 +66,10 @@ if (flight) startFlight({ root, canvas: flight, reducedMotion: matchMedia('(pref
 // B-02: the one live region is in the page from the start, before there is anything to say
 mountAnnouncer();
 const toast = mountToast(document.body);
+// A1 / A2b (FIXES-1.0.1.md): the browser's install offer for the «встановити» button; after the install the tab says where the app is
+if (!installed) {
+  useInstallOffer(watchInstallOffer(window, () => toast.show({ message: t('встановлено :) відкрий body.log з головного екрана'), showIcon: true, stay: true })));
+}
 wireTapMotion(document);
 wireNotes(document);
 const host = document.querySelector<HTMLElement>('#app')!;
@@ -75,6 +81,9 @@ startApp({
   browser: browserChoice(storage),
   platform: detectPlatform(navigator),
   installed,
+  inApp: isInAppBrowser(navigator.userAgent),
+  welcome: welcomeMemory(storage),
+  pageUrl: () => location.href,
   toast,
   today: () => dayKeyOf(new Date()),
   sections: sectionMemory(storage),
