@@ -3,6 +3,7 @@ import type { Answer, Day } from './day';
 import { MOMENTS, type Moment, type Settings, type Tracker } from './settings';
 import { MOMENT_SHORT } from './stats';
 import { t } from '../i18n/lang';
+import { healthAverages, HEALTH_NAME } from '../health/health';
 
 /*
  * The carousel «середнє за 7 днів» (wave 9, Olesia 2026-11-18; FIXES-PLAN
@@ -21,7 +22,8 @@ export const MAX_LINES = 5;
 /** Up to this many days a point is a day; over it, a week. */
 export const DAILY_UP_TO = 31;
 
-export interface AverageRow { readonly moment: Moment; readonly label: string; readonly value: number | null }
+/** `moment` is missing on the card «зі Здоровʼя», whose rows are steps and km. */
+export interface AverageRow { readonly moment?: Moment; readonly label: string; readonly value: number | null }
 export interface YesNoRow { readonly label: string; readonly yes: number; readonly total: number }
 export interface PairEntry { readonly date: DayKey; readonly label: string; readonly a: number | null; readonly b: number | null }
 
@@ -117,13 +119,23 @@ function card(tracker: Tracker, keys: readonly DayKey[], dayAt: (key: DayKey) =>
     return { moment, label: MOMENT_SHORT[moment], value: values.length ? round(mean(values)) : null };
   });
   if (rows.every((row) => row.value === null)) return { ...base, kind: 'empty' };
-  const withData = rows.filter((row) => row.value !== null).map((row) => row.moment);
+  const withData = rows.filter((row) => row.value !== null).map((row) => row.moment!);
   return { ...base, kind: 'averages', rows, chart: chartOf(tracker, withData, keys, dayAt) };
 }
 
-/** A card for every question but the notes, in the order of the settings. */
+/**
+ * Beta 1.1.1 (HEALTH-IMPORT.md, A5): average steps and km from «Здоровʼя»
+ * over the days that have them; no card when none of the days has any.
+ */
+function healthCard(keys: readonly DayKey[], dayAt: (key: DayKey) => Day): TrackerCard[] {
+  const { steps, km } = healthAverages(keys, dayAt);
+  if (steps === null && km === null) return [];
+  return [{ id: 'health', name: HEALTH_NAME, kind: 'averages', rows: [{ label: t('кроки'), value: steps }, { label: t('км'), value: km }], chart: null }];
+}
+
+/** A card for every question but the notes, in the order of the settings; «зі Здоровʼя» last. */
 export function trackerCards(keys: readonly DayKey[], dayAt: (key: DayKey) => Day, settings: Settings): TrackerCard[] {
-  return settings.trackers.filter((tracker) => tracker.kind !== 'note').map((tracker) => card(tracker, keys, dayAt));
+  return [...settings.trackers.filter((tracker) => tracker.kind !== 'note').map((tracker) => card(tracker, keys, dayAt)), ...healthCard(keys, dayAt)];
 }
 
 /** The day shown and the six before it, oldest first: the points of the chart on home. */

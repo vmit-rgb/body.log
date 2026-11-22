@@ -34,6 +34,12 @@ export interface HomeSession {
   pulseStep: () => void;
   /** The pending step, so ■ and «скасувати» can call it off. */
   pulseTimer: ReturnType<typeof setTimeout> | undefined;
+  /**
+   * «Здоровʼя» on an iPhone (beta 1.1.1): `synced`, «синхронізувати» was pressed, so
+   * «вставити дані» comes next; `field`, the clipboard couldn't be read and a paste
+   * field is open; `tip`, the bubble «як підключити» shows.
+   */
+  readonly health: { synced: boolean; field: boolean; tip: boolean };
 }
 
 export interface Draft { readonly moment: Moment; readonly tracker: string; readonly value: number }
@@ -88,6 +94,7 @@ export function homeSession(): HomeSession {
   return {
     open: new Map(), armed: null, running: new Map(), retry: new Set(), drafts: new Map(), typed: new Map(), quietTips: new Set(),
     month: null, carousel: { card: 0 }, pulse: null, pulseStep: () => {}, pulseTimer: undefined,
+    health: { synced: false, field: false, tip: false },
   };
 }
 

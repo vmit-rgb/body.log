@@ -6,6 +6,7 @@ import { kindDone, levelDone } from './progress';
 import { MOMENTS, type Moment, type Settings, type Tracker } from './settings';
 import { monthName, monthOf, type MonthKey } from './stats';
 import { t } from '../i18n/lang';
+import { formatHealth, hasHealth, HEALTH_NAME } from '../health/health';
 
 /*
  * The diary read back (stage 6b): what a day card in «історія» shows
@@ -188,7 +189,9 @@ function movement(day: Day, settings: Settings): DayBlock[] {
     const label = kind ? kind.name || t('без назви') : t('рух, якого вже немає');
     return { label, value: formatLaps(laps.filter(hasLap)), unit: '', text: false };
   });
-  return rows.length ? [{ kind: 'values', title: t('рух'), rows }] : [];
+  // beta 1.1.1: «Здоровʼя» first, as on home
+  const health = hasHealth(day.hl) ? [{ label: HEALTH_NAME, value: formatHealth(day.hl), unit: '', text: false }] : [];
+  return rows.length || health.length ? [{ kind: 'values', title: t('рух'), rows: [...health, ...rows] }] : [];
 }
 
 /** Every block of the day in the order it was lived; `days` holds names of deleted exercises. */

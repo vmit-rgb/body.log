@@ -26,6 +26,7 @@ import { pagesOverHome, type DeviceEnv } from './pages';
 import { startScreen, type Phone, type Platform, type StartScreen } from './start';
 import { installedWelcome } from './in-app';
 import { useInAppHelp } from '../screens/parts';
+import { withHealth } from '../health/health';
 import { t } from '../i18n/lang';
 
 export { SAVE_DELAY_MS } from './keeper';
@@ -52,6 +53,13 @@ export interface AppEnv extends DeviceEnv {
   welcome?: { seen(): boolean; mark(): void } | undefined;
   /** The page's address, for «скопіювати посилання». */
   pageUrl?: () => string;
+  /** iPhone only (beta 1.1.1): «Здоровʼя» through the shortcut and the clipboard; none on other phones. */
+  health?: {
+    connected(): boolean;
+    connect(): void;
+    /** The clipboard as text; null when the phone doesn't give it. */
+    read(): Promise<string | null>;
+  } | undefined;
 }
 
 /* Beta 1.0.1 (FIXES-1.0.1.md, A2a, A3): Нитка's drafts. */
@@ -193,6 +201,17 @@ export function startApp(env: AppEnv): void {
       restore: restoreDay,
       refresh: () => showDay(shown, date),
       toast: (message) => toast.show(message),
+      health: env.health && {
+        ...env.health,
+        add(days) {
+          toast.changed();
+          // each day that came gets its «Здоровʼя» replaced; written at once, not after the typing pause
+          for (const [day, health] of Object.entries(days)) shown = log.edit(shown, day as DayKey, withHealth(health));
+          log.saveNow();
+          diary = shown;
+          showDay(shown, date);
+        },
+      },
     });
   }
 

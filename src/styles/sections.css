@@ -345,6 +345,38 @@
   flex-direction: column;
   gap: var(--gap-items);
 }
+/* beta 1.1.1: «Здоровʼя» on an iPhone; the buttons in a row, the bubble points at the first of them */
+.health {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-items);
+}
+.health__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--gap-items);
+}
+.health .tip {
+  inset-inline-start: 0;
+  inset-inline-end: auto;
+}
+.health .tip::before {
+  inset-inline-start: 22px;
+  inset-inline-end: auto;
+}
+.health__line {
+  display: block;
+  margin-bottom: 4px;
+}
+.health__paste {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-micro);
+}
+.mv-kind--health {
+  gap: var(--gap-micro);
+}
 /* every workout exercise in a filled box, as «самопочуття …» (Olesia, MY-FIXES); bottom 1.5× the top */
 .wo-ex {
   gap: 0;

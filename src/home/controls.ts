@@ -17,6 +17,7 @@ import { dropPulse, pulseRunning, PULSE_READY_MS, PULSE_SAYS, READY_MS, schedule
 import { prepareSound, startSignal } from './signal';
 import { REMOVE_TIP, ROUNDS_TIP, SETS_TIP, SLIDER_TIP, SLIDER_TIP_TEXT, SW_RUNNING_LABEL, tip } from './sections';
 import { t } from '../i18n/lang';
+import { applyHealthField, connectHealth, pasteHealth, showHealthTip, syncHealth, type HealthControls } from '../health/health-controls';
 
 /*
  * What a tap or a keystroke inside the sections does. The markup
@@ -43,6 +44,8 @@ export interface SectionControls {
   tipOpen?(id: string): boolean;
   /** The person did what a tip explains; after three times it stops showing (wave 5b). */
   tipDone?(id: string): void;
+  /** iPhone only: the «Здоровʼя» buttons in «рух» (beta 1.1.1). */
+  readonly health?: HealthControls | undefined;
 }
 
 const AI_LINK: ToastMessage = { message: t('це посилання дав ШІ. перевір його, перш ніж повторювати.') };
@@ -361,6 +364,11 @@ const TAPS: Record<string, Tap> = {
     c.render();
     timerBack(c, el);
   },
+  'health-connect': connectHealth,
+  'health-sync': syncHealth,
+  'health-how': showHealthTip,
+  'health-paste': (c) => void pasteHealth(c),
+  'health-apply': applyHealthField,
 };
 
 /* ---- typing ---- */

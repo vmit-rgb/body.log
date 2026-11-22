@@ -5,6 +5,7 @@ import { MOMENT_TITLES, answerRow, exerciseName, sessionName, warmupGroups, zone
 import { formatNumber } from './numbers';
 import { MOMENTS, type Moment, type Settings } from './settings';
 import { t } from '../i18n/lang';
+import { formatHealth, hasHealth, HEALTH_NAME } from '../health/health';
 
 /*
  * The records PDF laid out for reading (Olesia, 2026-11-19): the date, then
@@ -116,16 +117,17 @@ function workout(day: Day, days: readonly Day[], settings: Settings): PdfBlock[]
   return [...heading(session ? sessionName(session.name) : t('тренування')), gap(2), table];
 }
 
-/** A kind with one lap on one line; with several, each lap one level down. */
+/** A kind with one lap on one line; with several, each lap one level down. «Здоровʼя» first (beta 1.1.1). */
 function movement(day: Day, settings: Settings): PdfBlock[] {
-  const kinds = Object.entries(day.mv).map(([id, laps]) => {
+  const health = hasHealth(day.hl) ? [[bullet(`${HEALTH_NAME}: ${formatHealth(day.hl)}`)]] : [];
+  const kinds = [...health, ...Object.entries(day.mv).map(([id, laps]) => {
     const kind = settings.movement.kinds.find((k) => k.id === id);
     const label = kind ? kind.name || t('без назви') : t('рух, якого вже немає');
     const filled = laps.filter(hasLap);
     return filled.length === 1
       ? [bullet(`${label}: ${formatLaps(filled)}`)]
       : [bullet(label), ...filled.map((lap, i) => subBullet(`${t('коло')} ${i + 1}: ${formatLaps([lap])}`))];
-  });
+  })];
   return kinds.length ? [...heading(t('рух')), ...kinds.flat()] : [];
 }
 

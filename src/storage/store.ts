@@ -27,6 +27,7 @@ const TIP_DONE_KEY = 'phys-activity-tracking-app/tip-done/';
 export const FINISHED_KEY = 'phys-activity-tracking-app/workout-finished/';
 const THEME_KEY = 'phys-activity-tracking-app/theme';
 const BACKUP_KEY = 'phys-activity-tracking-app/last-copy';
+const HEALTH_KEY = 'phys-activity-tracking-app/health-connected';
 
 export interface DiaryStore {
   /**
@@ -188,6 +189,18 @@ export function backupMemory(storage: KeyValue): { last(): DayKey | null; rememb
       return isDayKey(day) ? day : null;
     },
     remember: (day) => setQuietly(storage, BACKUP_KEY, day),
+  };
+}
+
+/**
+ * «підключити Здоровʼя» was pressed on this phone (beta 1.1.1, HEALTH-IMPORT.md, question Б):
+ * the app can't see whether the shortcut was really added, so «підключено»
+ * means the person pressed the button. On this phone only, not in the copy.
+ */
+export function healthMemory(storage: KeyValue): { connected(): boolean; connect(): void } {
+  return {
+    connected: () => storage.getItem(HEALTH_KEY) === 'yes',
+    connect: () => setQuietly(storage, HEALTH_KEY, 'yes'),
   };
 }
 
