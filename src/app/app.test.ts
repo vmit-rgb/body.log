@@ -363,6 +363,31 @@ describe('in a browser tab the app says that records will not stay (A-04)', () =
     expect(document.querySelector('#app')?.hasAttribute('inert') ?? false).toBe(false);
   });
 
+  it('«як?» shows the drawn phone under the steps, the chosen one, hidden from screen readers (Olesia, 2026-11-22)', () => {
+    start({ platform: 'unknown', installed: false });
+    click('[data-install-how]');
+    const demo = () => popup()!.querySelector<HTMLElement>('.install-demo')!;
+    expect(demo().previousElementSibling!.hasAttribute('data-steps')).toBe(true);
+    expect(demo().querySelector('.phone')!.getAttribute('aria-hidden')).toBe('true');
+    expect(demo().querySelector<HTMLElement>('.phone')!.dataset.variant).toBe('android');
+    expect(demo().querySelector('[data-t="a-install"]')!.textContent).toBe('встановити застосунок');
+    popup()!.querySelector<HTMLElement>('[data-platform="iphone"]')!.click();
+    expect(demo().querySelector<HTMLElement>('.phone')!.dataset.variant).toBe('ios26');
+    expect(demo().querySelectorAll('button[data-variant]')).toHaveLength(2);
+  });
+
+  it('«як?» has no phone with «вимкнути всі анімації»: the steps say it all', () => {
+    document.documentElement.setAttribute('data-no-motion', '');
+    try {
+      start({ platform: 'unknown', installed: false });
+      click('[data-install-how]');
+      expect(popup()!.querySelector('[data-install-demo]')).toBeNull();
+      expect(steps()).toHaveLength(3);
+    } finally {
+      document.documentElement.removeAttribute('data-no-motion');
+    }
+  });
+
   it('«як?» works on home too', () => {
     start({ platform: 'unknown', installed: false });
     click('[data-start-without-ai]');
