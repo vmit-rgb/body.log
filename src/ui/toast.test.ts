@@ -119,6 +119,18 @@ describe('how long a toast stays (ACCESSIBILITY.md rule 7)', () => {
     expect(box().hidden).toBe(true);
   });
 
+  it('keeps «встановлено :)» until × though it is a success (stay; Olesia, 2026-11-22)', () => {
+    toast.show({ message: 'встановлено :) записи тепер тримаються тут', showIcon: true, stay: true });
+    expect(life().hidden).toBe(true);
+    wait(TOAST_MS * 10);
+    expect(box().hidden).toBe(false);
+    toast.screenChanged();
+    expect(box().hidden).toBe(false);
+    close().click();
+    wait(1000);
+    expect(box().hidden).toBe(true);
+  });
+
   it('counts the 4 s anew for a message that replaces another', () => {
     toast.show({ message: 'один' });
     const first = life();

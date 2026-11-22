@@ -10,6 +10,7 @@ import { BEFORE_FORMAT_KEY, browserChoice, DIARY_KEY, diaryStore, sectionMemory,
 import { mountToast } from '../ui/toast';
 import { INSTALL_NOTES } from '../screens/parts';
 import { startApp, type AppEnv } from './app';
+import { NO_OFFER, useInstallOffer, type InstallOffer } from '../pwa/install-offer';
 
 // Invented data only.
 const COPY_081 = serializeDiary({
@@ -353,13 +354,38 @@ describe('in a browser tab the app says that records will not stay (A-04)', () =
     expect(popup()?.getAttribute('role')).toBe('dialog');
     expect(steps()[0]).toBe('відкрий цю сторінку в Chrome.');
     popup()!.querySelector<HTMLElement>('[data-platform="iphone"]')!.click();
-    expect(steps()[1]).toBe('«поділитися» → «на початковий екран».');
+    expect(steps()[1]).toBe('натисни ⋯ (на старіших айфонах — ⍐ унизу) → «поділитися» → «на початковий екран».');
     expect(popup()!.querySelector('[data-steps-note]')!.textContent).toBe(INSTALL_NOTES.iphone);
     expect(popup()!.querySelector('[data-platform="iphone"]')!.getAttribute('aria-pressed')).toBe('true');
     popup()!.querySelector<HTMLElement>('.btn[data-close]')!.click();
     // gone, or fading out and taking no taps
     expect(popup() === null || popup()!.inert).toBe(true);
     expect(document.querySelector('#app')?.hasAttribute('inert') ?? false).toBe(false);
+  });
+
+  it('«як?» shows the drawn phone under the steps, the chosen one, hidden from screen readers (Olesia, 2026-11-22)', () => {
+    start({ platform: 'unknown', installed: false });
+    click('[data-install-how]');
+    const demo = () => popup()!.querySelector<HTMLElement>('.install-demo')!;
+    expect(demo().previousElementSibling!.hasAttribute('data-steps')).toBe(true);
+    expect(demo().querySelector('.phone')!.getAttribute('aria-hidden')).toBe('true');
+    expect(demo().querySelector<HTMLElement>('.phone')!.dataset.variant).toBe('android');
+    expect(demo().querySelector('[data-t="a-install"]')!.textContent).toBe('встановити застосунок');
+    popup()!.querySelector<HTMLElement>('[data-platform="iphone"]')!.click();
+    expect(demo().querySelector<HTMLElement>('.phone')!.dataset.variant).toBe('ios26');
+    expect(demo().querySelectorAll('button[data-variant]')).toHaveLength(2);
+  });
+
+  it('«як?» has no phone with «вимкнути всі анімації»: the steps say it all', () => {
+    document.documentElement.setAttribute('data-no-motion', '');
+    try {
+      start({ platform: 'unknown', installed: false });
+      click('[data-install-how]');
+      expect(popup()!.querySelector('[data-install-demo]')).toBeNull();
+      expect(steps()).toHaveLength(3);
+    } finally {
+      document.documentElement.removeAttribute('data-no-motion');
+    }
   });
 
   it('«як?» works on home too', () => {
@@ -392,6 +418,213 @@ describe('in a browser tab the app says that records will not stay (A-04)', () =
     click('[data-start-without-ai]');
     expect(heading()).toBe('головна');
     expect(note()).toBeUndefined();
+  });
+});
+
+describe('beta 1.0.1: installing (FIXES-1.0.1.md)', () => {
+  const toastBox = () => document.querySelector<HTMLElement>('.toast')!;
+  const welcome = () => {
+    let seen = false;
+    return { seen: () => seen, mark: vi.fn(() => { seen = true; }) };
+  };
+  const steps = () => [...host.querySelectorAll('[data-steps] li')].map((li) => li.textContent);
+  const installButton = () => host.querySelector<HTMLButtonElement>('[data-install-now]')!;
+
+  describe('A2a: «встановлено :)» on the first start of the installed app', () => {
+    it('says it, with ✓, when nothing is stored, and marks it at once', () => {
+      const memory = welcome();
+      start({ welcome: memory });
+      expect(toastSays()).toBe('✓ встановлено :) записи тепер тримаються тут');
+      expect(memory.mark).toHaveBeenCalledTimes(1);
+    });
+
+    it('stays until ×: no melting bar, and the first screen\'s own moves keep it', () => {
+      start({ welcome: welcome() });
+      expect(toastBox().querySelector<HTMLElement>('.toast__life')!.hidden).toBe(true);
+      toastBox().querySelector<HTMLElement>('.toast__close')!.click();
+      return vi.waitFor(() => expect(toastBox().hidden).toBe(true));
+    });
+
+    it('not a second time', () => {
+      const memory = welcome();
+      start({ welcome: memory });
+      document.querySelector<HTMLElement>('.toast__close')!.click();
+      start({ welcome: memory });
+      expect(toastText()).toBeUndefined();
+    });
+
+    it('not after the update for whoever has a diary already: the mark is set quietly', () => {
+      diaryStore(localStorage, () => new Date()).save(EXAMPLE_DIARY);
+      const memory = welcome();
+      start({ welcome: memory });
+      expect(heading()).toBe('головна');
+      expect(toastText()).toBeUndefined();
+      expect(memory.mark).toHaveBeenCalledTimes(1);
+      // and the diary being gone later doesn't bring it back
+      localStorage.clear();
+      start({ welcome: memory });
+      expect(toastText()).toBeUndefined();
+    });
+
+    it('not over a diary the app can\'t read', () => {
+      localStorage.setItem(DIARY_KEY, '{"format":"phys-activity-backup","version":1,"days":{');
+      start({ welcome: welcome() });
+      expect(toastText()).toBeUndefined();
+    });
+
+    it('never in a browser tab', () => {
+      const memory = welcome();
+      start({ welcome: memory, installed: false, platform: 'android' });
+      expect(toastText()).toBeUndefined();
+      expect(memory.mark).not.toHaveBeenCalled();
+    });
+
+    it('follows to home after «почати без ШІ», still until ×', () => {
+      start({ welcome: welcome() });
+      click('[data-start-without-ai]');
+      expect(heading()).toBe('головна');
+      expect(toastText()).toBe('встановлено :) записи тепер тримаються тут');
+    });
+  });
+
+  describe('A1: «встановити» when the browser offers the install', () => {
+    function fakeOffer(ready: boolean) {
+      let offered = ready;
+      const listeners = new Set<() => void>();
+      const offer: InstallOffer = {
+        ready: () => offered,
+        onChange(listener) {
+          listeners.add(listener);
+          return () => listeners.delete(listener);
+        },
+        install: vi.fn(async () => {
+          offered = false;
+          listeners.forEach((listener) => listener());
+          return 'accepted' as const;
+        }),
+      };
+      return { offer, arrive() { offered = true; listeners.forEach((listener) => listener()); } };
+    }
+    afterEach(() => useInstallOffer(NO_OFFER));
+
+    it('is there on Android, and the menu becomes the other way', () => {
+      const { offer } = fakeOffer(true);
+      useInstallOffer(offer);
+      start({ platform: 'android', installed: false });
+      expect(installButton().hidden).toBe(false);
+      expect(installButton().textContent).toBe('встановити');
+      expect(steps()).toEqual(['або меню ⋮ → «встановити застосунок».', 'відкрий застосунок з головного екрана. налаштовуй уже в ньому.']);
+      click('[data-platform="iphone"]');
+      expect(installButton().hidden).toBe(true);
+      expect(steps()).toHaveLength(4);
+    });
+
+    it('asks the browser and then goes, as the offer is used up', async () => {
+      const { offer } = fakeOffer(true);
+      useInstallOffer(offer);
+      start({ platform: 'android', installed: false });
+      installButton().click();
+      expect(offer.install).toHaveBeenCalledTimes(1);
+      await vi.waitFor(() => expect(installButton().hidden).toBe(true));
+      expect(steps()[0]).toBe('відкрий цю сторінку в Chrome.');
+    });
+
+    it('comes when the offer comes after the screen', () => {
+      const fake = fakeOffer(false);
+      useInstallOffer(fake.offer);
+      start({ platform: 'android', installed: false });
+      expect(installButton().hidden).toBe(true);
+      expect(steps()).toHaveLength(3);
+      fake.arrive();
+      expect(installButton().hidden).toBe(false);
+    });
+
+    it('is not there without an offer: the steps stay as text', () => {
+      start({ platform: 'android', installed: false });
+      expect(installButton().hidden).toBe(true);
+      expect(steps()[1]).toBe('меню ⋮ → «встановити застосунок».');
+    });
+
+    it('is in «як?» too', () => {
+      const { offer } = fakeOffer(true);
+      useInstallOffer(offer);
+      start({ platform: 'unknown', installed: false });
+      click('[data-install-how]');
+      const popup = document.querySelector<HTMLElement>('.install-how')!;
+      expect(popup.querySelector<HTMLElement>('[data-install-now]')!.hidden).toBe(false);
+      popup.remove();
+    });
+  });
+
+  describe('A4: the iPhone steps for iOS 26 and older', () => {
+    it('name ⋯, the older ⍐ and the «відкрити як вебзастосунок» switch', () => {
+      start({ platform: 'iphone', installed: false });
+      expect(steps()).toEqual([
+        'відкрий цю сторінку в Safari.',
+        'натисни ⋯ (на старіших айфонах — ⍐ унизу) → «поділитися» → «на початковий екран».',
+        'перемикач «відкрити як вебзастосунок» лиши увімкненим → «додати».',
+        'відкрий застосунок з головного екрана й налаштовуй уже там, не в Safari.',
+      ]);
+    });
+  });
+
+  describe('A3: inside Instagram or a messenger, the yellow frame', () => {
+    const frame = () => host.querySelector<HTMLElement>('[data-in-app]');
+    const SAYS = 'ти зараз у браузері всередині іншого застосунку. звідси body.log не встановиться — відкрий цю сторінку в Chrome або Safari.';
+
+    it('takes the place of the install steps, with «відкрити в Chrome» on Android', () => {
+      start({ platform: 'android', installed: false, inApp: true });
+      expect(heading()).toBe('спершу встанови застосунок');
+      expect(frame()!.classList.contains('tab-note')).toBe(true);
+      expect(frame()!.querySelector('p')!.textContent).toBe(SAYS);
+      expect(host.querySelector('[data-steps]')).toBeNull();
+      const chrome = frame()!.querySelector<HTMLAnchorElement>('[data-open-chrome]')!;
+      expect(chrome.textContent).toBe('відкрити в Chrome');
+      expect(chrome.getAttribute('href')).toMatch(/^intent:\/\/.*#Intent;scheme=https;package=com\.android\.chrome;end$/);
+      expect(frame()!.textContent).not.toContain('відкрити в Safari');
+    });
+
+    it('on an iPhone: no Chrome button, the app\'s own menu instead', () => {
+      start({ platform: 'iphone', installed: false, inApp: true });
+      expect(frame()!.querySelector('[data-open-chrome]')).toBeNull();
+      expect(frame()!.textContent).toContain('або знайди в меню цього застосунку «відкрити в браузері» чи «відкрити в Safari».');
+    });
+
+    it('«скопіювати посилання» copies the page and says so', async () => {
+      start({ platform: 'iphone', installed: false, inApp: true, pageUrl: () => 'https://vmit-rgb.github.io/body.log/' });
+      frame()!.querySelector<HTMLElement>('[data-copy-link]')!.click();
+      await vi.waitFor(() => expect(toastSays()).toBe('✓ посилання скопійовано'));
+      expect(device.copied).toEqual(['https://vmit-rgb.github.io/body.log/']);
+    });
+
+    it('says when the copy failed', async () => {
+      start({ platform: 'android', installed: false, inApp: true });
+      device.copyWorks = false;
+      frame()!.querySelector<HTMLElement>('[data-copy-link]')!.click();
+      await vi.waitFor(() => expect(toastSays()).toBe('не вдалося скопіювати >_<'));
+    });
+
+    it('stays over the first screen and home when the person goes on anyway', () => {
+      start({ platform: 'android', installed: false, inApp: true });
+      click('[data-use-browser]');
+      expect(heading()).toBe('привіт! почнімо з налаштувань :)');
+      expect(frame()!.querySelector('p')!.textContent).toBe(SAYS);
+      click('[data-start-without-ai]');
+      expect(heading()).toBe('головна');
+      expect(frame()).not.toBeNull();
+      expect(host.querySelector('[data-install-how]')).toBeNull();
+    });
+
+    it('never in the installed app, whatever the user agent says', () => {
+      start({ platform: 'iphone', installed: true, inApp: true });
+      expect(frame()).toBeNull();
+    });
+
+    it('not for a real browser: the usual steps', () => {
+      start({ platform: 'android', installed: false, inApp: false });
+      expect(frame()).toBeNull();
+      expect(host.querySelector('[data-steps]')).not.toBeNull();
+    });
   });
 });
 

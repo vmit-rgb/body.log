@@ -219,6 +219,44 @@
   box-shadow: var(--focus-ring);
 }
 
+/*
+ * Beta 1.0.1 (FIXES-1.0.1.md, A3): the same plate when the page is open inside another
+ * app. Its buttons are black text buttons like «як?», on the right, side by side when
+ * they fit; body.log keeps its bold but takes the plate's black (pink on yellow is hard to read).
+ */
+.tab-note--in-app {
+  gap: 4px;
+}
+.tab-note .brand {
+  color: inherit;
+}
+.tab-note__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0 16px;
+}
+.tab-note__act {
+  --fg-0: var(--tab-note-ink);
+  --fg-hover: var(--tab-note-ink);
+  --fg-pressed: var(--tab-note-ink);
+  --accent: var(--tab-note-ink);
+  --focus-ring: 0 0 0 var(--stroke-focus) var(--tab-note-ink);
+  --weight-0: 900;
+  --weight-hover: 900;
+  font-size: inherit;
+  /* as «як?»: the full --tap to press, but only 4px of it shows above and below the words */
+  margin-block: calc((1.3em - var(--tap)) / 2 + 4px);
+}
+
+/* A1: «встановити», the main button over the steps, only while the browser offers the install */
+.install-now {
+  width: 100%;
+}
+.install-now[hidden] {
+  display: none;
+}
+
 /* the «як?» popup: the install steps in a dialog panel */
 .install-how h2 {
   margin: 0;

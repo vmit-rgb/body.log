@@ -1,4 +1,5 @@
 import type { Phone } from '../app/start';
+import { installOffer, type InstallOffer } from '../pwa/install-offer';
 import { VERSION_LABEL } from '../version';
 import { lang, switchLang, t, type Lang } from '../i18n/lang';
 
@@ -35,11 +36,69 @@ export const FOOTER = `
  * A-04 (Olesia, 2026-11-14): in a browser tab the app keeps nothing after the
  * tab is closed (storage/store.ts, `storageFor`), and the screen must say so.
  */
-export const TAB_NOTE = `
+const TAB_NOTE = `
   <div class="tab-note t-2nd-bold" role="note">
     <p>${t('це вкладка браузера: закриєш її — і записи зникнуть. встанови застосунок, щоб вони лишилися.')}</p>
     <button type="button" class="ctl btn btn--tertiary tab-note__how" aria-haspopup="dialog" data-install-how>${t('як?')}</button>
   </div>`;
+
+/**
+ * The page is open inside another app (Instagram, a messenger): set once by
+ * the app at start (app.ts), read by every screen that shows the tab note.
+ */
+export interface InAppHelp {
+  readonly inApp: boolean;
+  readonly phone: Phone;
+  /** «скопіювати посилання»: copies the page's address and says so. */
+  copyLink(): void;
+}
+
+let inAppHelp: InAppHelp = { inApp: false, phone: 'android', copyLink: () => {} };
+
+export function useInAppHelp(help: InAppHelp): void {
+  inAppHelp = help;
+}
+
+export function inAppNow(): boolean {
+  return inAppHelp.inApp;
+}
+
+/**
+ * FIXES-1.0.1.md, A3 (Olesia, 2026-11-22): the same yellow frame as the tab
+ * note, telling the person to leave the other app's browser. Wording: Нитка's draft.
+ * body.log stays bold but in the frame's black, not the accent: pink on the yellow
+ * plate would be hard to read (Нитка's choice).
+ */
+function inAppNote(phone: Phone): string {
+  const chrome = phone === 'android'
+    ? `<a class="ctl btn btn--tertiary tab-note__act" href="#" data-open-chrome>${t('відкрити в Chrome')}</a>`
+    : '';
+  const menuHint = phone === 'iphone'
+    ? `<p class="t-2nd-regular">${t('або знайди в меню цього застосунку «відкрити в браузері» чи «відкрити в Safari».')}</p>`
+    : '';
+  return `
+  <div class="tab-note tab-note--in-app t-2nd-bold" role="note" data-in-app>
+    <p>${t('ти зараз у браузері всередині іншого застосунку. звідси body.log не встановиться — відкрий цю сторінку в Chrome або Safari.').replace('body.log', '<b class="brand">body.log</b>')}</p>
+    <div class="tab-note__actions">
+      ${chrome}
+      <button type="button" class="ctl btn btn--tertiary tab-note__act" data-copy-link>${t('скопіювати посилання')}</button>
+    </div>
+    ${menuHint}
+  </div>`;
+}
+
+/** The yellow note of a browser tab: about leaving the other app when inside one, else about installing. */
+export function tabNote(): string {
+  return inAppHelp.inApp ? inAppNote(inAppHelp.phone) : TAB_NOTE;
+}
+
+/** The in-app note's buttons, if `host` has the note; `chromeLink` is the intent link for Android. */
+export function wireInAppNote(host: ParentNode, chromeLink: string): void {
+  const note = host.querySelector('[data-in-app]');
+  if (!note) return;
+  note.querySelector<HTMLAnchorElement>('[data-open-chrome]')?.setAttribute('href', chromeLink);
+  note.querySelector('[data-copy-link]')?.addEventListener('click', () => inAppHelp.copyLink());
+}
 
 /** How to install, per phone: the landing page's steps (screen install-first, the «як?» of the tab note). */
 const INSTALL_STEPS: Record<Phone, readonly string[]> = {
@@ -48,12 +107,27 @@ const INSTALL_STEPS: Record<Phone, readonly string[]> = {
     t('меню ⋮ → «встановити застосунок».'),
     t('відкрий застосунок з головного екрана. налаштовуй уже в ньому.'),
   ],
+  // iOS 26 hides «поділитися» under ⋯; older iPhones have ⍐ at the bottom (FIXES-1.0.1.md, A4, Нитка's draft)
   iphone: [
     t('відкрий цю сторінку в Safari.'),
-    t('«поділитися» → «на початковий екран».'),
-    t('відкрий застосунок з головного екрана. налаштовуй уже в ньому, не в Safari: у них окремі сховища.'),
+    t('натисни ⋯ (на старіших айфонах — ⍐ унизу) → «поділитися» → «на початковий екран».'),
+    t('перемикач «відкрити як вебзастосунок» лиши увімкненим → «додати».'),
+    t('відкрий застосунок з головного екрана й налаштовуй уже там, не в Safari.'),
   ],
 };
+
+/**
+ * Android with the browser's own offer (A1): the «встановити» button comes
+ * first, the menu is the other way. «відкрий у Chrome» goes: the browser that
+ * offers the install is already a fitting one (Нитка's choice).
+ */
+const ANDROID_WITH_BUTTON: readonly string[] = [
+  t('або меню ⋮ → «встановити застосунок».'),
+  t('відкрий застосунок з головного екрана. налаштовуй уже в ньому.'),
+];
+
+/** «встановити»: hidden until the browser offers the install (pwa/install-offer.ts). */
+export const INSTALL_BUTTON = `<button type="button" class="ctl btn btn--primary install-now" data-install-now hidden>${t('встановити')}</button>`;
 
 /**
  * Under the steps (Olesia, 2026-11-19): the browsers to use, a soft warning about
@@ -65,18 +139,35 @@ export const INSTALL_NOTES: Record<Phone, string> = {
   iphone: t('краще встановлювати з Safari. на нових айфонах так само можна з Chrome, Firefox чи Edge: «поділитися» → «на початковий екран». з інших браузерів може не вийти. назви пунктів залежать від версії системи.'),
 };
 
-/** The platform toggles in `host` fill its `[data-steps]` list and `[data-steps-note]`; starts on `phone`. */
-export function wireInstallSteps(host: HTMLElement, phone: Phone): void {
+/**
+ * The platform toggles in `host` fill its `[data-steps]` list and `[data-steps-note]`; starts on `phone`.
+ * Android gets the «встановити» button (`[data-install-now]`) whenever the browser offers the install.
+ */
+export function wireInstallSteps(host: HTMLElement, phone: Phone, offer: InstallOffer = installOffer()): void {
   const steps = part<HTMLOListElement>(host, '[data-steps]');
   const note = part<HTMLElement>(host, '[data-steps-note]');
-  const choose = wirePlatformToggles(host, (chosen) => {
-    steps.replaceChildren(...INSTALL_STEPS[chosen].map((text) => {
+  const button = host.querySelector<HTMLButtonElement>('[data-install-now]');
+  let chosen = phone;
+  const draw = () => {
+    const withButton = button !== null && chosen === 'android' && offer.ready();
+    if (button) button.hidden = !withButton;
+    steps.replaceChildren(...(withButton ? ANDROID_WITH_BUTTON : INSTALL_STEPS[chosen]).map((text) => {
       const item = document.createElement('li');
       item.textContent = text;
       return item;
     }));
     note.textContent = INSTALL_NOTES[chosen];
+  };
+  const choose = wirePlatformToggles(host, (next) => {
+    chosen = next;
+    draw();
   });
+  // the offer can come after the screen; a screen that is gone stops listening
+  const stop = offer.onChange(() => {
+    if (steps.isConnected) draw();
+    else stop();
+  });
+  button?.addEventListener('click', () => void offer.install());
   choose(phone);
 }
 

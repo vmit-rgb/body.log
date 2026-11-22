@@ -108,7 +108,9 @@ describe('chips and tabs switch in stripes', () => {
     // stripes over the old tab start filled and end empty; over the new one the other way
     for (const [i, stripe] of stripes.entries()) {
       const [first, last] = [runs[i]!.keyframes[0]!.opacity, runs[i]!.keyframes.at(-1)!.opacity];
-      if (leftOf(stripe) + parseFloat((stripe as HTMLElement).style.width) / 2 < 50) expect([first, last]).toEqual([1, 0]);
+      // the drawn width has 0.3 % more, so no seam shows between stripes; the stripe's middle is without it
+      // (with it, a middle just under 50 % read as over the new tab: the test failed now and then)
+      if (leftOf(stripe) + (parseFloat((stripe as HTMLElement).style.width) - 0.3) / 2 < 50) expect([first, last]).toEqual([1, 0]);
       else expect([first, last]).toEqual([0, 1]);
     }
     // the colours of both labels swap halfway

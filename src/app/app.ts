@@ -24,6 +24,8 @@ import { copyPrompt as copyPromptText, PasteFlow, pasteFailed, RUSSIAN_COPY } fr
 import { logKeeper } from './keeper';
 import { pagesOverHome, type DeviceEnv } from './pages';
 import { startScreen, type Phone, type Platform, type StartScreen } from './start';
+import { installedWelcome } from './in-app';
+import { useInAppHelp } from '../screens/parts';
 import { t } from '../i18n/lang';
 
 export { SAVE_DELAY_MS } from './keeper';
@@ -44,7 +46,18 @@ export interface AppEnv extends DeviceEnv {
   onDiary(diary: Diary): void;
   /** Runs `save` when the app is hidden or closed, so nothing typed is lost. */
   whenHidden(save: () => void): void;
+  /** The page is open in a browser inside another app (in-app.ts, by the user agent). */
+  inApp?: boolean;
+  /** Whether the installed app said «встановлено :)» yet (storage/store.ts welcomeMemory); none: never says it. */
+  welcome?: { seen(): boolean; mark(): void } | undefined;
+  /** The page's address, for «скопіювати посилання». */
+  pageUrl?: () => string;
 }
+
+/* Beta 1.0.1 (FIXES-1.0.1.md, A2a, A3): Нитка's drafts. */
+const INSTALLED: ToastMessage = { message: t('встановлено :) записи тепер тримаються тут'), showIcon: true, stay: true };
+const PAGE_LINK_COPIED: ToastMessage = { message: t('посилання скопійовано'), showIcon: true };
+const LINK_NOT_COPIED: ToastMessage = { message: `${t('не вдалося скопіювати')} >_<`, error: true };
 
 /* Texts: COPY.md. */
 const SAVED: ToastMessage = { message: t('збережено :)'), showIcon: true };
@@ -282,5 +295,28 @@ export function startApp(env: AppEnv): void {
     env.onDiary(diary);
     followToasts(diary.profile);
   }
-  show(startScreen({ hasDiary: diary !== null, unreadable: diary === null && store.unreadable() !== null, installed: env.installed, platform: env.platform, browserChosen: browser.chosen() }));
+  // A3: inside Instagram or a messenger the yellow frame replaces the install steps; never in the installed app
+  useInAppHelp({
+    inApp: env.inApp === true && !env.installed,
+    phone: phoneOf(env.platform),
+    copyLink() {
+      void env.copyText(env.pageUrl?.() ?? location.href).then((done) => toast.show(done ? PAGE_LINK_COPIED : LINK_NOT_COPIED));
+    },
+  });
+  const unreadable = diary === null && store.unreadable() !== null;
+  show(startScreen({ hasDiary: diary !== null, unreadable, installed: env.installed, platform: env.platform, browserChosen: browser.chosen() }));
+  greetInstalled(diary === null && !unreadable);
+
+  /** A2a: «встановлено :)» once, on the first start of the installed app with nothing stored yet. */
+  function greetInstalled(nothingStored: boolean): void {
+    if (!env.welcome) return;
+    const welcome = installedWelcome({ installed: env.installed, seen: env.welcome.seen(), nothingStored });
+    if (welcome === 'none') return;
+    try {
+      env.welcome.mark();
+    } catch {
+      // storage refused: at worst it says «встановлено» once more
+    }
+    if (welcome === 'show') toast.show(INSTALLED);
+  }
 }

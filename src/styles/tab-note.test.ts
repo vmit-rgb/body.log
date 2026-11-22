@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import tokens from './tokens.css?raw';
 import screens from './screens.css?raw';
 import glass from './glass.css?raw';
-import { TAB_NOTE } from '../screens/parts';
+import { tabNote } from '../screens/parts';
 
 /*
  * Wave 11, item 1 (Olesia, 2026-11-18): «це вкладка браузера…» is a yellow plate
@@ -73,7 +73,7 @@ describe('«це вкладка браузера…»: a yellow plate, the same 
   });
 
   it('uses the 14 px text, bold', () => {
-    expect(TAB_NOTE).toContain('class="tab-note t-2nd-bold"');
+    expect(tabNote()).toContain('class="tab-note t-2nd-bold"');
   });
 
   it('puts «як?» on the right, bolder than the text (Olesia, 2026-11-19)', () => {

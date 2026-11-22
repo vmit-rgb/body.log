@@ -1,6 +1,6 @@
 import type { PasteAct } from '../app/paste-flow';
 import { pasteActOf, pasteResultBox, showPasteResult } from './paste-result';
-import { FOOTER, LANGUAGE_SWITCH, part, TAB_NOTE, wireLanguageSwitch, wireRestore } from './parts';
+import { FOOTER, LANGUAGE_SWITCH, part, tabNote, wireLanguageSwitch, wireRestore } from './parts';
 import { wireTabNote } from './install-how';
 import { emoticonsHtml } from '../ui/emoticons';
 import { withGrip } from '../ui/grip';
@@ -119,7 +119,7 @@ export function showFirstLaunch(host: HTMLElement, actions: FirstLaunchActions, 
   host.innerHTML = MARKUP;
   wireLanguageSwitch(host);
   if (inTab) {
-    part(host, '.lang').insertAdjacentHTML('afterend', TAB_NOTE);
+    part(host, '.lang').insertAdjacentHTML('afterend', tabNote());
     wireTabNote(host);
   }
   part(host, '[data-copy-prompt]').addEventListener('click', () => actions.copyPrompt());
