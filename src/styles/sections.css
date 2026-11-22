@@ -367,13 +367,15 @@
   width: 100%;
   justify-content: center;
 }
+/* as wide as the pill, the arrow in the middle, at the middle of the pill (Olesia, 2026-11-22) */
 .health .tip {
-  inset-inline-start: 0;
-  inset-inline-end: auto;
+  inset-inline: 0;
+  width: auto;
 }
 .health .tip::before {
-  inset-inline-start: 22px;
-  inset-inline-end: auto;
+  inset-inline: auto;
+  left: 50%;
+  transform: translateX(-50%);
 }
 .health__line {
   display: block;
