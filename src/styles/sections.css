@@ -357,6 +357,16 @@
   align-items: center;
   gap: var(--gap-items);
 }
+/* the bubble is taller than what is under the button: its section rises over the next one, or the next title covers «підключити знову» */
+.home-section:has(.health .tip) {
+  position: relative;
+  z-index: 31;
+}
+/* one pill across the screen, whatever step it is at (Olesia, 2026-11-22) */
+.health__main {
+  width: 100%;
+  justify-content: center;
+}
 .health .tip {
   inset-inline-start: 0;
   inset-inline-end: auto;

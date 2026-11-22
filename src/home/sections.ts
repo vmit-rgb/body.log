@@ -660,15 +660,21 @@ function movementKind(ctx: SectionContext, kind: MovementKind): string {
  * «підключити Здоровʼя» opens the shortcut's iCloud link and the bubble «як підключити»;
  * from then on «синхронізувати» runs the shortcut, which copies 7 days; back in the
  * app «вставити дані» reads them (iOS reads the clipboard only after a tap).
+ * One button, the same pill across the screen in every step (Olesia, 2026-11-22).
  */
 
 export const HEALTH_TIP = 'health';
+/*
+ * Olesia, 2026-11-22: say where «body.log health» turns up. The names of Apple's
+ * buttons («Додати швидку команду», «Команди») are Нитка's guess for iOS 16 in
+ * Ukrainian, not checked on a phone.
+ */
 const HEALTH_HOW = [
-  t('1. додай команду «body.log health» (посилання вже відкрилось).'),
-  t('2. при першому запуску дозволь їй доступ до «Здоровʼя».'),
-  t('3. повернись сюди й натисни «синхронізувати».'),
+  t('1. відкриється команда «body.log health»: натисни «Додати швидку команду». вона зʼявиться в застосунку «Команди».'),
+  t('2. повернись сюди й натисни «синхронізувати». при першому запуску дозволь команді доступ до «Здоровʼя».'),
+  t('3. команда скопіює кроки й км. повернись сюди й натисни «вставити дані».'),
 ];
-const HEALTH_FALLBACK = t('«синхронізувати» не відкриває команду? відкрий «Команди» і запусти body.log health, а потім натисни тут «вставити дані».');
+const HEALTH_FALLBACK = t('команда не відкривається? відкрий застосунок «Команди», запусти там body.log health, повернись сюди й натисни «вставити дані».');
 
 function healthTip(): string {
   const lines = [...HEALTH_HOW, HEALTH_FALLBACK].map((line) => `<span class="health__line">${esc(line)}</span>`).join('');
@@ -676,18 +682,17 @@ function healthTip(): string {
   return tip(HEALTH_TIP, `${lines}${again}`);
 }
 
-const syncLink = (level: 'secondary' | 'tertiary') =>
-  `<a class="ctl btn btn--${level}" href="${esc(SHORTCUT_RUN)}" data-act="health-sync">${t('синхронізувати')}</a>`;
+/** One pill across the screen; only its words and what it does change (Olesia, 2026-11-22). */
+const PILL = 'ctl btn btn--secondary health__main';
 
 function healthButtons(ctx: SectionContext): string {
   if (!ctx.health) return '';
   const { synced, field, tip: tipShown } = ctx.session.health;
-  const how = `<button type="button" class="ctl btn btn--tertiary" data-act="health-how">${t('як підключити?')}</button>`;
   const buttons = !ctx.health.connected
-    ? `<a class="ctl btn btn--secondary" href="${esc(SHORTCUT_LINK)}" target="_blank" rel="noopener noreferrer" data-act="health-connect">${t('підключити Здоровʼя')}</a>`
+    ? `<a class="${PILL}" href="${esc(SHORTCUT_LINK)}" target="_blank" rel="noopener noreferrer" data-act="health-connect">${t('підключити Здоровʼя')}</a>`
     : synced
-      ? `<button type="button" class="ctl btn btn--primary" data-act="health-paste">${t('вставити дані')}</button>${syncLink('tertiary')}`
-      : `${syncLink('secondary')}${how}`;
+      ? `<button type="button" class="${PILL}" data-act="health-paste">${t('вставити дані')}</button>`
+      : `<a class="${PILL}" href="${esc(SHORTCUT_RUN)}" data-act="health-sync">${t('синхронізувати')}</a>`;
   const paste = field ? `
     <label class="health__paste"><span class="t-2nd-regular">${t('встав сюди текст, який скопіювала команда:')}</span>
       ${withGrip(`<textarea class="field" rows="3" data-health-field ${keyed(dayKey(ctx, 'health-field'))}></textarea>`)}</label>

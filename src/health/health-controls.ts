@@ -55,20 +55,15 @@ export function syncHealth(c: Screen): void {
   later(c);
 }
 
-/** «як підключити?»: the bubble; a tap anywhere hides it, as every tip (screens/home.ts). */
-export function showHealthTip(c: Screen): void {
-  c.session.health.tip = true;
-  c.render();
-}
-
 /** The text from the shortcut, read and written; a text that isn't ours keeps the buttons as they are. */
 export function applyHealth(c: Screen, text: string): void {
   const health = c.health;
   if (!health) return;
   const pasted = parseHealth(text, health.today());
   if (pasted.kind === 'not-ours') {
-    // the bubble comes with «підключити знову»: maybe the shortcut was never added
-    c.session.health.tip = true;
+    // the bubble comes with «підключити знову»: maybe the shortcut was never added;
+    // the one button says «синхронізувати» again, to try once more
+    Object.assign(c.session.health, { synced: false, field: false, tip: true });
     c.render();
     c.toast(NOT_HEALTH);
     return;

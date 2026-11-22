@@ -17,7 +17,7 @@ import { dropPulse, pulseRunning, PULSE_READY_MS, PULSE_SAYS, READY_MS, schedule
 import { prepareSound, startSignal } from './signal';
 import { REMOVE_TIP, ROUNDS_TIP, SETS_TIP, SLIDER_TIP, SLIDER_TIP_TEXT, SW_RUNNING_LABEL, tip } from './sections';
 import { t } from '../i18n/lang';
-import { applyHealthField, connectHealth, pasteHealth, showHealthTip, syncHealth, type HealthControls } from '../health/health-controls';
+import { applyHealthField, connectHealth, pasteHealth, syncHealth, type HealthControls } from '../health/health-controls';
 
 /*
  * What a tap or a keystroke inside the sections does. The markup
@@ -366,7 +366,6 @@ const TAPS: Record<string, Tap> = {
   },
   'health-connect': connectHealth,
   'health-sync': syncHealth,
-  'health-how': showHealthTip,
   'health-paste': (c) => void pasteHealth(c),
   'health-apply': applyHealthField,
 };

@@ -48,6 +48,11 @@ const tap = async (name: string) => {
   await settle();
   await settle();
 };
+/** Olesia, 2026-11-22: one pill across the screen, nothing next to it. */
+const pills = () => [...movement().querySelectorAll<HTMLElement>('.health__buttons > *')].map((b) => {
+  expect(b.classList.contains('health__main')).toBe(true);
+  return b.textContent!.trim();
+});
 const toastSays = () => document.querySelector<HTMLElement>('.toast:not([hidden]) .toast__message')?.textContent;
 const stored = () => parseDiary(localStorage.getItem(DIARY_KEY) ?? '')!;
 const REAL = 'body.log health 1\n2026-11-19 steps 2841\n2026-11-19 km 2.15974999998603\n2026-11-22 steps 18';
@@ -78,12 +83,15 @@ describe('«Здоровʼя» buttons (A4)', () => {
     expect(connect.getAttribute('target')).toBe('_blank');
     await tap('підключити Здоровʼя');
     expect(healthMemory(localStorage).connected()).toBe(true);
-    expect(movement().querySelector('[data-tip-id="health"]')!.textContent).toContain('дозволь їй доступ до «Здоровʼя»');
+    const bubble = movement().querySelector('[data-tip-id="health"]')!.textContent!;
+    expect(bubble).toContain('«Додати швидку команду»');
+    expect(bubble).toContain('застосунку «Команди»');
     expect(control('підключити знову')).toBeDefined();
     expect(control('синхронізувати')!.getAttribute('href')).toBe('shortcuts://run-shortcut?name=body.log%20health');
+    expect(pills()).toEqual(['синхронізувати']);
 
     await tap('синхронізувати');
-    expect(control('вставити дані')).toBeDefined();
+    expect(pills()).toEqual(['вставити дані']);
     await tap('вставити дані');
 
     expect(toastSays()).toBe('додано зі Здоровʼя: 2 дні');
@@ -122,6 +130,8 @@ describe('«Здоровʼя» buttons (A4)', () => {
     await tap('вставити дані');
     expect(toastSays()).toContain('у буфері немає даних зі Здоровʼя');
     expect(control('підключити знову')).toBeDefined();
+    // the one button goes back to «синхронізувати», to try again
+    expect(pills()).toEqual(['синхронізувати']);
     expect(Object.values(stored().days).some((day) => day.hl)).toBe(false);
   });
 
@@ -149,9 +159,8 @@ describe('«Здоровʼя» buttons (A4)', () => {
   });
 
   it('the bubble goes on a tap anywhere, but its own button still works', async () => {
-    healthMemory(localStorage).connect();
     start('iphone');
-    await tap('як підключити?');
+    await tap('підключити Здоровʼя');
     const again = control('підключити знову')!;
     again.dispatchEvent(new Event('pointerdown', { bubbles: true }));
     expect(control('підключити знову')).toBe(again);
