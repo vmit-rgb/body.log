@@ -50,8 +50,9 @@ export function connectHealth(c: Screen): void {
   later(c);
 }
 
+/** «синхронізувати»: the button becomes «вставити дані», with a bubble saying it needs this second tap. */
 export function syncHealth(c: Screen): void {
-  Object.assign(c.session.health, { synced: true, field: false, tip: false });
+  Object.assign(c.session.health, { synced: true, field: false, tip: true });
   later(c);
 }
 

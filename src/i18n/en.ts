@@ -756,6 +756,7 @@ export const EN: Readonly<Record<string, string>> = {
   "2. повернись сюди й натисни «синхронізувати». при першому запуску дозволь команді доступ до «Здоровʼя».": "2. come back here and tap “sync”. on its first run, allow the shortcut access to Health.",
   "3. команда скопіює кроки й км. повернись сюди й натисни «вставити дані».": "3. the shortcut copies your steps and km. come back here and tap “paste data”.",
   "команда не відкривається? відкрий застосунок «Команди», запусти там body.log health, повернись сюди й натисни «вставити дані».": "the shortcut doesn't open? open the Shortcuts app, run body.log health there, come back here and tap “paste data”.",
+  "коли команда скопіює кроки й км, повернись сюди й натисни цю кнопку ще раз — «вставити дані». iOS спитає дозволу: натисни «Вставити».": "once the shortcut has copied your steps and km, come back here and tap this button again — “paste data”. iOS will ask: tap “Paste”.",
   "підключити знову": "connect again",
   "синхронізувати": "sync",
   "підключити Здоровʼя": "connect Health",

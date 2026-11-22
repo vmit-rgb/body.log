@@ -676,7 +676,14 @@ const HEALTH_HOW = [
 ];
 const HEALTH_FALLBACK = t('команда не відкривається? відкрий застосунок «Команди», запусти там body.log health, повернись сюди й натисни «вставити дані».');
 
-function healthTip(): string {
+/*
+ * After «синхронізувати» the same button says «вставити дані»: iOS reads the clipboard only
+ * after a tap, so a second tap is needed, and that isn't obvious (Olesia, 2026-11-22). Нитка's draft.
+ */
+const HEALTH_PASTE = t('коли команда скопіює кроки й км, повернись сюди й натисни цю кнопку ще раз — «вставити дані». iOS спитає дозволу: натисни «Вставити».');
+
+function healthTip(synced: boolean): string {
+  if (synced) return tip(HEALTH_TIP, esc(HEALTH_PASTE));
   const lines = [...HEALTH_HOW, HEALTH_FALLBACK].map((line) => `<span class="health__line">${esc(line)}</span>`).join('');
   const again = `<a class="ctl btn btn--tertiary" href="${esc(SHORTCUT_LINK)}" target="_blank" rel="noopener noreferrer" data-act="health-connect">${t('підключити знову')}</a>`;
   return tip(HEALTH_TIP, `${lines}${again}`);
@@ -697,7 +704,7 @@ function healthButtons(ctx: SectionContext): string {
     <label class="health__paste"><span class="t-2nd-regular">${t('встав сюди текст, який скопіювала команда:')}</span>
       ${withGrip(`<textarea class="field" rows="3" data-health-field ${keyed(dayKey(ctx, 'health-field'))}></textarea>`)}</label>
     <button type="button" class="ctl btn btn--primary" data-act="health-apply">${t('застосувати')}</button>` : '';
-  return `<div class="health"><div class="health__buttons">${buttons}</div>${tipShown ? healthTip() : ''}${paste}</div>`;
+  return `<div class="health"><div class="health__buttons">${buttons}</div>${tipShown ? healthTip(synced) : ''}${paste}</div>`;
 }
 
 /** The record from «Здоровʼя» of the day shown: read only, only what came; on any phone, e.g. after a copy moved. */

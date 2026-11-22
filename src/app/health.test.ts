@@ -92,6 +92,8 @@ describe('«Здоровʼя» buttons (A4)', () => {
 
     await tap('синхронізувати');
     expect(pills()).toEqual(['вставити дані']);
+    // the second tap isn't obvious: a bubble says so (Olesia, 2026-11-22)
+    expect(movement().querySelector('[data-tip-id="health"]')!.textContent).toContain('натисни цю кнопку ще раз — «вставити дані»');
     await tap('вставити дані');
 
     expect(toastSays()).toBe('додано зі Здоровʼя: 2 дні');
