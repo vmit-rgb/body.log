@@ -19,11 +19,24 @@ import type { DayKey } from './dates';
  *   Stored as 0.81 stores one entry (the first lap) plus `more` for the next laps,
  *   so 0.81 still reads the first lap and a copy keeps moving both ways.
  * - `names`: the names of exercises used that day, so a deleted exercise still reads fine.
+ * - `hl`: what came from «Здоров'я» on an iPhone (beta 1.1.1, HEALTH-IMPORT.md): `steps`, `km`,
+ *   `exmin` (exercise minutes), `kcal` (active energy), `floors`, `workouts` (`min`, `km`, `name`).
+ *   Its own record, apart from `mv`: a sync replaces it, and it never makes «рух» done.
+ *   Left out when nothing came, so a copy without it reads as before.
  */
 
 export type Answer = number | string | readonly (number | null)[];
 export interface SetLog { readonly w: number | null; readonly r: number | null; readonly s: number | null }
 export interface MovementLog { readonly km: number | null; readonly min: number | null; readonly steps: number | null }
+export interface HealthWorkout { readonly min: number; readonly km: number | null; readonly name: string }
+export interface HealthLog {
+  readonly steps: number | null;
+  readonly km: number | null;
+  readonly exmin: number | null;
+  readonly kcal: number | null;
+  readonly floors: number | null;
+  readonly workouts: readonly HealthWorkout[];
+}
 
 type Table<T> = Readonly<Record<string, T>>;
 
@@ -36,6 +49,8 @@ export interface Day {
   readonly wo: { readonly session: string; readonly ex: Table<readonly SetLog[]>; readonly rows: Table<number>; readonly done?: true } | null;
   readonly mv: Table<readonly MovementLog[]>;
   readonly names: Table<string>;
+  /** «Здоров'я» (beta 1.1.1); none when nothing came for the day. */
+  readonly hl?: HealthLog;
 }
 
 type Raw = { readonly [key: string]: unknown };
@@ -87,6 +102,25 @@ function readMovement(value: unknown): MovementLog[] | null {
   return laps.some(hasLap) ? laps : null;
 }
 
+const HEALTH_NUMBERS = ['steps', 'km', 'exmin', 'kcal', 'floors'] as const;
+
+function readHealthWorkout(value: unknown): HealthWorkout | null {
+  const workout = raw(value);
+  const min = num(workout.min);
+  return min === null ? null : { min, km: num(workout.km), name: typeof workout.name === 'string' ? workout.name : '' };
+}
+
+/** «Здоров'я» of a day, or null when nothing in it can be read. */
+function readHealth(value: unknown): HealthLog | null {
+  if (!isRaw(value)) return null;
+  const workouts = Array.isArray(value.workouts) ? value.workouts.map(readHealthWorkout).filter((w): w is HealthWorkout => w !== null) : [];
+  const [steps, km, exmin, kcal, floors] = HEALTH_NUMBERS.map((key) => num(value[key]));
+  const log: HealthLog = { steps: steps!, km: km!, exmin: exmin!, kcal: kcal!, floors: floors!, workouts };
+  return HEALTH_NUMBERS.some((key) => log[key] !== null) || workouts.length > 0 ? log : null;
+}
+
+const someHealth = (log: HealthLog | undefined) => log !== undefined && readHealth(log) !== null;
+
 export function emptyDay(date: DayKey): Day {
   return { date, t: {}, note: '', mw: { ticks: [], times: {}, rows: {} }, dw: [], wo: null, mv: {}, names: {} };
 }
@@ -96,7 +130,9 @@ export function readDay(value: unknown, date: DayKey): Day {
   const day = raw(value);
   const mw = raw(day.mw);
   const names = table(day.names, (name) => (typeof name === 'string' ? name : null));
+  const hl = readHealth(day.hl);
   return {
+    ...(hl ? { hl } : {}),
     date,
     t: table(day.t, (answers) => table(answers, readAnswer)),
     note: typeof day.note === 'string' ? day.note : '',
@@ -125,7 +161,7 @@ const someAnswer = (t: Day['t']) => Object.values(t).some((answers) => Object.ke
 /** Whether anything at all was logged (0.81 `hasData`); an empty day isn't stored. */
 export function hasData(day: Day): boolean {
   return someAnswer(day.t) || someTime(day.mw.times) || day.note !== '' || day.mw.ticks.length > 0
-    || day.dw.length > 0 || day.wo !== null || Object.values(day.mv).some((laps) => laps.some(hasLap));
+    || day.dw.length > 0 || day.wo !== null || Object.values(day.mv).some((laps) => laps.some(hasLap)) || someHealth(day.hl);
 }
 
 /** The day as stored, or null when there is nothing to keep (0.81 `compactDay`). */
@@ -136,5 +172,6 @@ export function writeDay(day: Day): Raw | null {
     ...day.wo,
     ex: Object.fromEntries(Object.entries(day.wo.ex).map(([id, sets]) => [id, trimEnd(sets, hasSet)] as const).filter(([, sets]) => sets.length > 0)),
   };
-  return { v: 2, date: day.date, t, note: day.note, mw: day.mw, dw: day.dw, wo, mv: writeMovement(day.mv), names: day.names };
+  const hl = someHealth(day.hl) ? { hl: day.hl } : {};
+  return { v: 2, date: day.date, t, note: day.note, mw: day.mw, dw: day.dw, wo, mv: writeMovement(day.mv), names: day.names, ...hl };
 }

@@ -345,6 +345,50 @@
   flex-direction: column;
   gap: var(--gap-items);
 }
+/* beta 1.1.1: «Здоровʼя» on an iPhone; the buttons in a row, the bubble points at the first of them */
+.health {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-items);
+}
+.health__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--gap-items);
+}
+/* the bubble is taller than what is under the button: its section rises over the next one, or the next title covers «підключити знову» */
+.home-section:has(.health .tip) {
+  position: relative;
+  z-index: 31;
+}
+/* one pill across the screen, whatever step it is at (Olesia, 2026-11-22) */
+.health__main {
+  width: 100%;
+  justify-content: center;
+}
+/* as wide as the pill, the arrow in the middle, at the middle of the pill (Olesia, 2026-11-22) */
+.health .tip {
+  inset-inline: 0;
+  width: auto;
+}
+.health .tip::before {
+  inset-inline: auto;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.health__line {
+  display: block;
+  margin-bottom: 4px;
+}
+.health__paste {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-micro);
+}
+.mv-kind--health {
+  gap: var(--gap-micro);
+}
 /* every workout exercise in a filled box, as «самопочуття …» (Olesia, MY-FIXES); bottom 1.5× the top */
 .wo-ex {
   gap: 0;

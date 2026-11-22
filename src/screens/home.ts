@@ -1,5 +1,5 @@
 import { formatLong, type DayKey } from '../domain/dates';
-import { emptyDay, type Day } from '../domain/day';
+import { emptyDay, type Day, type HealthLog } from '../domain/day';
 import type { Diary } from '../domain/diary';
 import type { Edit } from '../domain/log';
 import type { Settings } from '../domain/settings';
@@ -9,7 +9,7 @@ import { dayArrives, popShownDay, reward, sheetIn, sheetOut, swapMonth } from '.
 import { completed } from '../domain/progress';
 import { heroFor, homeSections, sectionDone, type SectionId, type SectionSpec } from '../home/home-view';
 import {
-  checkInBody, daytimeBody, morningBody, movementBody, noteBody, sectionTop, workoutBody, type SectionContext,
+  checkInBody, daytimeBody, HEALTH_TIP, morningBody, movementBody, noteBody, sectionTop, workoutBody, type SectionContext,
 } from '../home/sections';
 import { PULSE_SAYS, pulseQuestion, pulseRunning, pulseTime, schedulePulse, stopwatchTime, type HomeSession } from '../home/session';
 import { calendarMarkup, type CalendarView } from '../home/calendar';
@@ -68,6 +68,17 @@ export interface HomeActions {
   toast(message: ToastMessage): void;
   /** Tips for newcomers: shown until the person closes them or has done the thing three times, on this phone. */
   tips?: { open(id: string): boolean; close(id: string): void; succeed?(id: string): void } | undefined;
+  /** iPhone only (beta 1.1.1): «Здоровʼя» in «рух». */
+  health?: HomeHealth | undefined;
+}
+
+export interface HomeHealth {
+  connected(): boolean;
+  connect(): void;
+  /** The clipboard as text; null when the phone doesn't give it. */
+  read(): Promise<string | null>;
+  /** Writes «Здоровʼя» of these days and shows home again. */
+  add(days: Readonly<Record<DayKey, HealthLog>>): void;
 }
 
 const BODIES: Record<SectionId, (ctx: SectionContext) => string> = {
@@ -135,6 +146,7 @@ function wireCollapse(home: HTMLElement): void {
 function markup(state: HomeState, actions: HomeActions): string {
   const ctx: SectionContext = {
     settings: state.settings, day: dayOf(state), days: state.days, session: state.session, tipOpen: (id) => tipShows(state, actions, id),
+    health: actions.health ? { connected: actions.health.connected() } : undefined,
   };
   const sections = homeSections(state.settings).map((section) => sectionMarkup(section, actions.sectionOpen(section.id), ctx));
   return `
@@ -206,17 +218,22 @@ const tipShows = (state: HomeState, actions: HomeActions, id: string) => !state.
  * opened again.
  */
 function wireTips(host: HTMLElement, state: HomeState, signal: AbortSignal): void {
-  const hush = () => {
+  const hush = (event: Event) => {
+    const target = event.target instanceof Element ? event.target : null;
     for (const tip of host.querySelectorAll<HTMLElement>('.tip')) {
       // only a bubble the person sees: one in a closed section waits for its turn
       if (tip.closest('[hidden]')) continue;
-      state.session.quietTips.add(String(tip.dataset.tipId));
+      // a button inside the bubble («підключити знову») must get its tap
+      if (target?.closest('a, button') && tip.contains(target)) continue;
+      // «як підключити» is asked for, not a newcomer's tip: it can come again
+      if (tip.dataset.tipId === HEALTH_TIP) state.session.health.tip = false;
+      else state.session.quietTips.add(String(tip.dataset.tipId));
       tip.remove();
     }
   };
   document.addEventListener('pointerdown', hush, { capture: true, signal });
   document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') hush();
+    if (event.key === 'Escape') hush(event);
   }, { signal });
 }
 
@@ -405,6 +422,12 @@ function sectionControls(host: HTMLElement, state: HomeState, actions: HomeActio
     toast: (message) => actions.toast(message),
     tipOpen: (id) => tipShows(state, actions, id),
     tipDone: (id) => actions.tips?.succeed?.(id),
+    health: actions.health && {
+      connect: actions.health.connect,
+      read: actions.health.read,
+      add: actions.health.add,
+      today: () => state.today,
+    },
   };
 }
 

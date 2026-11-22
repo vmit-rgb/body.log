@@ -16,6 +16,7 @@ import {
   formatCountdown, formatStopwatch, PULSE_SAYS, pulseQuestion, pulseRunning, pulseTime, stopwatchState, stopwatchTime, type HomeSession, type PulseRun,
 } from './session';
 import { t } from '../i18n/lang';
+import { formatHealth, hasHealth, HEALTH_NAME, SHORTCUT_LINK, SHORTCUT_RUN } from '../health/health';
 
 /*
  * The inside of the home sections (Figma `activity/section` 112:4468 and its
@@ -31,6 +32,8 @@ export interface SectionContext {
   readonly session: HomeSession;
   /** Whether a tip for newcomers still shows (the person hasn't closed it on this phone). */
   readonly tipOpen?: ((id: string) => boolean) | undefined;
+  /** iPhone only (beta 1.1.1): the «Здоровʼя» buttons in «рух»; `connected`, «підключити Здоровʼя» was pressed. */
+  readonly health?: { readonly connected: boolean } | undefined;
 }
 
 
@@ -652,9 +655,73 @@ function movementKind(ctx: SectionContext, kind: MovementKind): string {
     </div>`;
 }
 
+/*
+ * ---- «Здоровʼя» on an iPhone (beta 1.1.1, HEALTH-IMPORT.md, A3, A4; texts are Нитка's drafts) ----
+ * «підключити Здоровʼя» opens the shortcut's iCloud link and the bubble «як підключити»;
+ * from then on «синхронізувати» runs the shortcut, which copies 7 days; back in the
+ * app «вставити дані» reads them (iOS reads the clipboard only after a tap).
+ * One button, the same pill across the screen in every step (Olesia, 2026-11-22).
+ */
+
+export const HEALTH_TIP = 'health';
+/*
+ * Olesia, 2026-11-22: say where «body.log health» turns up. The names of Apple's
+ * buttons («Додати швидку команду», «Команди») are Нитка's guess for iOS 16 in
+ * Ukrainian, not checked on a phone.
+ */
+const HEALTH_HOW = [
+  t('1. відкриється команда «body.log health»: натисни «Додати швидку команду». вона зʼявиться в застосунку «Команди».'),
+  t('2. повернись сюди й натисни «синхронізувати». при першому запуску дозволь команді доступ до «Здоровʼя».'),
+  t('3. команда скопіює кроки й км. повернись сюди й натисни «вставити дані».'),
+];
+const HEALTH_FALLBACK = t('команда не відкривається? відкрий застосунок «Команди», запусти там body.log health, повернись сюди й натисни «вставити дані».');
+
+/*
+ * After «синхронізувати» the same button says «вставити дані»: iOS reads the clipboard only
+ * after a tap, so a second tap is needed, and that isn't obvious (Olesia, 2026-11-22). Нитка's draft.
+ */
+const HEALTH_PASTE = t('коли команда скопіює кроки й км, повернись сюди й натисни цю кнопку ще раз — «вставити дані». iOS спитає дозволу: натисни «Вставити».');
+
+function healthTip(synced: boolean): string {
+  if (synced) return tip(HEALTH_TIP, esc(HEALTH_PASTE));
+  const lines = [...HEALTH_HOW, HEALTH_FALLBACK].map((line) => `<span class="health__line">${esc(line)}</span>`).join('');
+  const again = `<a class="ctl btn btn--tertiary" href="${esc(SHORTCUT_LINK)}" target="_blank" rel="noopener noreferrer" data-act="health-connect">${t('підключити знову')}</a>`;
+  return tip(HEALTH_TIP, `${lines}${again}`);
+}
+
+/** One pill across the screen; only its words and what it does change (Olesia, 2026-11-22). */
+const PILL = 'ctl btn btn--secondary health__main';
+
+function healthButtons(ctx: SectionContext): string {
+  if (!ctx.health) return '';
+  const { synced, field, tip: tipShown } = ctx.session.health;
+  const buttons = !ctx.health.connected
+    ? `<a class="${PILL}" href="${esc(SHORTCUT_LINK)}" target="_blank" rel="noopener noreferrer" data-act="health-connect">${t('підключити Здоровʼя')}</a>`
+    : synced
+      ? `<button type="button" class="${PILL}" data-act="health-paste">${t('вставити дані')}</button>`
+      : `<a class="${PILL}" href="${esc(SHORTCUT_RUN)}" data-act="health-sync">${t('синхронізувати')}</a>`;
+  const paste = field ? `
+    <label class="health__paste"><span class="t-2nd-regular">${t('встав сюди текст, який скопіювала команда:')}</span>
+      ${withGrip(`<textarea class="field" rows="3" data-health-field ${keyed(dayKey(ctx, 'health-field'))}></textarea>`)}</label>
+    <button type="button" class="ctl btn btn--primary" data-act="health-apply">${t('застосувати')}</button>` : '';
+  return `<div class="health"><div class="health__buttons">${buttons}</div>${tipShown ? healthTip(synced) : ''}${paste}</div>`;
+}
+
+/** The record from «Здоровʼя» of the day shown: read only, only what came; on any phone, e.g. after a copy moved. */
+function healthRecord(ctx: SectionContext): string {
+  const log = ctx.day.hl;
+  if (!hasHealth(log)) return '';
+  return `
+    <div class="mv-kind mv-kind--health">
+      <p class="t-1st-semibold">${esc(HEALTH_NAME)}</p>
+      <p class="t-2nd-regular">${esc(formatHealth(log))}</p>
+    </div>`;
+}
+
 export function movementBody(ctx: SectionContext): string {
   const { kinds, hint: note } = ctx.settings.movement;
-  return `${muted(note)}${checkInSub(ctx, 'beforeMovement')}${kinds.map((kind) => movementKind(ctx, kind)).join('')}${checkInSub(ctx, 'afterMovement')}`;
+  return `${muted(note)}${healthButtons(ctx)}${checkInSub(ctx, 'beforeMovement')}${healthRecord(ctx)}${
+    kinds.map((kind) => movementKind(ctx, kind)).join('')}${checkInSub(ctx, 'afterMovement')}`;
 }
 
 /* ---- note ---- */

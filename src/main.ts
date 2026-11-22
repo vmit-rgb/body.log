@@ -17,7 +17,7 @@ import './styles/typography.css';
 import { startApp } from './app/app';
 import { detectPlatform, isInstalled } from './app/start';
 import { dayKeyOf } from './domain/dates';
-import { backupMemory, browserChoice, diaryStore, sectionMemory, storageFor, themeMemory, tipMemory, welcomeMemory } from './storage/store';
+import { backupMemory, browserChoice, diaryStore, healthMemory, sectionMemory, storageFor, themeMemory, tipMemory, welcomeMemory } from './storage/store';
 import { isInAppBrowser } from './app/in-app';
 import { useInstallOffer, watchInstallOffer } from './pwa/install-offer';
 import { DEFAULT_APPEARANCE, lookOf, startAppearance, type Appearance } from './ui/appearance';
@@ -76,11 +76,17 @@ wireNotes(document);
 const host = document.querySelector<HTMLElement>('#app')!;
 // C-01: the bottom bar rebuilds itself when the date doesn't fit, and what sits above it follows
 wireBarFit(root, host);
+const platform = detectPlatform(navigator);
 startApp({
   host,
   store: diaryStore(storage, () => new Date()),
   browser: browserChoice(storage),
-  platform: detectPlatform(navigator),
+  platform,
+  // beta 1.1.1: «Здоровʼя» only on an iPhone (HEALTH-IMPORT.md, decision 3); iOS shows its own «вставити» first
+  health: platform === 'iphone' ? {
+    ...healthMemory(storage),
+    read: () => (navigator.clipboard?.readText ? navigator.clipboard.readText().catch(() => null) : Promise.resolve(null)),
+  } : undefined,
   installed,
   inApp: isInAppBrowser(navigator.userAgent),
   welcome: welcomeMemory(storage),
