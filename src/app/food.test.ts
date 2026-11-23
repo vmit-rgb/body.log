@@ -11,6 +11,9 @@ import { PasteFlow } from './paste-flow';
 import { ACCENT_NAMES, ACCESS_SHORT } from '../screens/settings';
 import { fakeDevice, openSections } from './test-env';
 
+/** The sums keep their fields whole with no-break spaces (beta 1.2.3); compare them as plain text. */
+const plain = (text: string | null | undefined) => (text ?? '').replace(/[  ]/g, ' ');
+
 /* «їжа» on home: the sheet «+ прийом» (FOOD-SECTION.md). Invented data only. */
 
 const TODAY = '2026-11-23' as DayKey;
@@ -98,7 +101,7 @@ describe('the section «їжа»', () => {
     type(inSheet('[data-f="f"]'), '8');
     type(inSheet('[data-f="c"]'), '45,5');
     expect(inSheet<HTMLInputElement>('[data-food="kcal"]')).toHaveProperty('placeholder', '302');
-    expect(inSheet('[data-sum]').textContent).toContain('302 ккал');
+    expect(plain(inSheet('[data-sum]').textContent)).toContain('302 ккал');
     await save();
     expect(stored().days[TODAY]!.food).toEqual([{ t: '08:30', items: [{ name: 'вівсянка', portion: 1, p: 12, f: 8, c: 45.5, kcal: 302 }] }]);
     expect(readFoodSettings(stored().profile.food).dishes.map((d) => d.name)).toEqual(['вівсянка']);
@@ -113,10 +116,10 @@ describe('the section «їжа»', () => {
     inSheet('[data-portion="2"]').click();
     type(inSheet('[data-food="kcal"]'), '250');
     expect(inSheet('[data-own]').hidden).toBe(false);
-    expect(inSheet('[data-sum]').textContent).toContain('500 ккал · б 20');
+    expect(plain(inSheet('[data-sum]').textContent)).toContain('500 ккал · б 20');
     sheetButton('зберегти').click();
     await settle();
-    expect(hint()!.textContent).toContain('500 ккал · б 20 · ж 0 · в 0');
+    expect(plain(hint()!.textContent)).toContain('500 ккал · б 20 · ж 0 · в 0');
     expect(section()!.querySelector('.food-meal')!.textContent).toContain('сирник ×2');
   });
 
