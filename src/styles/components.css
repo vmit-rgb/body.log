@@ -274,6 +274,11 @@
   box-shadow: inset 0 0 0 var(--stroke-2) var(--disabled);
   color: var(--disabled);
 }
+/* one-line fields (input, not textarea) have no frame, as iOS draws them: the fill alone
+   marks the field; the focus ring and the error frame stay (Olesia, 2026-11-23) */
+input.field:not(:focus):not([aria-invalid='true']) {
+  box-shadow: none;
+}
 /* icon/resize-grip (73:3444) in the corner, in the muted colour (the accent while pulled).
    The grip itself stretches the field (ui/notes.ts): a tap-sized corner, the icon inside it */
 .field-wrap {
