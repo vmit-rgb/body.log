@@ -511,6 +511,9 @@ describe('тренування', () => {
     expect(host.textContent).toContain('5 кг');
     expect(checked('n кг', 0)).toBe(true);
     expect(checked('n с', 2)).toBe(true);
+    // the stopwatch counts from zero: no «скільки секунд» until «таймер» (beta 1.2.2, Olesia)
+    expect(host.textContent).not.toContain('30 с');
+    await tap('таймер');
     expect(host.textContent).toContain('30 с');
   });
 
@@ -522,8 +525,16 @@ describe('тренування', () => {
     await tick('n кг', 1);
     await tap('стартова вага');
     await type('');
+    await tap('таймер');
     await tap('30 с');
     await type('');
+    // the timer without its seconds is an error (Olesia, 2026-11-23)
+    expect(host.querySelector('.st-error')!.textContent).toContain('без них таймер не запуститься');
+    // and settings with an error are not kept: 💾 says so, the saved ones stay
+    await save();
+    expect(document.body.textContent).toContain('не збережено: у таймера немає секунд');
+    expect(at(`${S}.0`)).toMatchObject({ sets: 3, reps: '10' });
+    await tap('секундомір');
     await save();
     expect(at(`${S}.0`)).toMatchObject({ sets: 4, reps: '8–10', weight: 7.5 });
     expect(at(`${S}.1`)).toEqual({ exercise: 'exercise-7', reps: '12', sets: 2, fields: ['weight', 'reps'] });

@@ -110,7 +110,7 @@ describe('home', () => {
 
   it('ends with the footer: the version and the rights, no surname (Olesia, 2026-11-18)', () => {
     const lines = [...host.querySelectorAll('.footer p')].map((p) => p.textContent);
-    expect(lines).toEqual(['бета 1.2.1','© 2026 (Олеся + Нитка / AI) · усі права захищено']);
+    expect(lines).toEqual(['бета 1.2.2','© 2026 (Олеся + Нитка / AI) · усі права захищено']);
   });
 });
 

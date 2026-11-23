@@ -193,6 +193,22 @@ describe('how long a toast stays (ACCESSIBILITY.md rule 7)', () => {
     expect(box().hidden).toBe(false);
   });
 
+  it('a brief error goes after the 4 s, with the melting bar (Olesia, 2026-11-23)', () => {
+    toast.show({ message: 'хоч одне поле має лишитися >_<', error: true, brief: true });
+    expect(life().hidden).toBe(false);
+    wait(TOAST_MS + 1000);
+    expect(box().hidden).toBe(true);
+  });
+
+  it('a lead goes first, bold, in the error colour (Olesia, 2026-11-23)', () => {
+    toast.show({ lead: 'не збережено:', message: 'у таймера немає секунд >_<', error: true });
+    wait(1000);
+    const lead = box().querySelector('.toast__message .toast__lead')!;
+    expect(lead.tagName).toBe('STRONG');
+    expect(lead.textContent).toBe('не збережено:');
+    expect(box().querySelector('.toast__message')!.textContent).toBe('не збережено: у таймера немає секунд >_<');
+  });
+
   it('A-02: a message about one screen goes when another screen comes; others stay', () => {
     toast.show({ message: 'форму ще робимо, скоро буде', local: true });
     toast.screenChanged();

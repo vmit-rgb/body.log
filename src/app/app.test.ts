@@ -71,7 +71,7 @@ describe('first launch in the installed app', () => {
     expect(heading()).toBe('привіт! почнімо з налаштувань :)');
     expect(host.querySelector('[data-restore]')!.textContent).toBe('відновити з копії');
     expect(host.querySelector('[data-start-without-ai]')!.textContent).toBe('почати без ШІ');
-    expect(host.querySelector('footer')!.textContent).toContain('бета 1.2.1');
+    expect(host.querySelector('footer')!.textContent).toContain('бета 1.2.2');
   });
 
   it('shows the paste field at once, with no choice of phone (wave 7a)', () => {

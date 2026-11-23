@@ -46,7 +46,7 @@ const REMOVED: ToastMessage = { message: t('видалено'), showIcon: true }
 const FULL: ToastMessage = { message: `${t('у групі вже 3 вправи — більше не влізе')} >_<`, error: true };
 const NOT_A_NUMBER: ToastMessage = { message: `${t('тут потрібне число')} >_<`, error: true }; // draft
 const NEGATIVE: ToastMessage = { message: `${NUMBER_ERRORS.negative} >_<`, error: true }; // draft
-const ONE_FIELD: ToastMessage = { message: `${t('хоч одне поле має лишитися')} >_<`, error: true }; // draft
+const ONE_FIELD: ToastMessage = { message: `${t('хоч одне поле має лишитися')} >_<`, error: true, brief: true }; // draft; goes in 4 s (Olesia, 2026-11-23)
 
 const MAX: Record<EditKind, number> = { text: 120, long: 500, url: 500, number: 12, rx: 60 };
 const FIELD_ORDER = { wfield: ['weight', 'reps', 'seconds'], mfield: ['km', 'minutes', 'steps'] } as const;
@@ -171,6 +171,11 @@ export class SectionsEditor {
     const item = obj(valueAt(this.draft.profile(), path));
     const seconds = typeof item.seconds === 'number' ? item.seconds : null;
     this.draft.change(withTimed(path, on, seconds, String(item.reps ?? '')));
+  }
+
+  /** A workout exercise counts its time down from its seconds (the timer) or up (the stopwatch, left out). */
+  timer(path: string, on: boolean): void {
+    this.draft.change(withValue(`${path}.timer`, on ? true : undefined));
   }
 
   /** A field on or off; the last one stays (an empty list would read as the default anyway). */

@@ -41,6 +41,8 @@ export interface WarmupItem {
   readonly exercise: string;
   readonly reps: string;
   readonly seconds: number | null;
+  /** A countdown from `seconds` to zero on home instead of the stopwatch (beta 1.2.2, Olesia). */
+  readonly timer?: boolean;
 }
 
 export type WorkoutField = 'weight' | 'reps' | 'seconds';
@@ -52,9 +54,21 @@ export interface WorkoutItem {
   readonly weight: number | null;
   readonly sets: number | null;
   readonly fields: readonly WorkoutField[];
+  /** A countdown from `seconds` to zero on home instead of the stopwatch (beta 1.2.2, Olesia). */
+  readonly timer?: boolean;
 }
 
 export type WorkoutEntry = WorkoutItem | { readonly set: readonly WorkoutItem[] };
+
+/**
+ * Workout exercises on the timer without their seconds (beta 1.2.2): the timer has nothing
+ * to count from, so settings like these are not saved (Olesia, 2026-11-23). A warm-up
+ * exercise by time always has its seconds.
+ */
+export function timersWithoutSeconds(settings: Settings): string[] {
+  const items = settings.workout.sessions.flatMap((session) => session.items.flatMap((entry) => ('set' in entry ? entry.set : [entry])));
+  return items.filter((item) => item.timer === true && item.fields.includes('seconds') && item.seconds === null).map((item) => item.exercise);
+}
 
 export interface Level { readonly id: string; readonly name: string; readonly duration: string; readonly items: readonly WarmupItem[] }
 export interface DaytimeGroup { readonly id: string; readonly name: string; readonly items: readonly WarmupItem[] }
@@ -139,7 +153,7 @@ function readWarmupItems(value: unknown): WarmupItem[] {
     const exercise = id(item.exercise);
     if (exercise === null) return [];
     const seconds = numberOr(item.seconds, null);
-    return [{ exercise, reps: seconds === null ? text(item.reps) : '', seconds }];
+    return [{ exercise, reps: seconds === null ? text(item.reps) : '', seconds, ...(item.timer === true ? { timer: true } : {}) }];
   });
 }
 
@@ -157,6 +171,7 @@ function readWorkoutItem(entry: unknown): WorkoutItem | null {
     weight: numberOr(item.weight, null),
     sets: numberOr(item.sets, null),
     fields: fields.length ? fields : ['reps'],
+    ...(item.timer === true ? { timer: true } : {}),
   };
 }
 

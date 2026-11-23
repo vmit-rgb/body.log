@@ -274,6 +274,7 @@ function exerciseHead(ctx: Ctx, id: string): { name: string; how: string; source
 function warmupItem(ctx: Ctx, family: string, slot: Slot, item: WarmupItem): string {
   const path = `${slot.list}.${slot.index}`;
   const exercise = exerciseHead(ctx, item.exercise);
+  // the count or the seconds next to the name, as before (Olesia took the move back, 2026-11-23)
   const value = item.seconds === null
     ? ed(`${path}.reps`, item.reps, t('n разів'), t('скільки разів'), 'text', 't-3rd-regular st-value')
     : ed(`${path}.seconds`, `${formatNumber(item.seconds)} ${t('с')}`, t('n с'), t('скільки секунд'), 'number', 't-3rd-regular st-value');
@@ -281,7 +282,7 @@ function warmupItem(ctx: Ctx, family: string, slot: Slot, item: WarmupItem): str
         <div class="st-row">${ed(`ex:${item.exercise}.name`, exercise.name, t('вправа'), t('назва вправи'), 'text')}${value}</div>
         ${removeButton(slot, exercise.name, 'exercise')}
         ${ed(`ex:${item.exercise}.how`, exercise.how, t('як робити: короткий опис вправи'), t('як робити'), 'long', 't-2nd-regular')}
-        ${checkbox(t('n с'), item.seconds !== null, `${act('timed')} data-path="${path}"`)}
+        ${checkbox(t('n с'), item.seconds !== null, `${act('timed')} data-path="${path}"`)}${item.seconds === null ? '' : timeKind(item, path)}
         ${linkField(`ex:${item.exercise}.source`, exercise.source)}`;
   return entry(ctx, family, slot, item.exercise, exercise.name, inner, ' st-ex');
 }
@@ -293,13 +294,28 @@ export function prescription(item: WorkoutItem): string {
 function workoutFields(item: WorkoutItem, path: string): string {
   const on = (field: WorkoutItem['fields'][number]) => item.fields.includes(field);
   const box = (field: WorkoutItem['fields'][number], label: string) => checkbox(label, on(field), `${act('wfield')} data-path="${path}.fields" data-field="${field}"`);
-  const seconds = on('seconds') ? ed(`${path}.seconds`, item.seconds === null ? '' : `${formatNumber(item.seconds)} ${t('с')}`, t('скільки секунд'), t('скільки секунд'), 'number', 't-3rd-regular st-value') : '';
+  // «скільки секунд» only for the timer: the stopwatch counts from zero (Olesia, 2026-11-23)
+  const seconds = on('seconds') && item.timer === true ? ed(`${path}.seconds`, item.seconds === null ? '' : `${formatNumber(item.seconds)} ${t('с')}`, t('скільки секунд'), t('скільки секунд'), 'number', 't-3rd-regular st-value') : '';
   const weight = on('weight') ? ed(`${path}.weight`, item.weight === null ? '' : `${formatNumber(item.weight)} ${t('кг')}`, t('стартова вага'), t('вага'), 'number', 't-3rd-regular st-value') : '';
   return `<div class="st-fields">
-          <div class="st-row">${box('seconds', t('n с'))}${seconds}</div>
+          <div class="st-row st-row--time">${box('seconds', t('n с'))}${seconds}</div>${on('seconds') ? timeKind(item, path) : ''}
           <div class="st-row">${box('weight', t('n кг'))}${weight}</div>
           ${box('reps', t('n разів'))}
         </div>`;
+}
+
+/**
+ * A timed exercise counts up (the stopwatch) or down from «скільки секунд» (the timer; beta 1.2.2, Olesia),
+ * in the workout and in the morning warm-up. The timer needs the seconds: without them it is an error
+ * (Olesia, 2026-11-23), and home shows the stopwatch until they are there.
+ */
+function timeKind(item: WorkoutItem | WarmupItem, path: string): string {
+  const timer = item.timer === true;
+  const tab = (on: boolean, label: string) => `<button type="button" class="ctl tab" ${act('wtimer', `data-path="${path}" data-on="${on}"`)}
+        aria-pressed="${timer === on}">${label}</button>`;
+  const note = timer && item.seconds === null ? `<p class="st-error t-3rd-regular">${t('впиши «скільки секунд» — без них таймер не запуститься')} >_<</p>` : '';
+  return `
+          <div class="segmented st-lengths" role="group" aria-label="${t('як рахувати час')}">${tab(false, t('секундомір'))}${tab(true, t('таймер'))}</div>${note}`;
 }
 
 function workoutItem(ctx: Ctx, slot: Slot, item: WorkoutItem): string {

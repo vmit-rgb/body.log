@@ -85,6 +85,7 @@ export type SettingsAct =
   | { readonly act: 'ask'; readonly path: string; readonly moment: Moment; readonly on: boolean }
   | { readonly act: 'timed'; readonly path: string; readonly on: boolean }
   | { readonly act: 'wfield'; readonly path: string; readonly field: string; readonly on: boolean }
+  | { readonly act: 'wtimer'; readonly path: string; readonly on: boolean }
   | { readonly act: 'mfield'; readonly path: string; readonly field: string; readonly on: boolean }
   | { readonly act: 'kind-on'; readonly kind: ActivityKind; readonly on: boolean }
   | { readonly act: 'target'; readonly kind: ActivityKind; readonly delta: number }
@@ -366,6 +367,7 @@ const READ: Record<string, Read> = {
   ask: (el, on) => ({ act: 'ask', path: d(el, 'path'), moment: d(el, 'moment') as Moment, on }),
   timed: (el, on) => ({ act: 'timed', path: d(el, 'path'), on }),
   wfield: (el, on) => ({ act: 'wfield', path: d(el, 'path'), field: d(el, 'field'), on }),
+  wtimer: (el) => ({ act: 'wtimer', path: d(el, 'path'), on: d(el, 'on') === 'true' }),
   mfield: (el, on) => ({ act: 'mfield', path: d(el, 'path'), field: d(el, 'field'), on }),
   'kind-on': (el, on) => ({ act: 'kind-on', kind: d(el, 'kind') as ActivityKind, on }),
   target: (el) => ({ act: 'target', kind: d(el, 'kind') as ActivityKind, delta: Number(d(el, 'delta')) }),

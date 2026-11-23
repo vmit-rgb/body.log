@@ -1,19 +1,19 @@
 import type { DayKey } from '../domain/dates';
-import type { Day, MovementLog } from '../domain/day';
+import type { AddedExercise, Day, MovementLog } from '../domain/day';
 import { formatLaps, formatSets, lastLaps, lastSets } from '../domain/history';
 import { exerciseName as nameOf, MOMENT_TITLES, sessionName } from '../domain/journal';
 import { lapRows, roundRows, setRows } from '../domain/log';
 import { countLabel, formatNumber } from '../domain/numbers';
 import { levelDone } from '../domain/progress';
 import type {
-  DaytimeGroup, Exercise, Level, Moment, MovementField, MovementKind, Settings, Source, Tracker, WarmupItem, WorkoutEntry, WorkoutItem,
+  DaytimeGroup, Exercise, Level, Moment, MovementField, MovementKind, Settings, Source, Tracker, WarmupItem, WorkoutEntry, WorkoutField, WorkoutItem,
 } from '../domain/settings';
 import { esc } from '../ui/html';
 import { iconSvg } from '../ui/icons';
 import { smallUnits } from '../ui/units';
 import { withGrip } from '../ui/grip';
 import {
-  formatCountdown, formatStopwatch, PULSE_SAYS, pulseQuestion, pulseRunning, pulseTime, stopwatchState, stopwatchTime, type HomeSession, type PulseRun,
+  formatCountdown, formatStopwatch, PULSE_SAYS, pulseQuestion, pulseRunning, pulseTime, runningTime, stopwatchState, type HomeSession, type PulseRun,
 } from './session';
 import { t } from '../i18n/lang';
 import { formatHealth, hasHealth, HEALTH_NAME, SHORTCUT_LINK, SHORTCUT_RUN } from '../health/health';
@@ -374,18 +374,27 @@ const SW_ICONS = { default: 'play', running: 'rectangle', saved: 'check', retry:
 /** F-05: during «3 · 2 · 1» ■ only calls the start off; nothing is counted yet. */
 const SW_READY_LABEL = t('зупинити відлік і не запускати');
 
-function stopwatch(ctx: SectionContext, target: string, saved: number | null, n: number): string {
+/** A timer (beta 1.2.2) starts with its own words; the rest is as the stopwatch. */
+const TIMER_START_LABEL = t('запустити таймер');
+
+/**
+ * The stopwatch, or with `countdown` the timer (beta 1.2.2, Olesia): it
+ * shows its seconds before the start and counts them down to zero.
+ */
+function stopwatch(ctx: SectionContext, target: string, saved: number | null, n: number, countdown: number | null = null): string {
   const key = dayKey(ctx, target);
   const state = stopwatchState(ctx.session, key, saved);
   const started = ctx.session.running.get(key);
   const now = performance.now();
-  const time = started === undefined ? formatStopwatch((saved ?? 0) * 1000) : stopwatchTime(started, now);
-  const label = started !== undefined && now < started ? SW_READY_LABEL : SW_LABELS[state];
+  const idle = formatStopwatch((saved ?? countdown ?? 0) * 1000);
+  const time = started === undefined ? idle : runningTime(started, now, countdown);
+  const label = started !== undefined && now < started ? SW_READY_LABEL : countdown !== null && state === 'default' ? TIMER_START_LABEL : SW_LABELS[state];
+  const left = countdown === null ? '' : ` data-sw-left="${countdown}"`;
   return `
-    <div class="sw" data-state="${state}">
+    <div class="sw${countdown === null ? '' : ' sw--timer'}" data-state="${state}">
       <button type="button" class="ctl icon-btn icon-btn--secondary sw__btn" data-act="sw" data-sw="${esc(target)}"
         aria-label="${label}, ${n}">${iconSvg(SW_ICONS[state])}</button>
-      <span class="sw__time t-1st-bold" data-sw-time="${esc(key)}">${time}</span>
+      <span class="sw__time t-1st-bold" data-sw-time="${esc(key)}"${left}>${time}</span>
       ${state === 'retry' ? `<span class="sw__again t-3rd-regular muted">${t('знову')}</span>` : ''}
     </div>`;
 }
@@ -403,7 +412,7 @@ function timerRounds(ctx: SectionContext, item: WarmupItem): string {
     const target = `round|${item.exercise}|${i}`;
     const label = n > 1 ? `${t('видалити таймер')} ${i + 1}` : t('скинути таймер до нуля');
     // one round has no number (stopwatch 157:2903)
-    return `<div class="set-row"><span class="set-row__n t-2nd-regular">${n > 1 ? i + 1 : ''}</span>${stopwatch(ctx, target, times[i] ?? null, i + 1)}${removeButton(ctx, target, label, idleTimer(ctx, target, n, times[i] ?? null))}</div>${armedTip(ctx, target, t('коло'))}`;
+    return `<div class="set-row"><span class="set-row__n t-2nd-regular">${n > 1 ? i + 1 : ''}</span>${stopwatch(ctx, target, times[i] ?? null, i + 1, warmupCountdown(ctx.settings, item.exercise))}${removeButton(ctx, target, label, idleTimer(ctx, target, n, times[i] ?? null))}</div>${armedTip(ctx, target, t('коло'))}`;
   });
   // checklist/exercise: the rows on the right, «ще раз» under them; the tip under the first «ще раз» of the warm-up
   const showTip = tipOpen(ctx, ROUNDS_TIP) && firstTimed(ctx) === item;
@@ -521,7 +530,20 @@ function setRow(ctx: SectionContext, item: WorkoutItem, i: number, n: number, qu
   const seconds = ctx.day.wo?.ex[item.exercise]?.[i]?.s ?? null;
   const remove = setRemove(ctx, target, timed, i, n, seconds);
   return `<div class="set-row${timed ? ' set-row--timed' : ''}"><span class="set-row__n t-2nd-regular">${n > 1 ? i + 1 : ''}</span>
-    <div class="set-row__main">${timed ? stopwatch(ctx, target, seconds, i + 1) : ''}${setFields(ctx, item, i)}</div>${remove}</div>${armedTip(ctx, target, t('підхід'), quiet)}`;
+    <div class="set-row__main">${timed ? stopwatch(ctx, target, seconds, i + 1, countdownOf(item)) : ''}${setFields(ctx, item, i)}</div>${remove}</div>${armedTip(ctx, target, t('підхід'), quiet)}`;
+}
+
+/** The seconds an exercise's timer counts down from; null for the stopwatch (beta 1.2.2). */
+export const countdownOf = (item: WorkoutItem | WarmupItem): number | null =>
+  item.timer === true && (!('fields' in item) || item.fields.includes('seconds')) && item.seconds !== null && item.seconds > 0 ? item.seconds : null;
+
+/**
+ * The timer of a morning warm-up exercise. Its rounds are kept by the exercise, so one in two
+ * levels has one timer: the first level that sets it one wins, on screen and at zero alike.
+ */
+export function warmupCountdown(settings: Settings, exercise: string): number | null {
+  const items = settings.morningWarmup.levels.flatMap((level) => level.items).filter((item) => item.exercise === exercise);
+  return items.map(countdownOf).find((seconds) => seconds !== null) ?? null;
 }
 
 /** × from the second set; a timer has × always, and the only timer's × resets it. */
@@ -535,7 +557,7 @@ function setRemove(ctx: SectionContext, target: string, timed: boolean, i: numbe
  * A workout exercise in its own filled box; its name folds it like a warm-up
  * level, for an exercise skipped today or already done (Olesia, MY-FIXES).
  */
-function workoutExercise(ctx: SectionContext, item: WorkoutItem, showTip: boolean): string {
+function workoutExercise(ctx: SectionContext, item: WorkoutItem, showTip: boolean, added?: AddedExercise): string {
   const exercise = exerciseById(ctx, item.exercise);
   const n = setRows(ctx.day, item.exercise, item.sets);
   const last = lastSets(ctx.days, ctx.day.date, item.exercise);
@@ -543,19 +565,64 @@ function workoutExercise(ctx: SectionContext, item: WorkoutItem, showTip: boolea
   const memo = `wo|${item.exercise}`;
   const open = remembered(ctx, memo, true);
   const id = nextId();
-  const name = exerciseName(ctx, item.exercise);
+  const name = added?.name || exerciseName(ctx, item.exercise);
   return `
-    <li class="wo-ex">
+    <li class="wo-ex${added ? ' wo-ex--added' : ''}">
       <button type="button" class="ctl accordion accordion--exercise" aria-expanded="${open}" aria-controls="${id}" data-memo="${esc(dayKey(ctx, memo))}">
         <span class="accordion__title t-1st-semibold">${esc(name)}</span><span class="accordion__meta t-3rd-semibold">${esc(prescription(item))}</span>
       </button>
       <div class="acc-body acc-body--exercise" id="${id}"${open ? '' : ' hidden'}>
         <div class="wo-ex__sub">${cue ? `<p class="t-2nd-regular">${esc(cue)}</p>` : ''}${last ? `<p class="t-2nd-regular"><b>${t('минулого разу:')}</b> ${smallUnits(esc(formatSets(last)))}</p>` : ''}</div>
-        <div class="sets">${Array.from({ length: n }, (_, i) => setRow(ctx, item, i, n, showTip)).join('')}</div>${showTip ? tip(SETS_TIP, SETS_TIP_TEXT) : ''}
+        ${added ? addedFields(ctx, added, name) : ''}<div class="sets">${Array.from({ length: n }, (_, i) => setRow(ctx, item, i, n, showTip)).join('')}</div>${showTip ? tip(SETS_TIP, SETS_TIP_TEXT) : ''}
         <div class="wo-ex__actions">${howAccordion(ctx, `how|${item.exercise}`, howTo(exercise)) || '<span></span>'}
           <button type="button" class="ctl btn btn--tertiary" data-act="more-sets" data-ex="${esc(item.exercise)}">${t('додати підхід')}</button></div>
+        ${added ? addedRemove(ctx, added, name) : ''}
       </div>
     </li>`;
+}
+
+/* ---- exercises added right in the workout (beta 1.2.2, Olesia) ---- */
+
+const ADDED_FIELD_NAMES: readonly (readonly [WorkoutField, string])[] = [['weight', t('кг')], ['reps', t('повтори')], ['seconds', t('секундомір')]];
+
+/** As a planned exercise, from what the day keeps: no plan, only the fields shown. */
+export const addedItem = (added: AddedExercise): WorkoutItem => ({ exercise: added.id, reps: '', seconds: null, weight: null, sets: null, fields: added.fields });
+
+/** All three fields at first; a chip takes one away or brings it back (the last one stays). */
+function addedFields(ctx: SectionContext, added: AddedExercise, name: string): string {
+  const chip = ([field, label]: readonly [WorkoutField, string]) => `<button type="button" class="ctl chip" data-act="added-field" data-ex="${esc(added.id)}"
+      data-field="${field}" aria-pressed="${added.fields.includes(field)}" ${keyed(dayKey(ctx, `added-field|${added.id}|${field}`))}>${label}</button>`;
+  return `<div class="chips wo-ex__fields" role="group" aria-label="${esc(name)}${t(': що записувати')}">${ADDED_FIELD_NAMES.map(chip).join('')}</div>`;
+}
+
+/** «прибрати вправу»: a first tap asks, the second removes (ACCESSIBILITY.md, deleting); «скасувати» in the toast brings it back. */
+function addedRemove(ctx: SectionContext, added: AddedExercise, name: string): string {
+  const target = `addex|${added.id}`;
+  const armed = ctx.session.armed === dayKey(ctx, target);
+  const label = armed ? `${t('так, прибрати вправу')} «${esc(name)}»` : `${t('прибрати вправу')} «${esc(name)}»`;
+  return `<div class="wo-ex__drop"><button type="button" class="ctl btn ${armed ? 'btn--destructive' : 'btn--tertiary'}" data-act="rm" data-rm="${esc(target)}"
+      aria-label="${label}" ${keyed(dayKey(ctx, target))}>${armed ? t('так, прибрати вправу') : t('прибрати вправу')}</button></div>`;
+}
+
+/**
+ * «додати вправу» under the exercises; tapped, a one-line field for the name, and under it
+ * «додати» (second level) and «скасувати» (red, as other destructive buttons) across its width (Olesia, 2026-11-23).
+ */
+function addExerciseBlock(ctx: SectionContext): string {
+  if (ctx.session.adding !== dayKey(ctx, 'add-ex')) {
+    return `<div class="wo-add"><button type="button" class="ctl btn btn--secondary" data-act="add-ex-open" ${keyed(dayKey(ctx, 'add-ex-open'))}>${t('додати вправу')}</button></div>`;
+  }
+  const names = [...new Set(ctx.settings.exercises.map((exercise) => exercise.name.trim()).filter(Boolean))];
+  const list = names.length ? `<datalist id="wo-add-names">${names.map((n) => `<option value="${esc(n)}"></option>`).join('')}</datalist>` : '';
+  return `
+    <div class="wo-add wo-add--open">
+      <input class="field wo-add__field" type="text" maxlength="120" autocomplete="off" enterkeyhint="done" aria-label="${t('назва вправи')}"
+        placeholder="${t('назва вправи')}" data-add-ex${names.length ? ' list="wo-add-names"' : ''} ${keyed(dayKey(ctx, 'add-ex-field'))}>${list}
+      <div class="wo-add__buttons">
+        <button type="button" class="ctl btn btn--secondary" data-act="add-ex">${t('додати')}</button>
+        <button type="button" class="ctl btn btn--destructive" data-act="add-ex-cancel">${t('скасувати')}</button>
+      </div>
+    </div>`;
 }
 
 /** The tip goes under the first exercise that has an × to explain (two sets or more). */
@@ -580,8 +647,9 @@ function pickedWorkout(ctx: SectionContext, sessionId: string): string {
     remembered(ctx, 'how|session', false), howParagraphs(session.how))}</div>` : '';
   const rules = ctx.settings.workout.hint ? `<p class="wo-rules t-1st-regular">${esc(ctx.settings.workout.hint)}</p>` : '';
   const tipFor = tipExercise(ctx, session.items.flatMap((entry) => ('set' in entry ? entry.set : [entry])));
+  const added = (ctx.day.wo?.add ?? []).map((entry) => workoutExercise(ctx, addedItem(entry), false, entry)).join('');
   return `${how}<h3 class="t-h5 wo-title">${esc(sessionName(session.name))}</h3>${rules}
-    <ol class="ex-list">${session.items.map((entry) => workoutEntry(ctx, entry, tipFor)).join('')}</ol>${finishButton(ctx)}`;
+    <ol class="ex-list">${session.items.map((entry) => workoutEntry(ctx, entry, tipFor)).join('')}${added}</ol>${addExerciseBlock(ctx)}${finishButton(ctx)}`;
 }
 
 /**

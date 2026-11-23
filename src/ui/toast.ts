@@ -1,5 +1,6 @@
 import { announce } from './announce';
 import { emoticonsHtml, withoutEmoticons } from './emoticons';
+import { esc } from './html';
 import { iconSvg } from './icons';
 import { EASE, glyphs, MS, play, typeIn, whenDone } from './motion';
 import { t } from '../i18n/lang';
@@ -20,6 +21,10 @@ export interface ToastMessage {
    * to do something next (Olesia, 2026-11-22, the one exception to the 4 s; FIXES-1.0.1.md, A2).
    */
   readonly stay?: boolean;
+  /** An error that goes after the 4 s anyway: a hint about what can't be done, nothing lost (Olesia, 2026-11-23). */
+  readonly brief?: boolean;
+  /** Words before the message, bold and in the error colour: «не збережено:» (Olesia, 2026-11-23). */
+  readonly lead?: string;
 }
 
 export interface ToastAction {
@@ -54,7 +59,7 @@ export function undo(run: () => void): ToastAction {
 
 /** What a screen reader hears: the message whole, then the button's name. */
 function spoken(next: ToastMessage): string {
-  const message = withoutEmoticons(next.message);
+  const message = withoutEmoticons(next.lead ? `${next.lead} ${next.message}` : next.message);
   return next.action ? `${message}. ${next.action.label}` : message;
 }
 
@@ -123,11 +128,11 @@ export function mountToast(host: HTMLElement): Toast {
   let settling: ReturnType<typeof setTimeout> | undefined;
   const held = { focus: false, pointer: false };
 
-  const timed = (message: ToastMessage) => !keepAll && !message.action && !message.error && !message.stay;
+  const timed = (message: ToastMessage) => !keepAll && !message.action && (!message.error || message.brief === true) && !message.stay;
 
   function write(next: ToastMessage): void {
     // innerHTML on the toast's own element, never a global document: the settle timer can fire after a test file's page is gone (it broke two deploys)
-    text.innerHTML = emoticonsHtml(next.message);
+    text.innerHTML = `${next.lead ? `<strong class="toast__lead">${esc(next.lead)}</strong> ` : ''}${emoticonsHtml(next.message)}`;
   }
 
   /** Counts what is left of the 4 s, unless something holds the toast. */
