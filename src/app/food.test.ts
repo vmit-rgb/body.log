@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { DayKey } from '../domain/dates';
 import { parseDiary, type Diary } from '../domain/diary';
 import { EXAMPLE_DIARY } from '../domain/examples';
@@ -68,6 +68,11 @@ beforeEach(() => {
   localStorage.clear();
   document.body.innerHTML = '';
   copied = [];
+});
+
+// the keeper writes 400 ms after the last change: written now, so it can't land in the next test's storage
+afterEach(() => {
+  host?.querySelector<HTMLElement>('.bar__menu')?.click();
 });
 
 describe('the section «їжа»', () => {
