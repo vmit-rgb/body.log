@@ -868,7 +868,6 @@ export const EN: Readonly<Record<string, string>> = {
   "у середньому за день, г; дні без записів не враховано": "average per day, g; days without entries aren't counted",
   "без записів": "no entries",
   "останні 14 днів": "the last 14 days",
-  "г": "g",
 };
 
 /** Ukrainian [1, 2–4, 5+] → English [1, other], keyed by the first Ukrainian word (domain/numbers.ts, `plural`). */

@@ -118,7 +118,7 @@ function macrosMarkup(card: Extract<FoodCard, { kind: 'food-macros' }>): string 
   return `<ul class="avgs" role="list">
       <li class="avg"><span class="avg__label t-3rd-semibold">${LETTERS.kcal}</span> <b class="avg__value t-1st-bold">${whole(avg.kcal)}${kcalRef}</b></li>${grams.map((key) => `
       <li class="avg"><span class="avg__label t-3rd-semibold">${LETTERS[key]}</span> <b class="avg__value t-1st-bold">${whole(avg[key])}${card.ref[key] === undefined ? '' : ` / ${whole(card.ref[key]!)}`}</b></li>`).join('')}</ul>
-    <div class="food-bars" aria-hidden="true"><div class="food-bars__y">${axis}<span class="food-bars__unit t-3rd-regular">${t('г')}</span></div><div class="food-bars__plot">${grid}${refs}${days}</div></div>
+    <div class="food-bars" aria-hidden="true"><div class="food-bars__y">${axis}</div><div class="food-bars__plot">${grid}${refs}${days}</div></div>
     <ul class="chart__legend t-3rd-regular" role="list">
       <li><span class="food-key food-bar--p"></span>${t('білки')}</li><li><span class="food-key food-bar--f"></span>${t('жири')}</li><li><span class="food-key food-bar--c"></span>${t('вуглеводи')}</li>${
   guided.length ? `<li><span class="food-key food-key--ref"></span>${t('орієнтир')}</li>` : ''}${
