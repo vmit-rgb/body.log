@@ -568,15 +568,29 @@
   background: var(--accent);
 }
 
-/* small text under a checkbox, on one line with its label ([ ] is three characters and a gap wide);
-   «.settings» in front, or «.settings p { margin: 0 }» wins and the text drops 26 px lower */
-.settings .st-hint {
-  margin: calc(-1 * var(--gap-group) - 10px) 0 0;
-  padding-left: calc(17px * var(--text-scale) * 0.6 * 3 + var(--gap-items));
+/*
+ * Small text under a checkbox's name, inside its label (settings-bits `checkbox`), so it
+ * follows a name on any number of lines (Olesia's Pixel, 2026-11-23: a pulled-up hint ran
+ * over a name on two lines). [ ] stays at the first line; the name stands where a one-line
+ * name stood in the 48 px row.
+ */
+.checkbox--hinted {
+  align-items: flex-start;
+  padding-top: calc((var(--tap) - 1.3em) / 2);
 }
-/* only the first one tucks up to the checkbox; the next stands under it («їжа», 2026-11-23) */
-.settings .st-hint + .st-hint {
-  margin-top: var(--gap-items);
+.checkbox__text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-micro);
+  text-align: left;
+}
+.checkbox__hint {
+  color: var(--muted);
+  font-weight: 420;
+}
+/* a note after a checkbox, lined up with its name ([ ] is three characters and a gap wide) */
+.settings .st-note {
+  padding-left: calc(17px * var(--text-scale) * 0.6 * 3 + var(--gap-items));
 }
 
 /* a description or «як робити» keeps its line breaks and empty lines, as on home */

@@ -4,10 +4,22 @@ import { t } from '../i18n/lang';
 
 /* Small pieces of the settings page, shared by its parts. */
 
-export function checkbox(label: string, checked: boolean, data: string, disabled = false): string {
+/** Small text under a checkbox's name: its id for aria-describedby, and the text (HTML). */
+export interface CheckHint { readonly id: string; readonly text: string }
+
+/**
+ * A checkbox; `hints` stand under its name inside the label, so they follow
+ * a name of any length (Olesia's Pixel, 2026-11-23: a name on two lines ran
+ * over the hint that was pulled up to one line). Hidden from the name, they
+ * are its description.
+ */
+export function checkbox(label: string, checked: boolean, data: string, disabled = false, hints: readonly CheckHint[] = []): string {
+  const described = hints.length ? ` aria-describedby="${hints.map((hint) => hint.id).join(' ')}"` : '';
+  const under = hints.map((hint) => `<span class="checkbox__hint t-2nd-regular muted" id="${hint.id}" aria-hidden="true">${hint.text}</span>`).join('');
+  const name = `<span class="checkbox__label t-1st-semibold">${label}</span>`;
   return `
-    <label class="ctl checkbox"><input class="checkbox__input" type="checkbox" ${data}${checked ? ' checked' : ''}${disabled ? ' disabled' : ''} /><span class="checkbox__box" aria-hidden="true"></span>
-      <span class="checkbox__label t-1st-semibold">${label}</span></label>`;
+    <label class="ctl checkbox${hints.length ? ' checkbox--hinted' : ''}"><input class="checkbox__input" type="checkbox" ${data}${described}${checked ? ' checked' : ''}${disabled ? ' disabled' : ''} /><span class="checkbox__box" aria-hidden="true"></span>
+      ${hints.length ? `<span class="checkbox__text">${name}${under}</span>` : name}</label>`;
 }
 
 export const act = (name: string, extra = '') => `data-act="${name}"${extra ? ` ${extra}` : ''}`;

@@ -204,8 +204,7 @@ function accessBody(settings: Settings, reduced: boolean): string {
   const row = (key: AccessibilityKey) => {
     const locked = reduced && MOTION_KEYS.includes(key);
     const hint = ACCESS_HINTS[key];
-    const box = checkbox(ACCESS_LABELS[key], locked || settings.accessibility[key], `${act('access')} data-key="${key}"${hint ? ` aria-describedby="access-${key}-hint"` : ''}`, locked);
-    return hint ? `${box}<p class="t-2nd-regular muted st-hint" id="access-${key}-hint">${hint}</p>` : box;
+    return checkbox(ACCESS_LABELS[key], locked || settings.accessibility[key], `${act('access')} data-key="${key}"`, locked, hint ? [{ id: `access-${key}-hint`, text: hint }] : []);
   };
   const note = reduced ? `<p class="t-2nd-regular muted">${t('на телефоні ввімкнено «зменшити рух», тож анімації вимкнені.')}</p>` : '';
   return `${ACCESSIBILITY_KEYS.map(row).join('')}${note}`;

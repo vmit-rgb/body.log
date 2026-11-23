@@ -41,9 +41,9 @@ const OWN_PROMPT = t('загальний промпт налаштувань л�
 
 const sw = (key: FoodSwitch, on: boolean) => {
   const hint = HINTS[key];
-  const box = checkbox(SWITCHES[key], on, `${act('food-on')} data-key="${key}"${hint ? ` aria-describedby="food-${key}-hint"` : ''}`);
-  const own = key === 'enabled' ? `<p class="t-2nd-regular muted st-hint">${OWN_PROMPT}</p>` : '';
-  return hint ? `${box}<p class="t-2nd-regular muted st-hint" id="food-${key}-hint">${hint}</p>${own}` : box;
+  const box = checkbox(SWITCHES[key], on, `${act('food-on')} data-key="${key}"`, false, hint ? [{ id: `food-${key}-hint`, text: hint }] : []);
+  // not about the checkbox itself: its own paragraph, so a tap on it switches nothing
+  return key === 'enabled' ? `${box}<p class="t-2nd-regular muted st-note">${OWN_PROMPT}</p>` : box;
 };
 
 const REF_LABELS: Record<FoodNumber, string> = { kcal: t('калорії'), p: t('білки, г'), f: t('жири, г'), c: t('вуглеводи, г') };
