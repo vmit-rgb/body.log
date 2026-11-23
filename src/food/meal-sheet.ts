@@ -165,7 +165,7 @@ function rowMarkup(spec: MealSheetSpec, row: Row, i: number, armed: number | nul
       <div class="chips food-portions" role="group" aria-label="${t('порція')}"><span class="t-3rd-regular muted">${t('порція')}</span>${PORTIONS.map((p) => `
         <button type="button" class="ctl chip" data-food="portion" data-row="${row.id}" data-portion="${p}" aria-pressed="${row.portion === p}">${portionLabel(p)}</button>`).join('')}</div>
       <div class="food-row__numbers">${macro('p', t('білки, г на порцію'), t('б'))}${macro('f', t('жири, г на порцію'), t('ж'))}${macro('c', t('вуглеводи, г на порцію'), t('в'))}
-        <span class="food-row__arrow" aria-hidden="true">→</span>${kcalField(row)}</div>
+        <span class="food-row__kcal"><span class="food-row__arrow" aria-hidden="true">→</span>${kcalField(row)}</span></div>
       <p class="t-2nd-regular food-error" data-num-note="${row.id}" aria-live="polite" hidden>${NUMBER_ERRORS['not-a-number']}</p>
       ${row.ai ? `<p class="t-3rd-regular muted">${t('оцінка ШІ, приблизно')}</p>` : ''}` : '';
   return `
@@ -481,9 +481,9 @@ export function dishSheet(spec: DishSheetSpec): Promise<DishAnswer> {
       <input class="field" type="text" maxlength="${PORTION_NOTE_MAX}" placeholder="${t('порція, напр. тарілка або 100 г')}" aria-label="${t('що таке одна порція')}" value="${esc(state.portion)}" data-dish="portion" />
       <p class="t-3rd-regular muted">${t('білки, жири й вуглеводи — у грамах на одну порцію.')}</p>
       <div class="food-row__numbers">${num('p', t('білки, г на порцію'), t('б'))}${num('f', t('жири, г на порцію'), t('ж'))}${num('c', t('вуглеводи, г на порцію'), t('в'))}
-        <span class="food-row__arrow" aria-hidden="true">→</span>${foodNumber({
+        <span class="food-row__kcal"><span class="food-row__arrow" aria-hidden="true">→</span>${foodNumber({
           key: 'kcal', label: t('калорії на порцію'), value: state.kcal, placeholder: state.kcal ? '' : String(counted() ?? ''), unit: t('ккал'), data: 'data-dish="kcal"',
-        })}</div>
+        })}</span></div>
       <p class="t-2nd-regular food-error" data-num-note aria-live="polite" hidden>${NUMBER_ERRORS['not-a-number']}</p>
       ${dish ? `<div><button type="button" class="ctl btn btn--destructive" data-dish-act="delete">${t('видалити страву')}</button></div>` : ''}
       <div class="food-sheet__actions">

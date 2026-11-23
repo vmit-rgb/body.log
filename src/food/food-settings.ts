@@ -62,7 +62,7 @@ function refFields(food: FoodSettings): string {
       <h4 class="t-2nd-bold">${t('орієнтир')}</h4>
       <p class="t-2nd-regular muted">${t('за бажанням, для кожного числа окремо. це лише пунктирна лінія на графіку: застосунок нічого не оцінює. порожнє поле — без лінії.')}</p>
       <div class="food-row__numbers food-ref">${(['p', 'f', 'c'] as const).map(field).join('')}
-        <span class="food-row__arrow" aria-hidden="true">→</span>${field('kcal')}</div>
+        <span class="food-row__kcal"><span class="food-row__arrow" aria-hidden="true">→</span>${field('kcal')}</span></div>
       <p class="t-2nd-regular food-error" data-ref-note aria-live="polite" hidden>${NUMBER_ERRORS['not-a-number']}</p>
       <p class="t-3rd-regular muted">${t('калорії рахуються самі, коли є всі три числа. своє число в їхньому полі важить більше.')}</p>
     </div>`;

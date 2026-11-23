@@ -336,3 +336,19 @@
 .food-guide h4 {
   margin: 0;
 }
+
+/* the numbers of «їжа» are lower than other fields (Olesia, 2026-11-23: «дуже здорові»);
+   with «збільшити зони натискання» they keep the full 48 px */
+:root:not([data-larger-targets]) .food-num {
+  min-height: 36px;
+}
+.food-row__numbers {
+  column-gap: var(--gap-items);
+}
+/* → and kcal move to the next line together, never → alone at the end of a line */
+.food-row__kcal {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gap-items);
+  white-space: nowrap;
+}
