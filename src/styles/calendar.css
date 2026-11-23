@@ -106,7 +106,12 @@
 .cal-block .carousel h3 {
   margin-top: 0;
 }
+/* position: relative keeps an absolute child (the .visually-hidden times of
+   «їжа: час прийомів») inside the track; without it the child escaped the
+   scroll, the page grew sideways and the bottom bar went off screen
+   (Olesia's iPhone, 2026-11-23) */
 .carousel__track {
+  position: relative;
   display: flex;
   overflow-x: auto;
   overscroll-behavior-x: contain;

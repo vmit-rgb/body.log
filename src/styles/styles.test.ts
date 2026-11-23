@@ -209,6 +209,10 @@ describe('stylesheets', () => {
   });
 
   describe('wave 4: overflow and fields (Olesia, MY-FIXES)', () => {
+    it('the carousel track holds its absolute children, so the page never scrolls sideways (Olesia, 2026-11-23)', () => {
+      expect(block(read('./calendar.css'), '.carousel__track')).toContain('position: relative;');
+    });
+
     it('reserve 6 characters in a one-line field, 9 in the movement section, in ch so larger text widens them', () => {
       const css = read('./components.css');
       expect(block(css, '.number')).toContain('--chars: 6;');
