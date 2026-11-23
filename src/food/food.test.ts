@@ -142,13 +142,22 @@ describe('words', () => {
     expect(plain(totalsLine({ kcal: 1240, p: 48, f: 40, c: 150 }, { p: 90 }))).toBe('1 240 ккал · б 48 / 90 · ж 40 · в 150');
   });
 
+  it('wrap a field whole (beta 1.2.3, Olesia): a line breaks only after «· »', () => {
+    const line = totalsLine({ kcal: 943, p: 24, f: 33, c: 137 }, { kcal: 1980, p: 60, f: 60, c: 300 });
+    // the only ordinary spaces are right after the dots
+    expect(line.split(' ')).toHaveLength(4);
+    expect(line.split(' ').slice(0, -1).every((part) => part.endsWith('·'))).toBe(true);
+    expect(mealLine(lunch, ON).split(' · ')).toHaveLength(5);
+  });
+
   it('count meals when the numbers are off', () => {
     expect(daySummary([oats, lunch, oats], { ...ON, macros: false })).toBe('3 прийоми');
     expect(daySummary([], ON)).toBe('');
   });
 
   it('show a meal by its names, with portions, and its sum', () => {
-    expect(mealLine(lunch, ON)).toBe('гречка ×1½, сирник · 493 ккал · б 19 · ж 8 · в 55');
+    const plain = (text: string) => text.replace(/[  ]/g, ' ');
+    expect(plain(mealLine(lunch, ON))).toBe('гречка ×1½, сирник · 493 ккал · б 19 · ж 8 · в 55');
     expect(mealLine(lunch, { ...ON, macros: false })).toBe('гречка ×1½, сирник');
     expect(mealLine(lunch, { ...ON, macros: false, names: false })).toBe('');
   });

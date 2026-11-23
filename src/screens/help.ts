@@ -34,6 +34,13 @@ interface NewsEntry {
  */
 const NEWS: readonly NewsEntry[] = [
   {
+    // 1.2.3 (Olesia, 2026-11-23): the food sums wrap a field whole; Нитка's draft
+    version: t('бета 1.2.3 · 23.11.2026'),
+    changes: [
+      t('їжа: підсумки дня й прийому переносяться на новий рядок цілими полями, наприклад «ж 33 / 60», а не шматками.'),
+    ],
+  },
+  {
     // 1.2.2 (Olesia, 2026-11-23): the workout timer and exercises added in the workout; Нитка's draft
     version: t('бета 1.2.2 · 23.11.2026'),
     changes: [

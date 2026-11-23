@@ -207,15 +207,23 @@ export function whole(value: number): string {
 export const LETTERS: Record<FoodNumber, string> = { kcal: t('ккал'), p: t('б'), f: t('ж'), c: t('в') };
 
 /**
+ * Beta 1.2.3 (Olesia, 2026-11-23): a field («ж 33 / 60») wraps whole, never in pieces.
+ * Inside a field the spaces don't break; the «·» keeps to the field before it,
+ * so a line breaks only after «· ».
+ */
+const KEEP = ' ';
+const SEP = `${KEEP}· `;
+
+/**
  * «1 240 ккал · б 48 · ж 40 · в 150»; with a guide line, «б 48 / 90»:
  * the same colour, no word about more or less.
  */
 export function totalsLine(totals: Totals, ref: FoodSettings['ref'] = {}): string {
-  const guide = (key: FoodNumber) => (ref[key] === undefined ? '' : ` / ${whole(ref[key]!)}`);
+  const guide = (key: FoodNumber) => (ref[key] === undefined ? '' : `${KEEP}/${KEEP}${whole(ref[key]!)}`);
   return [
-    `${whole(totals.kcal)}${guide('kcal')} ${LETTERS.kcal}`,
-    ...(['p', 'f', 'c'] as const).map((key) => `${LETTERS[key]} ${whole(totals[key])}${guide(key)}`),
-  ].join(' · ');
+    `${whole(totals.kcal)}${guide('kcal')}${KEEP}${LETTERS.kcal}`,
+    ...(['p', 'f', 'c'] as const).map((key) => `${LETTERS[key]}${KEEP}${whole(totals[key])}${guide(key)}`),
+  ].join(SEP);
 }
 
 const MEALS = ['прийом', 'прийоми', 'прийомів'] as const;
@@ -233,7 +241,7 @@ export function mealNames(meal: Meal): string {
 export function mealLine(meal: Meal, settings: FoodSettings): string {
   const names = settings.macros || settings.names ? mealNames(meal) : '';
   const sum = settings.macros && hasNumbers(meal) ? totalsLine(mealTotals(meal)) : '';
-  return [names, sum].filter(Boolean).join(' · ');
+  return [names, sum].filter(Boolean).join(SEP);
 }
 
 /** What the section's header says about the day. */
