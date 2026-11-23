@@ -584,8 +584,9 @@ body:has(.bar:not(.bar--hidden)) .toast {
   font-weight: 700;
   color: var(--err);
 }
-/* Every text emoticon («:)», «<3», «>_<»…) anywhere: in the accent (COPY.md rules; E-17, one way: `emoticonsHtml`) */
+/* Every text emoticon («:)», «<3», «>_<»…) anywhere: bold and in the accent (COPY.md rules; E-17, one way: `emoticonsHtml`; bold: Olesia, 2026-11-23, beta 1.2.4) */
 .emoticon {
+  font-weight: 700;
   color: var(--accent);
 }
 /* The name body.log in running text: bold, in the accent, like the emoticons (Olesia, 2026-11-21, copy fix A10; `emoticonsHtml`) */

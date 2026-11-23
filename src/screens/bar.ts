@@ -90,7 +90,7 @@ export function fillBar(host: HTMLElement, state: BarState): void {
 
 /** «вгору» (Figma button/to-top 288:10620), on home and in the history. */
 export const TO_TOP = `
-  <button type="button" class="ctl icon-btn icon-btn--primary to-top" aria-label="${t('вгору')}" hidden>${iconSvg('arrow-up')}</button>`;
+  <button type="button" class="ctl icon-btn icon-btn--primary to-top" aria-label="${t('вгору')}" hidden><span class="to-top__glyph" aria-hidden="true">/\\</span></button>`;
 
 /**
  * The bar hides on scroll down; «вгору» shows once scrolled. `pinned` keeps the

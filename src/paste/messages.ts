@@ -14,7 +14,7 @@ const SILENT_LISTS: readonly (string | number)[] = ['levels', 'groups', 'session
 const at = (value: unknown, path: Path): unknown =>
   path.reduce<unknown>((node, key) => (typeof node === 'object' && node !== null ? (node as Record<string | number, unknown>)[key] : undefined), value);
 
-/** «ранкова розминка → рівень 2 «легкий день» → вправа 1 → скільки разів». */
+/** «ранкова розминка -> рівень 2 «легкий день» -> вправа 1 -> скільки разів». */
 export function where(profile: unknown, path: Path): string {
   const parts: string[] = [];
   path.forEach((key, i) => {
@@ -27,7 +27,7 @@ export function where(profile: unknown, path: Path): string {
       parts.push(title ?? `"${key}"`);
     }
   });
-  return parts.join(' → ');
+  return parts.join(' -> ');
 }
 
 /** `morningWarmup.levels[1].items[0].reps`, for the AI. */
@@ -86,7 +86,7 @@ export function issueLine(issue: ProfileIssue, profile: unknown): Line {
   return { text, forAi: issue.path.length ? `${text} [${jsonPath(issue.path)}]` : text };
 }
 
-/** A key the app doesn't know: «тренування → тренування 1 «а» → вправа 1 → "side"». */
+/** A key the app doesn't know: «тренування -> тренування 1 «а» -> вправа 1 -> "side"». */
 export function unknownLine(path: Path, profile: unknown): Line {
   const text = where(profile, path);
   return { text, forAi: `${text} [${jsonPath(path)}]` };

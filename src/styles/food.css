@@ -37,8 +37,15 @@
   gap: var(--gap-group);
   padding-bottom: calc(var(--gap-section) + env(safe-area-inset-bottom));
 }
+.food-sheet .food-sheet__panel {
+  /* the layer is as tall as what is visible above the keyboard (`keepAboveKeyboard`), and so is the sheet, minus 48 px (beta 1.2.4) */
+  max-height: calc(100% - 48px);
+}
 .food-sheet__panel h2 {
   margin: 0;
+}
+.food-sheet__panel h2:focus {
+  outline: none;
 }
 .food-sheet .field:not(textarea),
 .food-search__field {
@@ -345,7 +352,7 @@
 .food-row__numbers {
   column-gap: var(--gap-items);
 }
-/* → and kcal move to the next line together, never → alone at the end of a line */
+/* -> and kcal move to the next line together, never -> alone at the end of a line */
 .food-row__kcal {
   display: inline-flex;
   align-items: center;

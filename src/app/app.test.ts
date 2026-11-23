@@ -71,14 +71,14 @@ describe('first launch in the installed app', () => {
     expect(heading()).toBe('привіт! почнімо з налаштувань :)');
     expect(host.querySelector('[data-restore]')!.textContent).toBe('відновити з копії');
     expect(host.querySelector('[data-start-without-ai]')!.textContent).toBe('почати без ШІ');
-    expect(host.querySelector('footer')!.textContent).toContain('бета 1.2.3');
+    expect(host.querySelector('footer')!.textContent).toContain('бета 1.2.4');
   });
 
   it('shows the paste field at once, with no choice of phone (wave 7a)', () => {
     expect(host.querySelector<HTMLElement>('[data-paste]')!.hidden).toBe(false);
     expect(host.querySelector('[data-platform]')).toBeNull();
     expect(host.querySelector('[data-platform-hint]')).toBeNull();
-    expect(host.querySelector('[data-paste-how]')!.textContent).toBe('у чаті з ШІ скопіюй його відповідь з налаштуваннями. тут натисни в полі → «вставити».');
+    expect(host.querySelector('[data-paste-how]')!.textContent).toBe('у чаті з ШІ скопіюй його відповідь з налаштуваннями. тут натисни в полі -> «вставити».');
   });
 
   it('enables «застосувати» only once something is pasted', () => {
@@ -185,7 +185,7 @@ describe('first launch in the installed app', () => {
   it('explains an error in plain words and copies it for the AI', async () => {
     pasteText(JSON.stringify({ ...PASTED, exercises: [{ id: 'neck-rolls', name: '' }] }));
     expect(result().querySelector('[data-paste-title]')!.textContent).toBe('щось не так у налаштуваннях >_<');
-    expect(result().textContent).toContain('вправи → вправа 1 → назва: не може бути порожнім');
+    expect(result().textContent).toContain('вправи -> вправа 1 -> назва: не може бути порожнім');
     expect(resultButton('зберегти')).toBeUndefined();
     resultButton('скопіювати для ШІ').click();
     await vi.waitFor(() => expect(toastSays()).toBe('✓ скопійовано — встав у чат зі своїм ШІ'));
@@ -203,7 +203,7 @@ describe('first launch in the installed app', () => {
     expect(field.value).toBe('');
     // «скопіювати для ШІ» still has the text the field held
     resultButton('скопіювати для ШІ').click();
-    await vi.waitFor(() => expect(device.copied[0]).toContain('вправа 1 → назва'));
+    await vi.waitFor(() => expect(device.copied[0]).toContain('вправа 1 -> назва'));
   });
 
   it('keeps the field when the settings are read', () => {
@@ -375,7 +375,7 @@ describe('in a browser tab the app says that records will not stay (A-04)', () =
     expect(popup()?.getAttribute('role')).toBe('dialog');
     expect(steps()[0]).toBe('відкрий цю сторінку в Chrome.');
     popup()!.querySelector<HTMLElement>('[data-platform="iphone"]')!.click();
-    expect(steps()[1]).toBe('натисни ⋯ (на старіших айфонах — ⍐ унизу) → «поділитися» → «на початковий екран».');
+    expect(steps()[1]).toBe('натисни ⋯ (на старіших айфонах — ⍐ унизу) -> «поділитися» -> «на початковий екран».');
     expect(popup()!.querySelector('[data-steps-note]')!.textContent).toBe(INSTALL_NOTES.iphone);
     expect(popup()!.querySelector('[data-platform="iphone"]')!.getAttribute('aria-pressed')).toBe('true');
     popup()!.querySelector<HTMLElement>('.btn[data-close]')!.click();
@@ -534,7 +534,7 @@ describe('beta 1.0.1: installing (FIXES-1.0.1.md)', () => {
       start({ platform: 'android', installed: false });
       expect(installButton().hidden).toBe(false);
       expect(installButton().textContent).toBe('встановити');
-      expect(steps()).toEqual(['або меню ⋮ → «встановити застосунок».', 'відкрий застосунок з головного екрана. налаштовуй уже в ньому.']);
+      expect(steps()).toEqual(['або меню ⋮ -> «встановити застосунок».', 'відкрий застосунок з головного екрана. налаштовуй уже в ньому.']);
       click('[data-platform="iphone"]');
       expect(installButton().hidden).toBe(true);
       expect(steps()).toHaveLength(4);
@@ -563,7 +563,7 @@ describe('beta 1.0.1: installing (FIXES-1.0.1.md)', () => {
     it('is not there without an offer: the steps stay as text', () => {
       start({ platform: 'android', installed: false });
       expect(installButton().hidden).toBe(true);
-      expect(steps()[1]).toBe('меню ⋮ → «встановити застосунок».');
+      expect(steps()[1]).toBe('меню ⋮ -> «встановити застосунок».');
     });
 
     it('is in «як?» too', () => {
@@ -582,8 +582,8 @@ describe('beta 1.0.1: installing (FIXES-1.0.1.md)', () => {
       start({ platform: 'iphone', installed: false });
       expect(steps()).toEqual([
         'відкрий цю сторінку в Safari.',
-        'натисни ⋯ (на старіших айфонах — ⍐ унизу) → «поділитися» → «на початковий екран».',
-        'перемикач «відкрити як вебзастосунок» лиши увімкненим → «додати».',
+        'натисни ⋯ (на старіших айфонах — ⍐ унизу) -> «поділитися» -> «на початковий екран».',
+        'перемикач «відкрити як вебзастосунок» лиши увімкненим -> «додати».',
         'відкрий застосунок з головного екрана й налаштовуй уже там, не в Safari.',
       ]);
     });

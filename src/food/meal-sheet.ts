@@ -1,5 +1,5 @@
 import { formatNumber, NUMBER_ERRORS, readNumber } from '../domain/numbers';
-import { confirmDialog, layer } from '../ui/dialog';
+import { confirmDialog, keepAboveKeyboard, layer } from '../ui/dialog';
 import { esc } from '../ui/html';
 import { iconSvg } from '../ui/icons';
 import { EASE, MS, play } from '../ui/motion';
@@ -165,7 +165,7 @@ function rowMarkup(spec: MealSheetSpec, row: Row, i: number, armed: number | nul
       <div class="chips food-portions" role="group" aria-label="${t('порція')}"><span class="t-3rd-regular muted">${t('порція')}</span>${PORTIONS.map((p) => `
         <button type="button" class="ctl chip" data-food="portion" data-row="${row.id}" data-portion="${p}" aria-pressed="${row.portion === p}">${portionLabel(p)}</button>`).join('')}</div>
       <div class="food-row__numbers">${macro('p', t('білки, г на порцію'), t('б'))}${macro('f', t('жири, г на порцію'), t('ж'))}${macro('c', t('вуглеводи, г на порцію'), t('в'))}
-        <span class="food-row__kcal"><span class="food-row__arrow" aria-hidden="true">→</span>${kcalField(row)}</span></div>
+        <span class="food-row__kcal"><span class="food-row__arrow" aria-hidden="true">-></span>${kcalField(row)}</span></div>
       <p class="t-2nd-regular food-error" data-num-note="${row.id}" aria-live="polite" hidden>${NUMBER_ERRORS['not-a-number']}</p>
       ${row.ai ? `<p class="t-3rd-regular muted">${t('оцінка ШІ, приблизно')}</p>` : ''}` : '';
   return `
@@ -184,15 +184,26 @@ function rowMarkup(spec: MealSheetSpec, row: Row, i: number, armed: number | nul
     </li>`;
 }
 
-interface PasteState { open: boolean; text: string; lines: readonly string[] }
+interface PasteState { open: boolean; text: string; lines: readonly string[]; copied: boolean }
 
+/*
+ * «вставити від ШІ» copies the request by itself and says so in a toast
+ * (Olesia, 2026-11-23, beta 1.2.4); inside, «скопіювати запит ще раз» is a
+ * tertiary button. When the copy fails, the section asks to copy as before.
+ */
 function pasteMarkup(paste: PasteState): string {
   if (!paste.open) return `<button type="button" class="ctl btn btn--secondary st-wide" data-food="paste-open">${t('вставити від ШІ')}</button>`;
   const errors = paste.lines.length
     ? `<div class="food-errors" role="alert"><p class="t-2nd-bold">${t('не вдалося прочитати:')}</p><ul class="t-2nd-regular">${paste.lines.map((line) => `<li>${esc(line)}</li>`).join('')}</ul></div>` : '';
+  const how = paste.copied
+    ? t('запит уже скопійовано: встав його в чат зі своїм ШІ й опиши, що було в прийомі. відповідь ШІ встав сюди.')
+    : t('скопіюй запит, встав його в чат зі своїм ШІ й опиши, що було в прийомі. відповідь ШІ встав сюди.');
+  const copy = paste.copied
+    ? `<div><button type="button" class="ctl btn btn--tertiary" data-food="paste-copy" data-key="paste-copy">${t('скопіювати запит ще раз')}</button></div>`
+    : `<button type="button" class="ctl btn btn--secondary st-wide" data-food="paste-copy" data-key="paste-copy">${t('скопіювати запит')}</button>`;
   return `<div class="food-paste">
-      <p class="t-2nd-regular muted">${t('скопіюй запит, встав його в чат зі своїм ШІ й опиши, що було в прийомі. відповідь ШІ встав сюди.')}</p>
-      <button type="button" class="ctl btn btn--secondary st-wide" data-food="paste-copy">${t('скопіювати запит')}</button>
+      <p class="t-2nd-regular muted">${how}</p>
+      ${copy}
       <textarea class="field paste__field" rows="3" aria-label="${t('відповідь ШІ')}" placeholder="${t('встав сюди відповідь ШІ')}" data-food="paste-text" data-key="paste">${esc(paste.text)}</textarea>
       <button type="button" class="ctl btn btn--primary btn--wide" data-food="paste-apply"${paste.text.trim() ? '' : ' disabled'}>${t('застосувати')}</button>
       ${errors}</div>`;
@@ -207,7 +218,7 @@ export function mealSheet(spec: MealSheetSpec): Promise<MealAnswer> {
   let time = spec.meal?.t ?? spec.now;
   let rows: Row[] = items.length ? items.map((item) => rowOf(item, false)) : [rowOf(null, true)];
   let armed: number | null = null;
-  const paste: PasteState = { open: false, text: '', lines: [] };
+  const paste: PasteState = { open: false, text: '', lines: [], copied: false };
   const start = JSON.stringify({ time, rows: rows.map((row) => itemOf(row, settings.macros)) });
   const withRows = settings.macros || settings.names;
 
@@ -228,11 +239,11 @@ export function mealSheet(spec: MealSheetSpec): Promise<MealAnswer> {
   function draw(focus?: string): void {
     const keyNow = focus ?? (document.activeElement as HTMLElement | null)?.dataset?.key;
     panel.innerHTML = `
-      <h2 class="t-h5" id="food-sheet-title">${editing ? t('прийом їжі') : t('новий прийом')}</h2>
+      <h2 class="t-h5" id="food-sheet-title" tabindex="-1" data-key="title">${editing ? t('прийом їжі') : t('новий прийом')}</h2>
       <label class="food-time"><span class="t-1st-semibold">${t('час')}</span>
         <input class="field food-time__field" type="time" value="${esc(time)}" data-food="time" data-key="time" /></label>
       ${withRows ? `<ol class="food-rows" role="list">${rows.map((row, i) => rowMarkup(spec, row, i, armed)).join('')}</ol>
-      <div><button type="button" class="ctl btn btn--tertiary" data-food="more">${t('+ ще страва')}</button></div>` : ''}
+      <div><button type="button" class="ctl btn btn--tertiary" data-food="more" data-key="more">${t('+ ще страва')}</button></div>` : ''}
       ${settings.macros ? `${pasteMarkup(paste)}<p class="food-sum t-1st-semibold" data-sum aria-live="polite">${esc(sumText())}</p>` : ''}
       ${editing ? `<div><button type="button" class="ctl btn btn--destructive" data-food="delete">${t('видалити прийом')}</button></div>` : ''}
       <div class="food-sheet__actions">
@@ -291,6 +302,20 @@ export function mealSheet(spec: MealSheetSpec): Promise<MealAnswer> {
         rows.splice(Math.min(at, rows.length), 0, row);
         draw(`name|${row.id}`);
       }),
+    });
+  }
+
+  /** Copies the request; the toast says how it went (4 s), the section follows. */
+  function copyPrompt(): void {
+    void spec.copy(mealPrompt()).then((done) => {
+      if (!root.isConnected) return;
+      if (paste.open && paste.copied !== done) {
+        paste.copied = done;
+        draw();
+      }
+      spec.toast(done
+        ? { message: t('скопійовано — встав у чат зі своїм ШІ'), showIcon: true }
+        : { message: `${t('не вдалося скопіювати')} >_<`, error: true });
     });
   }
 
@@ -372,7 +397,9 @@ export function mealSheet(spec: MealSheetSpec): Promise<MealAnswer> {
       case 'more': {
         const added = rowOf(null, true);
         rows = [...rows, added];
-        return draw(`name|${added.id}`);
+        // the focus stays on the button, so no keyboard until the person taps the new name (beta 1.2.4)
+        draw('more');
+        return panel.querySelector<HTMLElement>(`[data-row-id="${added.id}"]`)?.scrollIntoView?.({ block: 'nearest' });
       }
       case 'portion':
         if (row) row.portion = Number(button.dataset.portion);
@@ -394,19 +421,20 @@ export function mealSheet(spec: MealSheetSpec): Promise<MealAnswer> {
         return removeRow(row);
       case 'paste-open':
         paste.open = true;
-        return draw('paste');
-      case 'paste-copy':
-        return void spec.copy(mealPrompt()).then((done) => spec.toast(done
-          ? { message: t('скопійовано — встав у чат зі своїм ШІ'), showIcon: true }
-          : { message: `${t('не вдалося скопіювати')} >_<`, error: true }));
+        draw();
+        // the field waits for a tap: no keyboard by itself (Olesia, 2026-11-23)
+        panel.querySelector<HTMLElement>('[data-food="paste-copy"]')?.focus({ preventScroll: true });
+        return copyPrompt();
+      case 'paste-copy': return copyPrompt();
       case 'paste-apply': return applyPaste();
       default:
     }
   }
 
   draw();
-  if (withRows && !editing) panel.querySelector<HTMLElement>('.food-row__name')?.focus({ preventScroll: true });
-  else panel.querySelector<HTMLElement>('.food-time__field')?.focus({ preventScroll: true });
+  // the title takes the focus, not a field: the keyboard opens only where the person taps (Olesia, 2026-11-23)
+  panel.querySelector<HTMLElement>('#food-sheet-title')?.focus({ preventScroll: true });
+  const unfit = keepAboveKeyboard(root, panel);
   play(panel, [{ transform: 'translateY(100%)' }, { transform: 'none' }], { duration: MS.m, easing: EASE.out });
   play(root.querySelector('.list-sheet__scrim'), [{ opacity: 0 }, { opacity: 1 }], { duration: MS.m, easing: EASE.out });
 
@@ -439,6 +467,7 @@ export function mealSheet(spec: MealSheetSpec): Promise<MealAnswer> {
     answer = (value) => {
       if (answered) return;
       answered = true;
+      unfit();
       dissolve();
       resolve(value);
     };
@@ -475,13 +504,13 @@ export function dishSheet(spec: DishSheetSpec): Promise<DishAnswer> {
 
   function draw(): void {
     panel.innerHTML = `
-      <h2 class="t-h5" id="dish-sheet-title">${dish ? t('моя страва') : t('нова страва')}</h2>
+      <h2 class="t-h5" id="dish-sheet-title" tabindex="-1">${dish ? t('моя страва') : t('нова страва')}</h2>
       <input class="field" type="text" maxlength="${NAME_MAX}" placeholder="${t('назва страви')}" aria-label="${t('назва страви')}" value="${esc(state.name)}" data-dish="name" />
       ${error ? `<p class="t-2nd-regular food-error" role="alert">${esc(error)}</p>` : ''}
       <input class="field" type="text" maxlength="${PORTION_NOTE_MAX}" placeholder="${t('порція, напр. тарілка або 100 г')}" aria-label="${t('що таке одна порція')}" value="${esc(state.portion)}" data-dish="portion" />
       <p class="t-3rd-regular muted">${t('білки, жири й вуглеводи — у грамах на одну порцію.')}</p>
       <div class="food-row__numbers">${num('p', t('білки, г на порцію'), t('б'))}${num('f', t('жири, г на порцію'), t('ж'))}${num('c', t('вуглеводи, г на порцію'), t('в'))}
-        <span class="food-row__kcal"><span class="food-row__arrow" aria-hidden="true">→</span>${foodNumber({
+        <span class="food-row__kcal"><span class="food-row__arrow" aria-hidden="true">-></span>${foodNumber({
           key: 'kcal', label: t('калорії на порцію'), value: state.kcal, placeholder: state.kcal ? '' : String(counted() ?? ''), unit: t('ккал'), data: 'data-dish="kcal"',
         })}</span></div>
       <p class="t-2nd-regular food-error" data-num-note aria-live="polite" hidden>${NUMBER_ERRORS['not-a-number']}</p>
@@ -509,7 +538,9 @@ export function dishSheet(spec: DishSheetSpec): Promise<DishAnswer> {
   }
 
   draw();
-  panel.querySelector<HTMLElement>('[data-dish="name"]')?.focus({ preventScroll: true });
+  // as in the meal sheet: no keyboard until the person taps a field
+  panel.querySelector<HTMLElement>('#dish-sheet-title')?.focus({ preventScroll: true });
+  const unfit = keepAboveKeyboard(root, panel);
   play(panel, [{ transform: 'translateY(100%)' }, { transform: 'none' }], { duration: MS.m, easing: EASE.out });
   root.addEventListener('input', (event) => {
     const target = event.target as HTMLInputElement;
@@ -536,6 +567,7 @@ export function dishSheet(spec: DishSheetSpec): Promise<DishAnswer> {
     answer = (result) => {
       if (answered) return;
       answered = true;
+      unfit();
       dissolve();
       resolve(result);
     };
