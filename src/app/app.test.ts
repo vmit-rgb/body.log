@@ -314,6 +314,27 @@ describe('a phone in the browser', () => {
     expect(host.querySelector('[data-steps]')!.textContent).toContain('Chrome');
   });
 
+  it('draws the install animation under the steps, for the chosen phone, as «як?» does', () => {
+    start({ platform: 'iphone', installed: false });
+    const phone = () => host.querySelector<HTMLElement>('.install-demo .phone')!;
+    expect(host.querySelector('.install-demo')!.previousElementSibling!.hasAttribute('data-steps')).toBe(true);
+    expect(phone().getAttribute('aria-hidden')).toBe('true');
+    expect(phone().dataset.variant).toBe('ios26');
+    click('[data-platform="android"]');
+    expect(phone().dataset.variant).toBe('android');
+  });
+
+  it('has no drawn phone with «вимкнути всі анімації»', () => {
+    document.documentElement.setAttribute('data-no-motion', '');
+    try {
+      start({ platform: 'iphone', installed: false });
+      expect(heading()).toBe('спершу встанови застосунок');
+      expect(host.querySelector('[data-install-demo]')).toBeNull();
+    } finally {
+      document.documentElement.removeAttribute('data-no-motion');
+    }
+  });
+
   it('names the browsers to use under the steps, with the note for the chosen phone (here and in «як?»)', () => {
     start({ platform: 'iphone', installed: false });
     const note = () => host.querySelector('[data-steps-note]')!.textContent;
