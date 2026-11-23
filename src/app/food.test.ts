@@ -157,14 +157,28 @@ describe('the section «їжа»', () => {
     expect(section()!.querySelector('.food-meal')!.textContent).toContain('яблуко');
   });
 
-  it('«вставити від ШІ»: the prompt is copied, the answer fills the rows marked as an estimate; a wrong one says why', async () => {
+  it('the sheet opens with no field focused, so no keyboard until a tap (beta 1.2.4)', async () => {
+    start(withFoodOn());
+    section()!.querySelector<HTMLElement>('[data-act="meal-add"]')!.click();
+    await settle();
+    expect(document.activeElement).toBe(inSheet('#food-sheet-title'));
+  });
+
+  it('«вставити від ШІ»: copies the prompt by itself (toast), «скопіювати запит ще раз» is tertiary; the answer fills the rows marked as an estimate; a wrong one says why', async () => {
     start(withFoodOn());
     section()!.querySelector<HTMLElement>('[data-act="meal-add"]')!.click();
     await settle();
     sheetButton('вставити від ШІ').click();
-    sheetButton('скопіювати запит').click();
     await settle();
+    expect(copied).toHaveLength(1);
     expect(copied[0]).toContain('body.log-food');
+    expect(document.querySelector('.toast')!.textContent).toContain('скопійовано');
+    expect(document.activeElement).not.toBe(inSheet('[data-food="paste-text"]'));
+    expect(sheet()!.textContent).toContain('запит уже скопійовано');
+    expect(sheetButton('скопіювати запит ще раз').classList.contains('btn--tertiary')).toBe(true);
+    sheetButton('скопіювати запит ще раз').click();
+    await settle();
+    expect(copied).toHaveLength(2);
     type(inSheet('[data-food="paste-text"]'), 'не те');
     sheetButton('застосувати').click();
     expect(sheet()!.querySelector('.food-errors')!.textContent).toContain('не схоже на відповідь про їжу');

@@ -122,13 +122,13 @@ describe('readPaste: unknown keys', () => {
 
   it('names them in plain words and never keeps them', () => {
     expect(result.kind).toBe('accepted');
-    expect(result.unknown).toEqual(['вигляд → "dark"', 'тренування → тренування 1 «а» → вправа 1 → "side"', '"schedule"']);
+    expect(result.unknown).toEqual(['вигляд -> "dark"', 'тренування -> тренування 1 «а» -> вправа 1 -> "side"', '"schedule"']);
     expect(result.profile).toEqual(example);
   });
 
   it('gives a text for the AI with the exact places', () => {
     expect(result.forAi).toContain('Застосунок не знає цих полів і не збереже їх:');
-    expect(result.forAi).toContain('2. тренування → тренування 1 «а» → вправа 1 → "side" [workout.sessions[0].items[0].side]');
+    expect(result.forAi).toContain('2. тренування -> тренування 1 «а» -> вправа 1 -> "side" [workout.sessions[0].items[0].side]');
     expect(result.forAi).toContain('3. "schedule" [schedule]');
     expect(result.forAi).toContain('Надішли весь JSON заново');
   });
@@ -192,33 +192,33 @@ describe('readPaste: refusals', () => {
     expect(result).toMatchObject({ reason: 'errors', title: 'щось не так у налаштуваннях >_<', hint: 'встав це своєму ШІ — він виправить.' });
     expect(result.lines).toEqual([
       'версія формату: має бути "0.1"',
-      'ранкова розминка → рівень 1 → назва: не може бути порожнім',
-      'тренування → ціль: днів на тиждень: має бути цілим числом',
-      'вправи → вправа 2 «планка» → id: id "neck-rolls" повторюється. у кожного запису свій id',
-      'ранкова розминка → рівень 1 → вправа 2 → id вправи: вправи з id "plank" немає в каталозі вправ ("exercises"). додай її туди або виправ id',
-      'тренування → тренування 1 «а» → вправа 2 → група вправ → вправа 2 → id вправи: вправи з id "plank" немає в каталозі вправ ("exercises"). додай її туди або виправ id',
-      'самопочуття → питання 1 «біль у шиї»: "min" має бути менше за "max"',
+      'ранкова розминка -> рівень 1 -> назва: не може бути порожнім',
+      'тренування -> ціль: днів на тиждень: має бути цілим числом',
+      'вправи -> вправа 2 «планка» -> id: id "neck-rolls" повторюється. у кожного запису свій id',
+      'ранкова розминка -> рівень 1 -> вправа 2 -> id вправи: вправи з id "plank" немає в каталозі вправ ("exercises"). додай її туди або виправ id',
+      'тренування -> тренування 1 «а» -> вправа 2 -> група вправ -> вправа 2 -> id вправи: вправи з id "plank" немає в каталозі вправ ("exercises"). додай її туди або виправ id',
+      'самопочуття -> питання 1 «біль у шиї»: "min" має бути менше за "max"',
     ]);
     expect(result.forAi).toContain('Застосунок не прийняв налаштування. Що треба виправити:\n1. версія формату: має бути "0.1" [version]');
-    expect(result.forAi).toContain('2. ранкова розминка → рівень 1 → назва: не може бути порожнім [morningWarmup.levels[0].name]');
+    expect(result.forAi).toContain('2. ранкова розминка -> рівень 1 -> назва: не може бути порожнім [morningWarmup.levels[0].name]');
     expect(result.forAi).toContain('Виправ це й нічого іншого не міняй.');
   });
 
   it('words the other kinds of error', () => {
     const line = (path: string, value: unknown) => refused(withAt(path, value)).lines[0];
-    expect(line('exercises.0.name', 'а'.repeat(61))).toBe('вправи → вправа 1 «ааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааа» → назва: задовгий текст: символів 61, можна до 60');
-    expect(line('goal.days', 9)).toBe('тижнева ціль → днів на тиждень: 9 — забагато, найбільше 7');
-    expect(line('goal.days', -1)).toBe('тижнева ціль → днів на тиждень: -1 — замало, найменше 0');
+    expect(line('exercises.0.name', 'а'.repeat(61))).toBe('вправи -> вправа 1 «ааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааа» -> назва: задовгий текст: символів 61, можна до 60');
+    expect(line('goal.days', 9)).toBe('тижнева ціль -> днів на тиждень: 9 — забагато, найбільше 7');
+    expect(line('goal.days', -1)).toBe('тижнева ціль -> днів на тиждень: -1 — замало, найменше 0');
     expect(read(withAt('goal.days', 0)).kind).toBe('accepted');
-    expect(line('encouragement.0', 'а'.repeat(81))).toBe('підбадьорливі фрази → фраза 1: задовгий текст: символів 81, можна до 80');
-    expect(line('theme.accent', 'red')).toContain('вигляд → акцентний колір: має бути одним із: "gray", "orange"');
-    expect(line('trackers.0.ask', [])).toBe('самопочуття → питання 1 «біль у шиї» → коли питати: замало записів: 0, треба щонайменше 1');
-    expect(line('trackers.0.ask', ['morning', 'morning'])).toBe('самопочуття → питання 1 «біль у шиї» → коли питати: значення не мають повторюватися');
-    expect(line('exercises.3.source.url', 'example.com')).toBe('вправи → вправа 4 «присід» → посилання → адреса: має починатися з https:// або http://');
-    expect(line('exercises.0.id', 'Шия')).toBe('вправи → вправа 1 «оберти шиєю» → id: тільки малі латинські літери, цифри й дефіс');
-    expect(line('exercises.0.name', undefined)).toBe('вправи → вправа 1: немає поля "name" (назва)');
+    expect(line('encouragement.0', 'а'.repeat(81))).toBe('підбадьорливі фрази -> фраза 1: задовгий текст: символів 81, можна до 80');
+    expect(line('theme.accent', 'red')).toContain('вигляд -> акцентний колір: має бути одним із: "gray", "orange"');
+    expect(line('trackers.0.ask', [])).toBe('самопочуття -> питання 1 «біль у шиї» -> коли питати: замало записів: 0, треба щонайменше 1');
+    expect(line('trackers.0.ask', ['morning', 'morning'])).toBe('самопочуття -> питання 1 «біль у шиї» -> коли питати: значення не мають повторюватися');
+    expect(line('exercises.3.source.url', 'example.com')).toBe('вправи -> вправа 4 «присід» -> посилання -> адреса: має починатися з https:// або http://');
+    expect(line('exercises.0.id', 'Шия')).toBe('вправи -> вправа 1 «оберти шиєю» -> id: тільки малі латинські літери, цифри й дефіс');
+    expect(line('exercises.0.name', undefined)).toBe('вправи -> вправа 1: немає поля "name" (назва)');
     expect(line('encouragement', 'вперед')).toBe('підбадьорливі фрази: має бути списком у квадратних дужках [ ]');
-    expect(line('morningWarmup.levels.0.items.0.reps', true)).toBe('ранкова розминка → рівень 1 «легкий день» → вправа 1 → скільки разів: має бути текстом у лапках або цілим числом');
+    expect(line('morningWarmup.levels.0.items.0.reps', true)).toBe('ранкова розминка -> рівень 1 «легкий день» -> вправа 1 -> скільки разів: має бути текстом у лапках або цілим числом');
     expect(line('trackers.0.kind', 'mood')).toContain('вид питання: має бути одним із: "scale", "yesno", "number", "numbers", "note"');
   });
 
@@ -227,7 +227,7 @@ describe('readPaste: refusals', () => {
     const result = refused({ ...example, morningWarmup: { enabled: false, weeklyTarget: 0, levels: [] }, daytimeWarmup: { enabled: false, weeklyTarget: 0, groups: [] }, workout: { enabled: false, weeklyTarget: 0, sessions: [] }, exercises });
     expect(result.lines).toHaveLength(SHOWN_LINES + 1);
     expect(result.lines.at(-1)).toBe('і ще 4');
-    expect(result.forAi).toContain('12. вправи → вправа 12 → назва: не може бути порожнім [exercises[11].name]');
+    expect(result.forAi).toContain('12. вправи -> вправа 12 -> назва: не може бути порожнім [exercises[11].name]');
   });
 });
 

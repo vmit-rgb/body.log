@@ -35,7 +35,7 @@ const consoleRows = WARNINGS.map(([marker, kind, label, text]) => `
 
 /* wave 7a (Olesia, 2026-11-18): no «маю андроїд / маю айфон» here, the field shows at once;
    pasting is the same on both phones. The install screen keeps its switch. */
-const PASTE_HOW = t('у чаті з ШІ скопіюй його відповідь з налаштуваннями. тут натисни в полі → «вставити».');
+const PASTE_HOW = t('у чаті з ШІ скопіюй його відповідь з налаштуваннями. тут натисни в полі -> «вставити».');
 
 const MARKUP = `
   <div class="screen screen--framed">

@@ -105,7 +105,7 @@ function saveCopyFile(env: DeviceEnv, home: Home): boolean {
 /** The share sheet; without one, the text and link on the clipboard. */
 async function share(env: DeviceEnv, toast: Toast): Promise<void> {
   if ((await env.share(SHARE)) !== 'unavailable') return;
-  toast.show((await env.copyText(`${SHARE.text} → ${SHARE.url}`)) ? LINK_COPIED : NOT_SHARED);
+  toast.show((await env.copyText(`${SHARE.text} -> ${SHARE.url}`)) ? LINK_COPIED : NOT_SHARED);
 }
 
 /** A screen drawn anew in place (the menu after ☼ / ☾ or a copy): no motion. */

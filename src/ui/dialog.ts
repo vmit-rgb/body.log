@@ -170,6 +170,27 @@ function fitToVisible(root: HTMLElement): () => void {
   };
 }
 
+/**
+ * A bottom sheet stays whole above the phone's keyboard (Olesia, 2026-11-23,
+ * beta 1.2.4: the food sheet hid under it). The layer covers only what is
+ * visible, the panel's height follows it (food.css), and the field being
+ * typed in scrolls into the panel's view when the keyboard comes or goes.
+ */
+export function keepAboveKeyboard(root: HTMLElement, panel: HTMLElement): () => void {
+  const unfit = fitToVisible(root);
+  const view = window.visualViewport;
+  if (!view) return unfit;
+  const reveal = () => {
+    const focused = document.activeElement;
+    if (focused instanceof HTMLElement && panel.contains(focused) && focused.matches('input, textarea')) focused.scrollIntoView?.({ block: 'nearest' });
+  };
+  view.addEventListener('resize', reveal);
+  return () => {
+    view.removeEventListener('resize', reveal);
+    unfit();
+  };
+}
+
 /** The new text, or null when cancelled. */
 export function editText(spec: TextEditSpec): Promise<string | null> {
   let answer: (done: boolean) => void = () => {};

@@ -56,7 +56,7 @@ describe('serializeDiary', () => {
     const diary = parseDiary(backup())!;
     const text = serializeDiary(diary, new Date('2026-11-09T08:00:00.000Z'));
     expect(parseDiary(text)).toEqual(diary);
-    expect(JSON.parse(text)).toMatchObject({ format: 'phys-activity-backup', version: 1, savedAt: '2026-11-09T08:00:00.000Z', app: 'бета 1.2.3' });
+    expect(JSON.parse(text)).toMatchObject({ format: 'phys-activity-backup', version: 1, savedAt: '2026-11-09T08:00:00.000Z', app: 'бета 1.2.4' });
   });
 
   it('writes days in the «бета 0.81» shape and leaves empty days out', () => {
