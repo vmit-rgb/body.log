@@ -11,6 +11,7 @@ import {
 import { dishesPrompt, mealPrompt, readFoodPaste } from './food-paste';
 import { foodCards, foodCardBody, gridStep } from './food-cards';
 import { describeChanges } from '../paste/preview';
+import { checkbox } from '../screens/settings-bits';
 import { foodForAi, keepFood, withDishes, withFood, withRef } from './food-profile';
 
 /* «їжа» (FOOD-SECTION.md) without the DOM. Invented data only. */
@@ -264,5 +265,18 @@ describe('the y axis of the bars (Olesia, 2026-11-23)', () => {
     expect(html).toContain('food-bars__tick');
     expect(html).not.toContain('food-bars__ref-label');
     expect(html).toContain('food-key--ref');
+  });
+});
+
+describe('a hint under a settings checkbox (Olesia\'s Pixel, 2026-11-23)', () => {
+  it('stands inside the label under the name, so a name on two lines can not run over it; it describes, not names', () => {
+    const host = document.createElement('div');
+    host.innerHTML = checkbox('довга назва, що на вузькому екрані стане у два рядки', true, 'data-x', false, [{ id: 'h1', text: 'підказка' }]);
+    const label = host.querySelector('label')!;
+    expect(label.classList.contains('checkbox--hinted')).toBe(true);
+    expect(label.querySelector('.checkbox__text > .checkbox__label + .checkbox__hint')!.textContent).toBe('підказка');
+    expect(label.querySelector('.checkbox__hint')!.getAttribute('aria-hidden')).toBe('true');
+    expect(label.querySelector('input')!.getAttribute('aria-describedby')).toBe('h1');
+    expect(checkbox('без підказки', false, '')).not.toContain('checkbox__hint');
   });
 });

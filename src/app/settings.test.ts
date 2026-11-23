@@ -59,7 +59,7 @@ const tap = async (name: string) => {
   await settle();
 };
 const checkbox = (label: string) => [...host.querySelectorAll<HTMLLabelElement>('label.checkbox')]
-  .find((l) => l.textContent!.trim() === label)!.querySelector<HTMLInputElement>('input')!;
+  .find((l) => l.querySelector('.checkbox__label')!.textContent!.trim() === label)!.querySelector<HTMLInputElement>('input')!;
 const tick = async (label: string) => {
   checkbox(label).click();
   await settle();
@@ -408,7 +408,7 @@ describe('settings: accent and «доступність»', () => {
   it('has nine checkboxes, applied at once and kept on 💾', async () => {
     await openSettings();
     await openPart('доступність');
-    const labels = [...host.querySelectorAll('#st-access label.checkbox')].map((l) => l.textContent!.trim());
+    const labels = [...host.querySelectorAll('#st-access label.checkbox .checkbox__label')].map((l) => l.textContent!.trim());
     expect(labels).toEqual([
       'вимкнути всі анімації', 'вимкнути фонові анімації (ASCII)', 'вимкнути вібрацію', 'вимкнути звук',
       'збільшити зони натискання', 'збільшити розмір тексту', 'віддзеркалити нижню панель', 'вимкнути зникання повідомлень',
@@ -996,7 +996,7 @@ describe('settings: the days at their ends', () => {
 });
 
 describe('settings: «будь-яка активність зараховує день» (Olesia, 2026-11-19)', () => {
-  const anyBox = () => [...host.querySelectorAll<HTMLLabelElement>('label.checkbox')].find((l) => l.textContent!.trim() === 'будь-яка активність зараховує день');
+  const anyBox = () => [...host.querySelectorAll<HTMLLabelElement>('label.checkbox')].find((l) => l.querySelector('.checkbox__label')!.textContent!.trim() === 'будь-яка активність зараховує день');
   const noGoal = (): Diary => {
     const { goal: _goal, ...profile } = EXAMPLE_DIARY.profile;
     return { ...WITH_A_DAY, profile };
