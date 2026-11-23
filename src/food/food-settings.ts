@@ -1,9 +1,9 @@
-import { formatNumber } from '../domain/numbers';
+import { formatNumber, NUMBER_ERRORS } from '../domain/numbers';
 import { esc } from '../ui/html';
 import { t } from '../i18n/lang';
 import { act, checkbox, secondary, tertiary } from '../screens/settings-bits';
 import { withGrip } from '../ui/grip';
-import { LETTERS, totalsLine, type Dish, type FoodNumber, type FoodSettings } from './food';
+import { key, LETTERS, totalsLine, type Dish, type FoodNumber, type FoodSettings } from './food';
 import { foodNumber } from './meal-sheet';
 
 /*
@@ -36,23 +36,36 @@ const HINTS: Partial<Record<FoodSwitch, string>> = {
   names: t('без назв і без цифр записується тільки час прийому.'),
 };
 
+/* Olesia, 2026-11-23: under the warning, that food has its own prompt. Нитка's draft. */
+const OWN_PROMPT = t('загальний промпт налаштувань лише вмикає чи вимикає цю секцію. «мої страви» твій ШІ складає за окремим запитом — він тут, у цьому розділі, коли секцію ввімкнено.');
+
 const sw = (key: FoodSwitch, on: boolean) => {
   const hint = HINTS[key];
   const box = checkbox(SWITCHES[key], on, `${act('food-on')} data-key="${key}"${hint ? ` aria-describedby="food-${key}-hint"` : ''}`);
-  return hint ? `${box}<p class="t-2nd-regular muted st-hint" id="food-${key}-hint">${hint}</p>` : box;
+  const own = key === 'enabled' ? `<p class="t-2nd-regular muted st-hint">${OWN_PROMPT}</p>` : '';
+  return hint ? `${box}<p class="t-2nd-regular muted st-hint" id="food-${key}-hint">${hint}</p>${own}` : box;
 };
 
 const REF_LABELS: Record<FoodNumber, string> = { kcal: t('калорії'), p: t('білки, г'), f: t('жири, г'), c: t('вуглеводи, г') };
 
 function refFields(food: FoodSettings): string {
+  const counted = (key: FoodNumber) => key === 'kcal' && food.refKcalAuto;
   const field = (key: FoodNumber) => foodNumber({
-    key: `ref|${key}`, label: `${t('орієнтир:')} ${REF_LABELS[key]}`, value: formatNumber(food.ref[key] ?? null), unit: LETTERS[key],
+    key: `ref|${key}`, label: `${t('орієнтир:')} ${REF_LABELS[key]}`, unit: LETTERS[key],
+    value: counted(key) ? '' : formatNumber(food.ref[key] ?? null),
+    placeholder: counted(key) && food.ref.kcal !== undefined ? String(food.ref.kcal) : '',
     data: `data-input="food-ref" data-ref="${key}"`,
   });
+  // in a frame, so it doesn't get lost among the checkboxes (Olesia, 2026-11-23)
   return `
-    <h4 class="t-2nd-bold">${t('орієнтир')}</h4>
-    <p class="t-2nd-regular muted">${t('за бажанням, для кожного числа окремо. це лише пунктирна лінія на графіку: застосунок нічого не оцінює. порожнє поле — без лінії.')}</p>
-    <div class="food-row__numbers food-ref">${(['kcal', 'p', 'f', 'c'] as const).map(field).join('')}</div>`;
+    <div class="food-guide">
+      <h4 class="t-2nd-bold">${t('орієнтир')}</h4>
+      <p class="t-2nd-regular muted">${t('за бажанням, для кожного числа окремо. це лише пунктирна лінія на графіку: застосунок нічого не оцінює. порожнє поле — без лінії.')}</p>
+      <div class="food-row__numbers food-ref">${(['p', 'f', 'c'] as const).map(field).join('')}
+        <span class="food-row__arrow" aria-hidden="true">→</span>${field('kcal')}</div>
+      <p class="t-2nd-regular food-error" data-ref-note aria-live="polite" hidden>${NUMBER_ERRORS['not-a-number']}</p>
+      <p class="t-3rd-regular muted">${t('калорії рахуються самі, коли є всі три числа. своє число в їхньому полі важить більше.')}</p>
+    </div>`;
 }
 
 function dishLine(dish: Dish): string {
@@ -64,7 +77,7 @@ function dishLine(dish: Dish): string {
 function dishesBlock(food: FoodSettings): string {
   const items = food.dishes.map((dish, i) => {
     const line = food.macros ? dishLine(dish) : dish.portion;
-    return `<li data-dish-name="${esc(dish.name.toLocaleLowerCase())}"><button type="button" class="ctl food-dish" ${act('food-dish', `data-index="${i}"`)}>
+    return `<li data-dish-name="${esc(key(dish.name))}"><button type="button" class="ctl food-dish" ${act('food-dish', `data-index="${i}"`)}>
       <span class="t-1st-semibold">${esc(dish.name)}</span>${line ? `<span class="t-3rd-regular muted">${esc(line)}</span>` : ''}</button></li>`;
   }).join('');
   const search = food.dishes.length > 5
@@ -73,7 +86,7 @@ function dishesBlock(food: FoodSettings): string {
     <h4 class="t-2nd-bold">${t('мої страви')}</h4>
     <p class="t-2nd-regular muted">${t('їх пропонує пошук 🔍 і підказка під назвою страви. зміна тут не змінює вже записані прийоми.')}</p>
     ${search}
-    ${items ? `<ul class="food-dishes" role="list">${items}</ul>` : `<p class="t-2nd-regular muted">${t('поки порожньо.')}</p>`}
+    ${items ? `<ul class="food-dishes" role="list" tabindex="0" aria-label="${t('мої страви')}">${items}</ul>` : `<p class="t-2nd-regular muted">${t('поки порожньо.')}</p>`}
     <div class="st-end">${tertiary(t('додати страву'), act('food-dish-add'))}</div>`;
 }
 

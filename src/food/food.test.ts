@@ -6,11 +6,12 @@ import { putMeal, removeMeal } from '../domain/log';
 import { readSettings } from '../domain/settings';
 import { EXAMPLE_DIARY } from '../domain/examples';
 import {
-  daySummary, dayTotals, itemKcal, kcalOf, mealLine, mergeDishes, readFoodSettings, readMeals, searchDishes, totalsLine, type Dish, type Meal,
+  daySummary, dayTotals, itemKcal, kcalOf, onlyNumber, mealLine, mergeDishes, readFoodSettings, readMeals, searchDishes, totalsLine, type Dish, type Meal,
 } from './food';
 import { dishesPrompt, mealPrompt, readFoodPaste } from './food-paste';
 import { foodCards } from './food-cards';
-import { withDishes, withFood, withoutFood, withRef } from './food-profile';
+import { describeChanges } from '../paste/preview';
+import { foodForAi, keepFood, withDishes, withFood, withRef } from './food-profile';
 
 /* «їжа» (FOOD-SECTION.md) without the DOM. Invented data only. */
 
@@ -80,8 +81,9 @@ describe('what is stored', () => {
 });
 
 describe('the settings of «їжа»', () => {
-  it('are off by default (FOOD-SECTION.md, risks), the rest on', () => {
-    expect(readSettings(EXAMPLE_DIARY.profile).food).toEqual({ enabled: false, macros: true, names: true, cardMacros: true, cardTimes: true, ref: {}, dishes: [] });
+  it('are off by default (FOOD-SECTION.md, risks), the rest on; «почати без ШІ» has them on (Olesia, 2026-11-23)', () => {
+    expect(readSettings({}).food).toEqual({ enabled: false, macros: true, names: true, cardMacros: true, cardTimes: true, ref: {}, refKcalAuto: true, dishes: [] });
+    expect(readSettings(EXAMPLE_DIARY.profile).food.enabled).toBe(true);
   });
 
   it('keep a guide line only for a number above zero', () => {
@@ -92,8 +94,8 @@ describe('the settings of «їжа»', () => {
   });
 
   it('store only what differs from the defaults', () => {
-    expect(withFood({ x: 1 }, { enabled: true })).toEqual({ x: 1, food: { enabled: true, dishes: [] } });
-    expect(withFood({}, { enabled: true, macros: false }).food).toEqual({ enabled: true, macros: false, dishes: [] });
+    expect(withFood({ x: 1 }, { enabled: true })).toEqual({ x: 1, food: { enabled: true } });
+    expect(withFood({}, { enabled: true, macros: false }).food).toEqual({ enabled: true, macros: false });
   });
 
   it('add the dishes ticked in the sheet; a name already there stays as it was', () => {
@@ -103,8 +105,29 @@ describe('the settings of «їжа»', () => {
     expect(readFoodSettings(again.food).dishes.map((d) => [d.name, d.p])).toEqual([['Чай', 0], ['кава', 0]]);
   });
 
-  it('are left out of the settings copied for the AI', () => {
-    expect(withoutFood({ a: 1, food: { enabled: true } })).toEqual({ a: 1 });
+  it('reach the AI only as switches: no dishes, guides or cards (Olesia, 2026-11-23)', () => {
+    const profile = withFood(withRef({ a: 1 }, 'p', 90), { enabled: true, macros: false, dishes: [{ name: 'чай', p: 0, f: 0, c: 0, kcal: 0, portion: '' }] });
+    expect(foodForAi(profile)).toEqual({ a: 1, food: { enabled: true, macros: false } });
+    expect(foodForAi({ a: 1 })).toEqual({ a: 1 });
+  });
+
+  it('from an AI: its switches over what the app keeps; none keeps it as it was', () => {
+    const now = withFood(withRef({}, 'p', 90), { enabled: false, cardTimes: false, dishes: [{ name: 'чай', p: 0, f: 0, c: 0, kcal: 0, portion: '' }] });
+    const on = readFoodSettings(keepFood(now, { food: { enabled: true, macros: false } }).food);
+    expect(on).toMatchObject({ enabled: true, macros: false, names: true, cardTimes: false, ref: { p: 90 } });
+    expect(on.dishes.map((d) => d.name)).toEqual(['чай']);
+    expect(keepFood(now, { x: 1 })).toEqual({ x: 1, food: now.food });
+    expect(keepFood(null, { x: 1 })).toEqual({ x: 1 });
+  });
+
+  it('count the kcal guide from the other three, until one is typed (Olesia, 2026-11-23)', () => {
+    const three = withRef(withRef(withRef({}, 'p', 100), 'f', 50), 'c', 200);
+    expect(readFoodSettings(three.food)).toMatchObject({ ref: { kcal: 1650 }, refKcalAuto: true });
+    expect((three.food as { ref: object }).ref).not.toHaveProperty('kcal');
+    expect(readFoodSettings(withRef({}, 'p', 100).food).ref).toEqual({ p: 100 });
+    const own = withRef(three, 'kcal', 1800);
+    expect(readFoodSettings(own.food)).toMatchObject({ ref: { kcal: 1800 }, refKcalAuto: false });
+    expect(readFoodSettings(withRef(own, 'kcal', null).food).ref.kcal).toBe(1650);
   });
 });
 
@@ -203,5 +226,29 @@ describe('the cards', () => {
   it('put every meal on its hour', () => {
     const times = foodCards(week, at, ON)[1] as unknown as { days: { meals: { at: number }[] }[] };
     expect(times.days.at(-1)!.meals.map((m) => m.at)).toEqual([8.5, 13 + 5 / 60]);
+  });
+});
+
+describe('Olesia, 2026-11-23', () => {
+  it('a number field keeps only a number: digits and one decimal place', () => {
+    expect(onlyNumber('12')).toBe('12');
+    expect(onlyNumber('1o2 г')).toBe('12');
+    expect(onlyNumber('-5')).toBe('5');
+    expect(onlyNumber('4,55')).toBe('4,5');
+    expect(onlyNumber('4.5.6')).toBe('4.5');
+    expect(onlyNumber('багато')).toBe('');
+  });
+
+  it('the full name finds its dish, whatever the apostrophe', () => {
+    const dishes: Dish[] = [{ name: 'мʼясо з рисом', p: 1, f: 1, c: 1, kcal: 17, portion: '' }];
+    expect(searchDishes(dishes, 'мʼясо з рисом')).toHaveLength(1);
+    expect(searchDishes(dishes, "М'ясо  з рисом")).toHaveLength(1);
+  });
+
+  it('«ось що зміниться» names «їжа» when an AI switches it', () => {
+    const names = { accents: new Proxy({}, { get: () => 'колір' }), accessibility: new Proxy({}, { get: () => 'x' }) } as never;
+    const off = { ...EXAMPLE_DIARY.profile, food: { enabled: false } };
+    expect(describeChanges(off, EXAMPLE_DIARY.profile, names).changed).toContain('їжа: білки, жири, вуглеводи');
+    expect(describeChanges(null, { ...EXAMPLE_DIARY.profile, food: { enabled: true, macros: false } }, names).added).toContain('їжа: назви страв і час');
   });
 });

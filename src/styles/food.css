@@ -287,3 +287,23 @@
   margin-left: 3.5em;
   color: var(--muted);
 }
+
+/* «мої страви»: five dishes in sight, then a scroll; no frame (Olesia, 2026-11-23) */
+.food-dishes {
+  /* a dish: its name and the line under it, 8 px above and below */
+  max-height: calc(5 * (16px + 40px * var(--text-scale)));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* the guide in a frame, so it doesn't get lost (Olesia, 2026-11-23) */
+.food-guide {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-items);
+  padding: var(--gap-group);
+  box-shadow: inset 0 0 0 var(--stroke-2) var(--accent);
+}
+.food-guide h4 {
+  margin: 0;
+}

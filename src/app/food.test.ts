@@ -71,9 +71,12 @@ beforeEach(() => {
 });
 
 describe('the section «їжа»', () => {
-  it('is not on home until switched on in the settings', () => {
-    start(EXAMPLE_DIARY);
+  it('is on in «почати без ШІ» (Olesia, 2026-11-23), off elsewhere until switched on, the warning as its description', () => {
+    start(withFoodOn({ enabled: false }));
     expect(section()).toBeNull();
+    start(EXAMPLE_DIARY);
+    expect(section()).not.toBeNull();
+    expect(hint()!.textContent).toContain('підрахунок їжі комусь допомагає, а комусь шкодить');
     start(withFoodOn());
     expect(section()).not.toBeNull();
     expect(section()!.textContent).toContain('калорії рахуються самі з білків, жирів і вуглеводів');
@@ -163,6 +166,19 @@ describe('the section «їжа»', () => {
     expect(sheet()!.textContent).toContain('оцінка ШІ, приблизно');
     await save();
     expect(stored().days[TODAY]!.food![0]!.items.every((item) => item.ai)).toBe(true);
+  });
+
+  it('only numbers get into the numbers; the full name of a dish still offers it', async () => {
+    start(withFoodOn({ dishes: [{ name: 'гречка', p: 6, f: 2, c: 30, kcal: 162, portion: 'тарілка' }] }));
+    section()!.querySelector<HTMLElement>('[data-act="meal-add"]')!.click();
+    await settle();
+    type(inSheet('[data-f="p"]'), '1о2');
+    expect(inSheet<HTMLInputElement>('[data-f="p"]').value).toBe('12');
+    expect(inSheet('[data-num-note]').hidden).toBe(false);
+    type(inSheet('[data-f="p"]'), '12,5');
+    expect(inSheet('[data-num-note]').hidden).toBe(true);
+    type(inSheet('[data-food="name"]'), 'гречка');
+    expect(inSheet('.food-suggest').textContent).toContain('гречка');
   });
 
   it('«скасувати» with something typed asks first', async () => {

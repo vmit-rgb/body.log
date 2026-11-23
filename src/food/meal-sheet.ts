@@ -1,4 +1,4 @@
-import { formatNumber, readNumber } from '../domain/numbers';
+import { formatNumber, NUMBER_ERRORS, readNumber } from '../domain/numbers';
 import { confirmDialog, layer } from '../ui/dialog';
 import { esc } from '../ui/html';
 import { iconSvg } from '../ui/icons';
@@ -7,7 +7,7 @@ import { announce } from '../ui/announce';
 import { undo, type ToastMessage } from '../ui/toast';
 import { t } from '../i18n/lang';
 import {
-  findDish, isTime, itemFromDish, kcalOf, NAME_MAX, PORTION_NOTE_MAX, PORTIONS, portionLabel, searchDishes, tenth, totalsLine, mealTotals,
+  findDish, isTime, onlyNumber, itemFromDish, kcalOf, NAME_MAX, PORTION_NOTE_MAX, PORTIONS, portionLabel, searchDishes, tenth, totalsLine, mealTotals,
   type Dish, type FoodItem, type FoodSettings, type Meal,
 } from './food';
 import { mealPrompt, readFoodPaste } from './food-paste';
@@ -36,6 +36,8 @@ interface Row {
   /** «зберегти в мої страви» */
   keep: boolean;
   search: boolean;
+  /** Just picked from «мої страви»: the hint under the name waits for the next letter. */
+  picked: boolean;
 }
 
 export interface MealSheetSpec {
@@ -70,6 +72,7 @@ function rowOf(item: FoodItem | null, keep: boolean): Row {
     ai: item?.ai === true,
     keep,
     search: false,
+    picked: false,
   };
 }
 
@@ -115,8 +118,9 @@ export function foodNumber(spec: NumberSpec): string {
 
 function suggestions(settings: FoodSettings, row: Row): string {
   const query = row.name.trim();
-  if (query === '' || row.search) return '';
-  const found = searchDishes(settings.dishes, query, 5).filter((dish) => dish.name !== row.name);
+  // the full name typed shows its dish too, so its numbers can be taken (Olesia, 2026-11-23)
+  if (query === '' || row.search || row.picked) return '';
+  const found = searchDishes(settings.dishes, query, 5);
   return found.map((dish) => `<li><button type="button" class="ctl food-pick t-2nd-regular" data-food="pick" data-row="${row.id}" data-dish="${esc(dish.name)}">${esc(dish.name)}${
     dish.portion ? ` <span class="muted">· ${esc(dish.portion)}</span>` : ''}</button></li>`).join('');
 }
@@ -162,6 +166,7 @@ function rowMarkup(spec: MealSheetSpec, row: Row, i: number, armed: number | nul
         <button type="button" class="ctl chip" data-food="portion" data-row="${row.id}" data-portion="${p}" aria-pressed="${row.portion === p}">${portionLabel(p)}</button>`).join('')}</div>
       <div class="food-row__numbers">${macro('p', t('білки, г на порцію'), t('б'))}${macro('f', t('жири, г на порцію'), t('ж'))}${macro('c', t('вуглеводи, г на порцію'), t('в'))}
         <span class="food-row__arrow" aria-hidden="true">→</span>${kcalField(row)}</div>
+      <p class="t-2nd-regular food-error" data-num-note="${row.id}" aria-live="polite" hidden>${NUMBER_ERRORS['not-a-number']}</p>
       ${row.ai ? `<p class="t-3rd-regular muted">${t('оцінка ШІ, приблизно')}</p>` : ''}` : '';
   return `
     <li class="food-row" data-row-id="${row.id}">
@@ -268,7 +273,7 @@ export function mealSheet(spec: MealSheetSpec): Promise<MealAnswer> {
 
   function fill(row: Row, dish: Dish): void {
     const item = itemFromDish(dish);
-    Object.assign(row, { name: item.name, p: show(item.p), f: show(item.f), c: show(item.c), kcal: item.kcalManual ? show(item.kcal) : '', manual: item.kcalManual === true, ai: false, keep: false, search: false });
+    Object.assign(row, { name: item.name, p: show(item.p), f: show(item.f), c: show(item.c), kcal: item.kcalManual ? show(item.kcal) : '', manual: item.kcalManual === true, ai: false, keep: false, search: false, picked: true });
   }
 
   /** Removes a row; «скасувати» in the toast puts it back where it was, while the sheet is open. */
@@ -325,9 +330,17 @@ export function mealSheet(spec: MealSheetSpec): Promise<MealAnswer> {
     }
     const row = rowById(target.dataset.row);
     if (!row) return;
-    if (target.classList.contains('number__input')) target.style.setProperty('--len', String(target.value.length));
+    if (target.classList.contains('number__input')) {
+      // only numbers get in (Olesia, 2026-11-23); what was dropped is said under the row
+      const clean = onlyNumber(target.value);
+      const note = panel.querySelector<HTMLElement>(`[data-num-note="${row.id}"]`);
+      if (note) note.hidden = clean === target.value;
+      if (clean !== target.value) target.value = clean;
+      target.style.setProperty('--len', String(target.value.length));
+    }
     if (what === 'name') {
       row.name = target.value;
+      row.picked = false;
       const known = findDish(settings.dishes, row.name) !== undefined;
       panel.querySelector<HTMLElement>(`[data-keep-box="${row.id}"]`)!.hidden = row.name.trim() === '' || known;
       panel.querySelector<HTMLElement>(`[data-suggest="${row.id}"]`)!.innerHTML = suggestions(settings, row);
@@ -471,6 +484,7 @@ export function dishSheet(spec: DishSheetSpec): Promise<DishAnswer> {
         <span class="food-row__arrow" aria-hidden="true">→</span>${foodNumber({
           key: 'kcal', label: t('калорії на порцію'), value: state.kcal, placeholder: state.kcal ? '' : String(counted() ?? ''), unit: t('ккал'), data: 'data-dish="kcal"',
         })}</div>
+      <p class="t-2nd-regular food-error" data-num-note aria-live="polite" hidden>${NUMBER_ERRORS['not-a-number']}</p>
       ${dish ? `<div><button type="button" class="ctl btn btn--destructive" data-dish-act="delete">${t('видалити страву')}</button></div>` : ''}
       <div class="food-sheet__actions">
         <button type="button" class="ctl btn btn--destructive" data-dish-act="cancel">${t('скасувати')}</button>
@@ -501,8 +515,13 @@ export function dishSheet(spec: DishSheetSpec): Promise<DishAnswer> {
     const target = event.target as HTMLInputElement;
     const key = target.dataset.dish as keyof typeof state | undefined;
     if (!key) return;
+    if (target.classList.contains('number__input')) {
+      const clean = onlyNumber(target.value);
+      panel.querySelector<HTMLElement>('[data-num-note]')!.hidden = clean === target.value;
+      if (clean !== target.value) target.value = clean;
+      target.style.setProperty('--len', String(target.value.length));
+    }
     state[key] = target.value;
-    if (target.classList.contains('number__input')) target.style.setProperty('--len', String(target.value.length));
     const kcal = panel.querySelector<HTMLInputElement>('[data-dish="kcal"]');
     if (kcal && state.kcal === '') kcal.placeholder = String(counted() ?? '');
   });

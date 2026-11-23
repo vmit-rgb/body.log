@@ -20,6 +20,9 @@ export interface SectionSpec {
 const CHECK_IN = t('познач, як ти зараз. правильних відповідей тут немає.');
 const LISTEN_TO_BODY = `${t('слухай тіло. якщо щось не так — зупинись')} <3`;
 
+/* Olesia, 2026-11-23: the warning of the settings stands as the section's description. */
+export const FOOD_WARNING = t('підрахунок їжі комусь допомагає, а комусь шкодить. якщо через нього тривожно — вимкни секцію в налаштуваннях, без неї теж ок.');
+
 const asked = (settings: Settings, moment: Moment) => settings.trackers.some((tracker) => tracker.ask.includes(moment));
 
 /** Sections in their fixed order; a section shows when it is switched on or has questions. */
@@ -31,7 +34,7 @@ export function homeSections(settings: Settings): SectionSpec[] {
     [settings.workout.enabled, { id: 'wo', title: t('тренування'), description: LISTEN_TO_BODY }],
     [settings.movement.enabled, { id: 'mv', title: t('рух'), description: t('запиши, скільки вийшло.') }],
     // FOOD-SECTION.md: switched on by hand in the settings; never «done», no grades
-    [settings.food.enabled, { id: 'food', title: t('їжа'), description: t('запиши, що їси й коли.') }],
+    [settings.food.enabled, { id: 'food', title: t('їжа'), description: FOOD_WARNING }],
     [asked(settings, 'evening'), { id: 'ck-evening', title: t('самопочуття ввечері'), description: CHECK_IN }],
     [true, { id: 'note', title: t('нотатка'), description: t('усе, що хочеш запамʼятати про цей день.') }],
   ];

@@ -20,7 +20,7 @@ import {
 import { goalKinds } from '../domain/progress';
 import { t } from '../i18n/lang';
 import { foodMeta, foodSettingsBody, type FoodSwitch, type FoodView } from '../food/food-settings';
-import type { FoodNumber } from '../food/food';
+import { key, onlyNumber, type FoodNumber } from '../food/food';
 
 /** Shown only with two or more sections ticked: with one, «any» and «all» are the same (Нитка, 2026-11-19). */
 export const GOAL_ANY = t('будь-яка активність зараховує день');
@@ -398,7 +398,13 @@ function typed(host: HTMLElement, input: HTMLInputElement, actions: SettingsActi
     part<HTMLButtonElement>(host, '[data-act="food-import"]').disabled = input.value.trim() === '';
     return;
   }
-  if (input.classList.contains('number__input')) input.style.setProperty('--len', String(input.value.length));
+  if (input.dataset.input === 'food-ref') {
+    // only numbers get in (Olesia, 2026-11-23)
+    const clean = onlyNumber(input.value);
+    part<HTMLElement>(host, '[data-ref-note]').hidden = clean === input.value;
+    if (clean !== input.value) input.value = clean;
+    input.style.setProperty('--len', String(input.value.length));
+  }
   // checkboxes say «input» too: only the paste field is text
   if (input.dataset.input !== 'paste') return;
   actions.paste(input.value);
@@ -409,7 +415,7 @@ function typed(host: HTMLElement, input: HTMLInputElement, actions: SettingsActi
 
 /** «мої страви»: the search hides the dishes that don't match, without drawing the page anew. */
 function findDishes(host: HTMLElement, query: string): void {
-  const q = query.trim().toLocaleLowerCase();
+  const q = key(query);
   for (const item of host.querySelectorAll<HTMLElement>('[data-dish-name]')) item.hidden = q !== '' && !String(item.dataset.dishName).includes(q);
 }
 

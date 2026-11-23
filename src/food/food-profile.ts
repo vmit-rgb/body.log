@@ -16,7 +16,8 @@ export type FoodPatch = Partial<Omit<FoodSettings, 'dishes' | 'ref'>> & {
 
 /** `food` as stored: only what differs from the defaults, the dishes as written. */
 export function writeFood(food: FoodSettings): JsonObject {
-  const ref = Object.fromEntries(FOOD_NUMBERS.filter((key) => food.ref[key] !== undefined).map((key) => [key, food.ref[key]]));
+  // a counted kcal guide is not stored: it follows the other three
+  const ref = Object.fromEntries(FOOD_NUMBERS.filter((key) => food.ref[key] !== undefined && !(key === 'kcal' && food.refKcalAuto)).map((key) => [key, food.ref[key]]));
   return {
     enabled: food.enabled,
     ...(food.macros ? {} : { macros: false }),
@@ -24,7 +25,7 @@ export function writeFood(food: FoodSettings): JsonObject {
     ...(food.cardMacros ? {} : { cardMacros: false }),
     ...(food.cardTimes ? {} : { cardTimes: false }),
     ...(Object.keys(ref).length ? { ref } : {}),
-    dishes: food.dishes.map(writeDish),
+    ...(food.dishes.length ? { dishes: food.dishes.map(writeDish) } : {}),
   };
 }
 
@@ -37,15 +38,42 @@ export function withDishes(profile: JsonObject, dishes: readonly Dish[]): JsonOb
   return withFood(profile, { dishes: mergeDishes(readFoodSettings(profile.food).dishes, dishes, false) });
 }
 
+/** One guide line; an emptied kcal field counts again from the other three. */
 export function withRef(profile: JsonObject, key: FoodNumber, value: number | null): JsonObject {
-  const ref = { ...readFoodSettings(profile.food).ref };
-  if (value === null || value <= 0) delete ref[key];
+  const food = readFoodSettings(profile.food);
+  const ref = { ...food.ref };
+  const gone = value === null || value <= 0;
+  if (gone) delete ref[key];
   else ref[key] = value;
-  return withFood(profile, { ref });
+  return withFood(profile, { ref, refKcalAuto: key === 'kcal' ? gone : food.refKcalAuto });
 }
 
-/** The settings as the AI sees them: without «їжа». */
-export function withoutFood(profile: JsonObject): JsonObject {
-  const { food: _food, ...rest } = profile;
-  return rest;
+/**
+ * The settings as the AI sees them: of «їжа» only whether it is on and what
+ * it records (Olesia, 2026-11-23); «мої страви», the guide and the cards stay
+ * in the app, they have their own prompt.
+ */
+export function foodForAi(profile: JsonObject): JsonObject {
+  if (profile.food === undefined) return profile;
+  const food = readFoodSettings(profile.food);
+  return { ...profile, food: { enabled: food.enabled, ...(food.macros ? {} : { macros: false }), ...(food.names ? {} : { names: false }) } };
+}
+
+/** New settings from an AI: its switches of «їжа» over what the app keeps; no `food` in them keeps it as it was. */
+export function keepFood(now: JsonObject | null, pasted: JsonObject): JsonObject {
+  const kept = now?.food;
+  const said = pasted.food;
+  if (said === undefined) return kept === undefined ? pasted : { ...pasted, food: kept };
+  const switches = said as { enabled?: unknown; macros?: unknown; names?: unknown };
+  const base = readFoodSettings(kept);
+  return withFood(pasted, {
+    dishes: base.dishes,
+    ref: base.ref,
+    refKcalAuto: base.refKcalAuto,
+    cardMacros: base.cardMacros,
+    cardTimes: base.cardTimes,
+    enabled: switches.enabled === true,
+    macros: switches.macros !== false,
+    names: switches.names !== false,
+  });
 }

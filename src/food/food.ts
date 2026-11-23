@@ -63,6 +63,11 @@ export interface FoodSettings {
   readonly cardTimes: boolean;
   /** The guide line per number; none = no line. */
   readonly ref: Readonly<Partial<Record<FoodNumber, number>>>;
+  /**
+   * The kcal guide is counted from the other three (Olesia, 2026-11-23), as in
+   * the sheet, once all three are there; a number typed in its field wins.
+   */
+  readonly refKcalAuto: boolean;
   readonly dishes: readonly Dish[];
 }
 
@@ -78,6 +83,18 @@ const text = (value: unknown, max: number): string => (typeof value === 'string'
 
 /** One decimal place, as typed numbers are kept. */
 export const tenth = (value: number) => Math.round(value * 10) / 10;
+
+/**
+ * What a number field of «їжа» keeps of what was typed (Olesia, 2026-11-23:
+ * only numbers): digits and one decimal comma or dot with one digit after it
+ * (FOOD-SECTION.md, «Округлення»). Letters, minus and spaces never get in.
+ */
+export function onlyNumber(typed: string): string {
+  const cleaned = typed.replace(/[^\d.,]/g, '');
+  const at = cleaned.search(/[.,]/);
+  if (at === -1) return cleaned;
+  return `${cleaned.slice(0, at + 1)}${cleaned.slice(at + 1).replace(/[.,]/g, '').slice(0, 1)}`;
+}
 
 /** kcal from protein, fat and carbs; null when none of them is known. */
 export function kcalOf(p: number | null, f: number | null, c: number | null): number | null {
@@ -148,6 +165,8 @@ export function readFoodSettings(value: unknown): FoodSettings {
     const n = num(ref[key]);
     if (n !== null && n > 0) refs[key] = n;
   }
+  const refKcalAuto = refs.kcal === undefined;
+  if (refKcalAuto && refs.p !== undefined && refs.f !== undefined && refs.c !== undefined) refs.kcal = kcalOf(refs.p, refs.f, refs.c)!;
   return {
     enabled: food.enabled === true,
     macros: food.macros !== false,
@@ -155,6 +174,7 @@ export function readFoodSettings(value: unknown): FoodSettings {
     cardMacros: food.cardMacros !== false,
     cardTimes: food.cardTimes !== false,
     ref: refs,
+    refKcalAuto,
     dishes: Array.isArray(food.dishes) ? food.dishes.map(readDish).filter((x): x is Dish => x !== null) : [],
   };
 }
@@ -225,7 +245,8 @@ export function daySummary(meals: readonly Meal[], settings: FoodSettings): stri
 
 /* ---- «мої страви» ---- */
 
-const key = (name: string) => name.trim().toLocaleLowerCase();
+/** A name as the search compares it: any case, any apostrophe (' ’ ʼ), spaces squeezed. */
+export const key = (name: string) => name.trim().toLocaleLowerCase().replace(/['’ʼ`]/g, 'ʼ').replace(/\s+/g, ' ');
 
 export const sameName = (a: string, b: string) => key(a) === key(b);
 

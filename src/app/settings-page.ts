@@ -9,7 +9,7 @@ import {
   cleanForSave, withAccent, withAccessibility, withEncouragement, withGoal, withPulseTimer, type ProfileEdit,
 } from '../domain/profile-edit';
 import { tidy } from '../domain/sections-edit';
-import { withFood, withoutFood, withRef } from '../food/food-profile';
+import { foodForAi, withFood, withRef } from '../food/food-profile';
 import { findDish, mergeDishes, tenth, type FoodNumber } from '../food/food';
 import { dishesPrompt, readFoodPaste } from '../food/food-paste';
 import { dishSheet } from '../food/meal-sheet';
@@ -309,7 +309,7 @@ class Draft implements SettingsPage {
   }
 
   copySettings(): Promise<void> {
-    return this.copy(JSON.stringify(withoutFood(this.draft), null, 1), 'copy-settings');
+    return this.copy(JSON.stringify(foodForAi(this.draft), null, 1), 'copy-settings');
   }
 
   exportText(): Promise<void> {
