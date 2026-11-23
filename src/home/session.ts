@@ -40,6 +40,8 @@ export interface HomeSession {
    * field is open; `tip`, the bubble «як підключити» shows.
    */
   readonly health: { synced: boolean; field: boolean; tip: boolean };
+  /** «додати вправу» tapped: the name field is open, for the day in this key (beta 1.2.2). */
+  adding: string | null;
 }
 
 export interface Draft { readonly moment: Moment; readonly tracker: string; readonly value: number }
@@ -94,7 +96,7 @@ export function homeSession(): HomeSession {
   return {
     open: new Map(), armed: null, running: new Map(), retry: new Set(), drafts: new Map(), typed: new Map(), quietTips: new Set(),
     month: null, carousel: { card: 0 }, pulse: null, pulseStep: () => {}, pulseTimer: undefined,
-    health: { synced: false, field: false, tip: false },
+    health: { synced: false, field: false, tip: false }, adding: null,
   };
 }
 
@@ -122,6 +124,19 @@ export function formatStopwatch(ms: number): string {
  */
 export function stopwatchTime(started: number, now: number): string {
   return now < started ? String(Math.max(1, Math.ceil((started - now) / 1000))) : formatStopwatch(now - started);
+}
+
+/**
+ * What a running timer shows (beta 1.2.2): «3», «2», «1», then the time
+ * left of `seconds`, down to zero, in the stopwatch's digits.
+ */
+export function countdownTime(started: number, now: number, seconds: number): string {
+  return now < started ? String(Math.max(1, Math.ceil((started - now) / 1000))) : formatStopwatch(seconds * 1000 - (now - started));
+}
+
+/** The running stopwatch or timer of `key`, as it shows now. */
+export function runningTime(started: number, now: number, countdown: number | null): string {
+  return countdown === null ? stopwatchTime(started, now) : countdownTime(started, now, countdown);
 }
 
 export type StopwatchState = 'default' | 'running' | 'saved' | 'retry';

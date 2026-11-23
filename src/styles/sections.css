@@ -642,3 +642,39 @@
 .wo-finish > .btn--tertiary {
   align-self: flex-start;
 }
+
+/* ---- exercises added right in the workout (beta 1.2.2, Olesia) ---- */
+/* «кг · повтори · секундомір»: which fields an added exercise has, above its sets */
+.wo-ex__fields {
+  margin-block: var(--gap-micro);
+}
+/* «прибрати вправу» on the left, as a third-level action; red once it asks */
+.wo-ex__drop {
+  display: flex;
+  justify-content: flex-start;
+}
+/* «додати вправу» under the exercises, on the right as every «додати …»; open, its field and buttons */
+.wo-add {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--gap-micro);
+}
+.wo-add--open {
+  align-items: stretch;
+}
+/* the name is one line across the row, not the three-line note field (Olesia, 2026-11-23) */
+.wo-add__field {
+  min-width: 0;
+  min-height: var(--tap);
+  resize: none;
+}
+/* «додати» and «скасувати» share the field's width */
+.wo-add__buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--gap-items);
+  /* 4 px more under the field, and not quite the field's width (Olesia, 2026-11-23) */
+  margin-top: 4px;
+  padding-inline: 24px;
+}

@@ -607,3 +607,13 @@
   align-items: center;
   min-height: calc(var(--tap) - var(--gap-items));
 }
+
+/* beta 1.2.2: «n с» and «скільки секунд» apart, so the checkbox and the field don't read as one (Olesia) */
+.st-row--time {
+  gap: 24px;
+}
+/* the timer without its seconds (Olesia, 2026-11-23) */
+.st-error {
+  margin: 0;
+  color: var(--err);
+}

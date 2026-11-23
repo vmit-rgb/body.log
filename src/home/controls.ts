@@ -1,10 +1,10 @@
 import type { Answer, Day, SetLog } from '../domain/day';
 import {
-  addLap, answer, dropSession, finishWorkout, markLevel, pickSession, removeLap, removeRound, removeSet, roundRows, setLap, setNote, setRound, setRows,
-  setSet, showMoreRounds, showMoreSets, toggleChip, toggleTick, type Edit,
+  addExercise, addLap, answer, dropSession, finishWorkout, markLevel, pickSession, removeAdded, removeLap, removeRound, removeSet, roundRows, setLap, setNote, setRound, setRows,
+  setSet, showMoreRounds, showMoreSets, toggleAddedField, toggleChip, toggleTick, type Edit,
 } from '../domain/log';
 import { parseNumber } from '../domain/numbers';
-import { MOMENTS, type Moment, type Settings, type WorkoutItem } from '../domain/settings';
+import { MOMENTS, type Moment, type Settings, type WorkoutField, type WorkoutItem } from '../domain/settings';
 import { undo, type ToastMessage } from '../ui/toast';
 import { bpm } from '../domain/stats';
 import {
@@ -14,8 +14,11 @@ import {
 import { forgetTyped, wireNumberErrors } from './number-errors';
 import { announce } from '../ui/announce';
 import { dropPulse, pulseRunning, PULSE_READY_MS, PULSE_SAYS, READY_MS, schedulePulse, STOPWATCH_GO, type HomeSession } from './session';
-import { prepareSound, startSignal } from './signal';
-import { REMOVE_TIP, ROUNDS_TIP, SETS_TIP, SLIDER_TIP, SLIDER_TIP_TEXT, SW_RUNNING_LABEL, tip } from './sections';
+import { endSignal, prepareSound, startSignal } from './signal';
+import { addedItem, countdownOf, warmupCountdown, REMOVE_TIP, ROUNDS_TIP, SETS_TIP, SLIDER_TIP, SLIDER_TIP_TEXT, SW_RUNNING_LABEL, tip } from './sections';
+
+/** What a screen reader hears when a workout timer reaches zero (beta 1.2.2; Нитка's draft). */
+const TIMER_DONE = t('час вийшов');
 import { t } from '../i18n/lang';
 import { openMeal, type FoodControls } from '../food/food-controls';
 import { applyHealthField, connectHealth, pasteHealth, syncHealth, type HealthControls } from '../health/health-controls';
@@ -61,7 +64,9 @@ const dayKey = (c: SectionControls, key: string) => `${c.day().date}|${key}`;
 
 function workoutItem(c: SectionControls, exercise: string): WorkoutItem | undefined {
   const session = c.settings.workout.sessions.find((s) => s.id === c.day().wo?.session);
-  return session?.items.flatMap((entry) => ('set' in entry ? entry.set : [entry])).find((item) => item.exercise === exercise);
+  const planned = session?.items.flatMap((entry) => ('set' in entry ? entry.set : [entry])).find((item) => item.exercise === exercise);
+  const added = c.day().wo?.add?.find((entry) => entry.id === exercise);
+  return planned ?? (added && addedItem(added));
 }
 
 const planned = (c: SectionControls, exercise: string) => workoutItem(c, exercise)?.sets ?? null;
@@ -98,7 +103,7 @@ function remove(c: SectionControls, target: string, button: HTMLElement): void {
   // before the edit: the render it makes already leaves out a tip done for the third time
   c.tipDone?.(REMOVE_TIP);
   if (removalKind(kind) === 'set' && !rowStays) c.tipDone?.(SETS_TIP);
-  const row = button.closest('.set-row');
+  const row = button.closest('.set-row, .wo-ex');
   const was = row?.querySelector('[data-sw-time]')?.textContent ?? '';
   const leave = rowStays ? () => {} : rowLeaving(row);
   removeWithUndo(c, edit, message);
@@ -124,10 +129,11 @@ const reset = (edit: Edit): Removal => ({ edit, message: t('таймер ски�
  * only timed set's time. The pulse has no × since wave 6: its number is
  * corrected in its field (Olesia, 2026-11-15).
  */
-type RemovalKind = 'lap' | 'round' | 'set';
-const removalKind = (kind: string): RemovalKind => (kind === 'lap' || kind === 'round' ? kind : 'set');
+type RemovalKind = 'lap' | 'round' | 'set' | 'addex';
+const removalKind = (kind: string): RemovalKind => (kind === 'lap' || kind === 'round' || kind === 'addex' ? kind : 'set');
 
 const REMOVALS: Record<RemovalKind, (c: SectionControls, id: string, at: string) => Removal> = {
+  addex: (_c, id) => removed(removeAdded(id), t('вправу прибрано')),
   lap: (_c, id, at) => removed(removeLap(id, Number(at)), t('коло видалено')),
   round: (c, id, at) => {
     const i = Number(at);
@@ -182,16 +188,91 @@ function startStopwatch(c: SectionControls, key: string, target: string, saved: 
   c.render();
 }
 
-/** «3 · 2 · 1» is over: the signal, unless ■ called it off (or it was started anew). */
+/** «3 · 2 · 1» is over: the signal, unless ■ called it off (or it was started anew). A timer's end is set now. */
 function stopwatchStarts(c: SectionControls, key: string, target: string, started: number): void {
   if (c.session.running.get(key) !== started) return;
   startSignal(c.settings.accessibility);
   announce(STOPWATCH_GO);
+  const countdown = countdownFor(c, target);
+  if (countdown !== null) setTimeout(() => timerEnds(c, key, target, started, countdown), countdown * 1000);
   // the label of ■ now says it saves; the digits are counted by the screen (tickStopwatches)
   const n = Number(target.split('|')[2] ?? 0) + 1;
   for (const button of document.querySelectorAll<HTMLElement>('[data-act="sw"]')) {
     if (button.dataset.sw === target && button.closest('.home')) button.setAttribute('aria-label', `${SW_RUNNING_LABEL}, ${n}`);
   }
+}
+
+/** The timer of a workout set, if its exercise has one (beta 1.2.2). */
+function countdownFor(c: SectionControls, target: string): number | null {
+  const [kind = '', id = ''] = target.split('|');
+  if (kind === 'round') return warmupCountdown(c.settings, id);
+  const item = kind === 'set' ? workoutItem(c, id) : undefined;
+  return item ? countdownOf(item) : null;
+}
+
+/**
+ * The timer reached zero, unless ■ stopped it before (or it was started
+ * anew): its whole time is saved, with the end signal of the pulse timer
+ * (vibration, sound, flash), so it is noticed without looking.
+ */
+function timerEnds(c: SectionControls, key: string, target: string, started: number, seconds: number): void {
+  if (c.session.running.get(key) !== started) return;
+  c.session.running.delete(key);
+  const [kind = '', id = '', at = '0'] = target.split('|');
+  endSignal(c.settings.accessibility);
+  announce(TIMER_DONE);
+  const edit = kind === 'round' ? setRound(id, Number(at), seconds) : setSet(id, Number(at), 's', seconds);
+  // another day shown by now: its edit would land there, so only the signal comes
+  if (key.startsWith(`${c.day().date}|`)) c.edit(edit, true);
+}
+
+/* ---- exercises added right in the workout (beta 1.2.2, Olesia) ---- */
+
+const ONE_FIELD: ToastMessage = { message: `${t('хоч одне поле має лишитися')} >_<`, error: true, brief: true };
+const focusOn = (c: SectionControls, selector: string) => c.screen().querySelector<HTMLElement>(selector)?.focus({ preventScroll: false });
+
+function openAdding(c: SectionControls): void {
+  c.session.adding = dayKey(c, 'add-ex');
+  c.render();
+  focusOn(c, '[data-add-ex]');
+}
+
+function closeAdding(c: SectionControls): void {
+  c.session.adding = null;
+  c.render();
+  focusOn(c, '[data-act="add-ex-open"]');
+}
+
+/**
+ * The name typed becomes an exercise of this day with all three fields.
+ * A name of an exercise from the settings that isn't in this workout yet
+ * takes its id, so «минулого разу» and the history meet it; any other name
+ * gets an id of its own. Nothing typed adds nothing.
+ */
+function addTyped(c: SectionControls): void {
+  const field = c.screen().querySelector<HTMLInputElement>('[data-add-ex]');
+  const name = field?.value.trim() ?? '';
+  if (!name) return void field?.focus();
+  const used = new Set([
+    ...Object.keys(c.day().wo?.ex ?? {}),
+    ...(c.day().wo?.add ?? []).map((entry) => entry.id),
+    ...(c.settings.workout.sessions.find((s) => s.id === c.day().wo?.session)?.items ?? []).flatMap((entry) => ('set' in entry ? entry.set : [entry])).map((item) => item.exercise),
+  ]);
+  const known = c.settings.exercises.find((exercise) => exercise.name.trim().toLowerCase() === name.toLowerCase() && !used.has(exercise.id));
+  let id = known?.id ?? `day-${Date.now().toString(36)}`;
+  while (!known && used.has(id)) id = `${id}x`;
+  c.session.adding = null;
+  c.edit(addExercise(id, name), true);
+  announce(t('вправу додано'));
+  focusOn(c, '[data-act="add-ex-open"]');
+}
+
+function toggleField(c: SectionControls, element: HTMLElement): void {
+  const id = data(element, 'ex');
+  const field = data(element, 'field') as WorkoutField;
+  const entry = c.day().wo?.add?.find((added) => added.id === id);
+  if (entry?.fields.length === 1 && entry.fields.includes(field)) return c.toast(ONE_FIELD);
+  c.edit(toggleAddedField(id, field), true);
 }
 
 function dropWorkout(c: SectionControls): void {
@@ -371,6 +452,10 @@ const TAPS: Record<string, Tap> = {
   'health-sync': syncHealth,
   'health-paste': (c) => void pasteHealth(c),
   'health-apply': applyHealthField,
+  'add-ex-open': openAdding,
+  'add-ex-cancel': closeAdding,
+  'add-ex': addTyped,
+  'added-field': toggleField,
   'meal-add': (c) => void openMeal(c, null),
   meal: (c, el) => void openMeal(c, index(el)),
 };
@@ -438,6 +523,13 @@ export function wireSections(root: HTMLElement, c: SectionControls): void {
   root.addEventListener('input', (event) => {
     const field = event.target as HTMLInputElement;
     TYPING[data(field, 'input')]?.(c, field);
+  });
+  // Enter in the name of a new exercise adds it, as «додати»
+  root.addEventListener('keydown', (event) => {
+    const field = event.target as HTMLElement;
+    if (event.key !== 'Enter' || !field.matches('[data-add-ex]') || event.isComposing) return;
+    event.preventDefault();
+    addTyped(c);
   });
   root.addEventListener('change', (event) => {
     const field = event.target as HTMLInputElement;

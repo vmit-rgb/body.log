@@ -16,6 +16,8 @@ import { readMeals, type Meal } from '../food/food';
  *   reps `r`, seconds `s`) and opened set rows (`rows`); null when none was picked.
  *   `done: true` once «закінчити тренування» was pressed (wave 5c, Olesia 2026-11-17);
  *   left out otherwise, so a copy without it reads as not finished.
+ *   `add`: exercises added right in the workout that day (beta 1.2.2, Olesia): `id`, `name` and
+ *   the `fields` shown (`weight`, `reps`, `seconds`); left out when none, so a copy reads as before.
  * - `mv`: movement per kind, as laps («кола», Olesia 2026-11-09): `km`, `min`, `steps`.
  *   Stored as 0.81 stores one entry (the first lap) plus `more` for the next laps,
  *   so 0.81 still reads the first lap and a copy keeps moving both ways.
@@ -28,6 +30,11 @@ import { readMeals, type Meal } from '../food/food';
  *   numbers per portion (`portion`, `p`, `f`, `c`, `kcal`, `kcalManual`, `ai`). Left out when
  *   there are none, so a copy without it reads as before.
  */
+
+import type { WorkoutField } from './settings';
+
+/** An exercise added right in the workout, for that day only (beta 1.2.2). */
+export interface AddedExercise { readonly id: string; readonly name: string; readonly fields: readonly WorkoutField[] }
 
 export type Answer = number | string | readonly (number | null)[];
 export interface SetLog { readonly w: number | null; readonly r: number | null; readonly s: number | null }
@@ -50,7 +57,10 @@ export interface Day {
   readonly note: string;
   readonly mw: { readonly ticks: readonly string[]; readonly times: Table<readonly (number | null)[]>; readonly rows: Table<number> };
   readonly dw: readonly string[];
-  readonly wo: { readonly session: string; readonly ex: Table<readonly SetLog[]>; readonly rows: Table<number>; readonly done?: true } | null;
+  readonly wo: {
+    readonly session: string; readonly ex: Table<readonly SetLog[]>; readonly rows: Table<number>; readonly done?: true;
+    readonly add?: readonly AddedExercise[];
+  } | null;
   readonly mv: Table<readonly MovementLog[]>;
   readonly names: Table<string>;
   /** «Здоров'я» (beta 1.1.1); none when nothing came for the day. */
@@ -88,10 +98,21 @@ const readNumbers = (value: unknown) => (Array.isArray(value) ? value.map(num) :
 const readSet = (value: unknown): SetLog => ({ w: num(raw(value).w), r: num(raw(value).r), s: num(raw(value).s) });
 export const hasSet = (set: SetLog) => set.w !== null || set.r !== null || set.s !== null;
 
+const ADDED_FIELDS: readonly WorkoutField[] = ['weight', 'reps', 'seconds'];
+
+function readAdded(value: unknown): AddedExercise | null {
+  const entry = raw(value);
+  if (typeof entry.id !== 'string' || entry.id === '' || typeof entry.name !== 'string') return null;
+  const fields = ADDED_FIELDS.filter((field) => strings(entry.fields).includes(field));
+  return { id: entry.id, name: entry.name, fields: fields.length ? fields : ['reps'] };
+}
+
 function readWorkout(value: unknown): Day['wo'] {
   const workout = raw(value);
   if (typeof workout.session !== 'string' || workout.session === '') return null;
+  const add = Array.isArray(workout.add) ? workout.add.map(readAdded).filter((entry): entry is AddedExercise => entry !== null) : [];
   return {
+    ...(add.length ? { add } : {}),
     session: workout.session,
     ex: table(workout.ex, (sets) => (Array.isArray(sets) ? sets.map(readSet) : null)),
     rows: table(workout.rows, num),

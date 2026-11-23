@@ -106,9 +106,10 @@ describe('«закінчити тренування» (Olesia, 2026-11-17)', () 
     expect(done('wo')).toBe(false);
     const finish = buttons('закінчити тренування')[0]!;
     expect(finish.classList.contains('btn--primary')).toBe(true);
-    // at the bottom of the workout: after its exercises, before «самопочуття після тренування»
+    // at the bottom of the workout: after its exercises and «додати вправу» (1.2.2), before «самопочуття після тренування»
     const wrap = finish.closest('.wo-finish')!;
-    expect(wrap.previousElementSibling!.matches('ol.ex-list')).toBe(true);
+    expect(wrap.previousElementSibling!.matches('.wo-add')).toBe(true);
+    expect(wrap.previousElementSibling!.previousElementSibling!.matches('ol.ex-list')).toBe(true);
     expect(wrap.nextElementSibling!.matches('.sub')).toBe(true);
     await tap('закінчити тренування');
     expect(done('wo')).toBe(true);

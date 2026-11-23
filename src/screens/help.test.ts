@@ -5,20 +5,23 @@ import type { DayKey } from '../domain/dates';
 import type { MonthKey } from '../domain/stats';
 
 describe('«що нового»', () => {
-  it('has beta 1.2.1 on top, then 1.1.1, 1.0.1 and 1.0; the 0.x entries were deleted (copy fix A9, Olesia, 2026-11-21)', () => {
+  it('has beta 1.2.2 on top, then 1.2.1, 1.1.1, 1.0.1 and 1.0; the 0.x entries were deleted (copy fix A9, Olesia, 2026-11-21)', () => {
     const host = document.createElement('div');
     showWhatsNew(host, { menu: () => {}, search: () => {}, close: () => {} });
     const text = host.textContent!;
     const entries = [...host.querySelectorAll('.news__entry')];
-    expect(entries).toHaveLength(4);
-    expect(entries[0]!.querySelector('h2')!.textContent).toContain('бета 1.2.1 · 23.11.2026');
-    expect(entries[0]!.textContent).toContain('їжа: що й коли їси');
-    expect(entries[1]!.querySelector('h2')!.textContent).toContain('бета 1.1.1 · 22.11.2026');
-    expect(entries[1]!.textContent).toContain('кроки й км зі «Здоровʼя»');
-    expect(entries[2]!.querySelector('h2')!.textContent).toContain('бета 1.0.1 · 22.11.2026');
-    expect(entries[2]!.querySelectorAll('.news__changes li')).toHaveLength(3);
-    expect(entries[2]!.textContent).toContain('кнопка «встановити» на андроїді.');
-    expect(entries[3]!.querySelector('h2')!.textContent).toContain('бета 1.0 · 21.11.2026');
+    expect(entries).toHaveLength(5);
+    expect(entries[0]!.querySelector('h2')!.textContent).toContain('бета 1.2.2 · 23.11.2026');
+    expect(entries[0]!.textContent).toContain('таймер у вправах тренування й ранкової розминки');
+    expect(entries[0]!.textContent).toContain('додати вправу');
+    expect(entries[1]!.querySelector('h2')!.textContent).toContain('бета 1.2.1 · 23.11.2026');
+    expect(entries[1]!.textContent).toContain('їжа: що й коли їси');
+    expect(entries[2]!.querySelector('h2')!.textContent).toContain('бета 1.1.1 · 22.11.2026');
+    expect(entries[2]!.textContent).toContain('кроки й км зі «Здоровʼя»');
+    expect(entries[3]!.querySelector('h2')!.textContent).toContain('бета 1.0.1 · 22.11.2026');
+    expect(entries[3]!.querySelectorAll('.news__changes li')).toHaveLength(3);
+    expect(entries[3]!.textContent).toContain('кнопка «встановити» на андроїді.');
+    expect(entries[4]!.querySelector('h2')!.textContent).toContain('бета 1.0 · 21.11.2026');
     expect(text).not.toContain('бета 0.9');
     expect(text).toContain('але це все ще бета: щось може зламатися.');
   });

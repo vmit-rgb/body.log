@@ -405,7 +405,8 @@
         "properties": {
           "exercise": { "$ref": "#/$defs/exerciseRef" },
           "reps": { "$ref": "#/$defs/reps" },
-          "seconds": { "$ref": "#/$defs/seconds" }
+          "seconds": { "$ref": "#/$defs/seconds" },
+          "timer": { "title": "таймер", "type": "boolean" }
         }
       }
     },
@@ -427,7 +428,8 @@
         "sets": { "title": "підходи", "type": "integer", "minimum": 1, "maximum": 10 },
         "reps": { "$ref": "#/$defs/reps" },
         "seconds": { "$ref": "#/$defs/seconds" },
-        "weight": { "title": "вага", "type": "number", "minimum": 0, "maximum": 500 }
+        "weight": { "title": "вага", "type": "number", "minimum": 0, "maximum": 500 },
+        "timer": { "title": "таймер", "type": "boolean" }
       }
     },
     "source": {

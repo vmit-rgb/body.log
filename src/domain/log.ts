@@ -1,6 +1,6 @@
-import { hasSet, type Answer, type Day, type MovementLog, type SetLog } from './day';
+import { hasSet, type AddedExercise, type Answer, type Day, type MovementLog, type SetLog } from './day';
 import { sortMeals, type Meal } from '../food/food';
-import type { Level, Moment, Settings } from './settings';
+import type { Level, Moment, Settings, WorkoutField } from './settings';
 
 /*
  * Logging on the home screen: every change to a day is an `Edit`, a pure
@@ -132,9 +132,40 @@ export const rememberNames = (settings: Settings): Edit => (day) => {
   const done = Object.entries(day.wo?.ex ?? {}).filter(([, sets]) => sets.some(hasSet)).map(([id]) => id);
   const used = [...day.mw.ticks, ...done];
   const kept = Object.entries(day.names).filter(([id]) => used.includes(id));
+  const added = (day.wo?.add ?? []).filter((entry) => used.includes(entry.id)).map((entry) => [entry.id, entry.name] as const);
   const named = settings.exercises.filter((exercise) => used.includes(exercise.id));
-  return { ...day, names: { ...Object.fromEntries(kept), ...Object.fromEntries(named.map((exercise) => [exercise.id, exercise.name])) } };
+  return {
+    ...day,
+    names: { ...Object.fromEntries(kept), ...Object.fromEntries(added), ...Object.fromEntries(named.map((exercise) => [exercise.id, exercise.name])) },
+  };
 };
+
+/* ---- exercises added right in the workout (beta 1.2.2, Olesia) ---- */
+
+/** All three fields at first (кг, повтори, секундомір); the person takes away what isn't needed. */
+export const ADDED_START: readonly WorkoutField[] = ['weight', 'reps', 'seconds'];
+
+const withAdded = (wo: NonNullable<Day['wo']>, add: readonly AddedExercise[]): NonNullable<Day['wo']> => {
+  const { add: _was, ...rest } = wo;
+  return add.length ? { ...rest, add } : rest;
+};
+
+export const addExercise = (id: string, name: string): Edit =>
+  inWorkout((wo) => withAdded(wo, [...(wo.add ?? []), { id, name, fields: ADDED_START }]));
+
+/** The exercise and what was logged in it are gone from the day. */
+export const removeAdded = (id: string): Edit => inWorkout((wo) => {
+  const { [id]: _sets, ...ex } = wo.ex;
+  const { [id]: _rows, ...rows } = wo.rows;
+  return withAdded({ ...wo, ex, rows }, (wo.add ?? []).filter((entry) => entry.id !== id));
+});
+
+/** A field on or off, in the order кг, повтори, секундомір; the last one stays. */
+export const toggleAddedField = (id: string, field: WorkoutField): Edit => inWorkout((wo) => withAdded(wo, (wo.add ?? []).map((entry) => {
+  if (entry.id !== id) return entry;
+  const fields = ADDED_START.filter((f) => (f === field ? !entry.fields.includes(f) : entry.fields.includes(f)));
+  return fields.length ? { ...entry, fields } : entry;
+})));
 
 /* ---- «їжа» (FOOD-SECTION.md): meals kept by time ---- */
 

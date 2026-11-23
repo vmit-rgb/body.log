@@ -15,7 +15,7 @@ import { dishesPrompt, readFoodPaste } from '../food/food-paste';
 import { dishSheet } from '../food/meal-sheet';
 import type { FoodView } from '../food/food-settings';
 import { parseNumber } from '../domain/numbers';
-import { readSettings, type ActivityKind, type Settings } from '../domain/settings';
+import { readSettings, timersWithoutSeconds, type ActivityKind, type Settings } from '../domain/settings';
 import { russianReason } from '../paste/russian';
 import { ACCENT_NAMES, ACCESS_SHORT } from '../screens/settings';
 import { copyPrompt, PasteFlow, pasteFailed, RUSSIAN_COPY } from './paste-flow';
@@ -83,6 +83,10 @@ export interface SettingsPage {
 
 /* COPY.md, Toasts and Settings; Нитка's drafts marked. */
 const SAVED: ToastMessage = { message: t('збережено :)'), showIcon: true };
+/** Нитка's draft (beta 1.2.2). */
+const TIMER_EMPTY: ToastMessage = {
+  lead: t('не збережено:'), message: `${t('у таймера немає секунд. впиши «скільки секунд» або обери секундомір')} >_<`, error: true,
+};
 const COPIED: ToastMessage = { message: t('скопійовано — встав у чат зі своїм ШІ'), showIcon: true };
 const NOT_COPIED: ToastMessage = { message: `${t('не вдалося скопіювати')} >_<`, error: true }; // draft
 const FILE_SAVED: ToastMessage = { message: t('збережено'), showIcon: true };
@@ -219,6 +223,8 @@ class Draft implements SettingsPage {
    * moment (MICROINTERACTIONS.md, «збереження в налаштуваннях»).
    */
   save(): void {
+    // a timer without its seconds is an error, and settings with an error are not kept (Olesia, 2026-11-23)
+    if (timersWithoutSeconds(this.settings()).length > 0) return this.say(TIMER_EMPTY);
     const before = this.saved;
     if (!this.keepProfile(cleanForSave(this.draft))) return;
     void spinWhile(this.button('save'), Promise.resolve());
@@ -513,6 +519,7 @@ const ACTS: Acts = {
   ask: (p, a) => p.sections.ask(a.path, a.moment, a.on),
   timed: (p, a) => p.sections.timed(a.path, a.on),
   wfield: (p, a) => p.sections.field('wfield', a.path, a.field, a.on),
+  wtimer: (p, a) => p.sections.timer(a.path, a.on),
   mfield: (p, a) => p.sections.field('mfield', a.path, a.field, a.on),
   'kind-on': (p, a) => p.sections.activity(a.kind, a.on),
   target: (p, a) => p.sections.target(a.kind, a.delta),

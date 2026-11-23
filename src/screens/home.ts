@@ -11,7 +11,7 @@ import { heroFor, homeSections, sectionDone, type SectionId, type SectionSpec } 
 import {
   checkInBody, daytimeBody, foodBody, HEALTH_TIP, morningBody, movementBody, noteBody, sectionTop, workoutBody, type SectionContext,
 } from '../home/sections';
-import { PULSE_SAYS, pulseQuestion, pulseRunning, pulseTime, schedulePulse, stopwatchTime, type HomeSession } from '../home/session';
+import { PULSE_SAYS, pulseQuestion, pulseRunning, pulseTime, schedulePulse, runningTime, type HomeSession } from '../home/session';
 import { calendarMarkup, type CalendarView } from '../home/calendar';
 import { mountCarousels, wireCarousels } from '../home/carousel';
 import { wireMonthSwipe } from '../home/month-swipe';
@@ -455,7 +455,8 @@ function tickStopwatches(host: HTMLElement, state: HomeState, signal: AbortSigna
     for (const time of host.querySelectorAll<HTMLElement>('[data-sw-time]')) {
       const started = state.session.running.get(String(time.dataset.swTime));
       // not while its old digits dissolve («знову»)
-      if (started !== undefined && time.dataset.busy === undefined) time.textContent = stopwatchTime(started, performance.now());
+      const left = time.dataset.swLeft === undefined ? null : Number(time.dataset.swLeft);
+      if (started !== undefined && time.dataset.busy === undefined) time.textContent = runningTime(started, performance.now(), left);
     }
   }, 50);
   signal.addEventListener('abort', () => clearInterval(timer));
