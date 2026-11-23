@@ -1,6 +1,6 @@
 {
   "name": "body.log",
-  "version": "1.1.1",
+  "version": "1.2.1",
   "private": true,
   "description": "A movement and wellbeing diary that lives on your phone (PWA).",
   "type": "module",

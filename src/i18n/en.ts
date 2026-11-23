@@ -718,7 +718,7 @@ export const EN: Readonly<Record<string, string>> = {
   "почати заново": "start over",
   "якщо копії немає. спершу збережи записи як файл: його можна буде показати тому, хто допоможе їх дістати.": "if there's no backup. save the entries as a file first: you can show it to someone who'll help get them out.",
   "повідомлення": "message",
-  "бета 1.1.1": "beta 1.1.1",
+  "бета 1.2.1": "beta 1.2.1",
   "формат": "format",
   "версія формату": "format version",
   "має бути кодом мови, наприклад uk або en": "must be a language code, for example uk or en",
@@ -762,6 +762,9 @@ export const EN: Readonly<Record<string, string>> = {
   "підключити Здоровʼя": "connect Health",
   "вставити дані": "paste data",
   "встав сюди текст, який скопіювала команда:": "paste the text the shortcut copied here:",
+  "бета 1.2.1 · 23.11.2026": "beta 1.2.1 · 23.11.2026",
+  "їжа: що й коли їси, а за бажанням — білки, жири й вуглеводи. калорії рахуються самі, без норм і оцінок. секція вмикається в налаштуваннях, розділ «їжа».": "food: what and when you eat, and if you want, protein, fat and carbs. calories are counted for you, with no norms or grades. switch the section on in settings → “food”.",
+  "«мої страви» допоможе скласти твій ШІ за окремим запитом, а в листі прийому є «вставити від ШІ». графіки їжі — у середньому за 7 днів.": "your AI can help you make “my dishes” with a separate request, and the meal sheet has “paste from AI”. food charts are in the 7-day average.",
   "бета 1.1.1 · 22.11.2026": "beta 1.1.1 · 22.11.2026",
   "айфон: кроки й км зі «Здоровʼя». у секції «рух» натисни «підключити Здоровʼя» і додай команду, далі — «синхронізувати» і «вставити дані». дані йдуть через буфер обміну й лишаються на телефоні.": "iPhone: steps and km from Health. in the “movement” section tap “connect Health” and add the shortcut, then “sync” and “paste data”. the data goes through the clipboard and stays on the phone.",
   "кроки зі «Здоровʼя» видно в русі, в історії, у середньому за 7 днів і в PDF. рух і тижневу ціль вони не зараховують.": "steps from Health show in movement, in the history, in the 7-day average and in the PDF. they don't count towards movement or the weekly goal.",
@@ -868,6 +871,8 @@ export const EN: Readonly<Record<string, string>> = {
   "у середньому за день, г; дні без записів не враховано": "average per day, g; days without entries aren't counted",
   "без записів": "no entries",
   "останні 14 днів": "the last 14 days",
+  "як записати їжу?": "how do I log food?",
+  "спершу ввімкни секцію: налаштування → «їжа». там же обираєш, що записувати: білки, жири й вуглеводи, лише назви страв чи тільки час. на головній натисни «+ прийом», впиши страви й натисни «зберегти». калорії рахуються самі, а своє число з етикетки можна вписати в поле ккал. 🔍 шукає в «моїх стравах»; скласти їх допоможе твій ШІ, для цього в налаштуваннях їжі є окремий запит. орієнтир — лише лінія на графіку: застосунок нічого не оцінює.": "first switch the section on: settings → “food”. there you also choose what to log: protein, fat and carbs, only the names of dishes, or only the time. on home tap “+ meal”, type in the dishes and tap “save”. calories are counted for you, and you can type your own number from a label into the kcal field. 🔍 searches “my dishes”; your AI can help you make them, there is a separate request for it in the food settings. the guide is only a line on the chart: the app doesn't judge anything.",
 };
 
 /** Ukrainian [1, 2–4, 5+] → English [1, other], keyed by the first Ukrainian word (domain/numbers.ts, `plural`). */

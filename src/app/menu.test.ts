@@ -66,7 +66,7 @@ describe('the menu (Figma screen/menu 183:3210)', () => {
     for (const name of ['історія', 'налаштування', 'пошук у нотатках', 'зберегти копію', 'що нового в застосунку', 'як користуватись', 'поділитися застосунком']) {
       expect(button(name), name).toBeTruthy();
     }
-    expect(host.querySelector('footer')!.textContent).toContain('бета 1.1.1');
+    expect(host.querySelector('footer')!.textContent).toContain('бета 1.2.1');
   });
 
   it('keeps the bottom bar, with ✕ instead of ≡', () => {
@@ -236,8 +236,8 @@ describe('«що нового» and «як користуватись»', () => 
   it('shows what is new, newest on top', () => {
     tap('що нового в застосунку');
     expect(heading()).toBe('що нового');
-    expect(host.querySelectorAll('.news__entry')).toHaveLength(3);
-    expect(host.querySelector('.news__entry h2')!.textContent).toContain('бета 1.1.1 · 22.11.2026');
+    expect(host.querySelectorAll('.news__entry')).toHaveLength(4);
+    expect(host.querySelector('.news__entry h2')!.textContent).toContain('бета 1.2.1 · 23.11.2026');
     // the name in bold and the accent, the emoticon in the accent (copy fix A9, A10)
     expect(host.querySelector('.news__changes .brand')!.textContent).toBe('body.log');
     expect(host.querySelector('.news__changes .emoticon')!.textContent).toBe(':)');
@@ -250,7 +250,7 @@ describe('«що нового» and «як користуватись»', () => 
     expect(first.getAttribute('aria-expanded')).toBe('false');
     first.click();
     expect(host.querySelector(`#${first.getAttribute('aria-controls')}`)!.textContent).toContain('натисни на вправу');
-    expect(host.querySelectorAll('.faq button.accordion')).toHaveLength(35);
+    expect(host.querySelectorAll('.faq button.accordion')).toHaveLength(36);
   });
 
   it('puts the questions in five groups, each answer under its own id', () => {
