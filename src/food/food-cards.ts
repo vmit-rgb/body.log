@@ -84,12 +84,30 @@ const weekday = (key: DayKey) => WEEKDAYS[new Date(`${key}T12:00:00Z`).getUTCDay
 const dayMonth = (key: DayKey) => `${key.slice(8)}.${key.slice(5, 7)}`;
 const pct = (value: number) => `${Math.max(0, Math.min(100, value)).toFixed(1)}%`;
 
+/** A round step for 3–5 lines of the y axis: 1, 2 or 5 times a power of ten. */
+export function gridStep(max: number): number {
+  const rough = Math.max(max, 1) / 4;
+  const power = 10 ** Math.floor(Math.log10(rough));
+  return [1, 2, 5, 10].map((k) => k * power).find((step) => step >= rough)!;
+}
+
+/*
+ * The y axis in grams with a line per step (Olesia, 2026-11-23: the labels on
+ * the guide lines overlapped the bars); a guide line is dashed in its bar's
+ * colour, and the legend says what the dashes are.
+ */
 function macrosMarkup(card: Extract<FoodCard, { kind: 'food-macros' }>): string {
   const grams = (['p', 'f', 'c'] as const);
-  const top = Math.max(1, ...card.bars.flatMap((bar) => (bar ? grams.map((key) => bar[key]) : [])), ...grams.map((key) => card.ref[key] ?? 0)) * 1.1;
+  const highest = Math.max(1, ...card.bars.flatMap((bar) => (bar ? grams.map((key) => bar[key]) : [])), ...grams.map((key) => card.ref[key] ?? 0));
+  const step = gridStep(highest);
+  const top = Math.ceil(highest / step) * step;
+  const ticks = Array.from({ length: Math.round(top / step) + 1 }, (_, i) => i * step);
+  const at = (value: number) => (value / top).toFixed(3);
+  const axis = ticks.map((v) => `<span class="food-bars__tick t-3rd-regular" style="--at: ${at(v)}">${whole(v)}</span>`).join('');
+  const grid = ticks.slice(1).map((v) => `<span class="food-bars__grid" style="--at: ${at(v)}"></span>`).join('');
   const few = card.bars.length <= 7;
-  const refs = grams.filter((key) => card.ref[key] !== undefined).map((key) => `
-      <span class="food-bars__ref food-bars__ref--${key}" style="--at: ${(card.ref[key]! / top).toFixed(3)}"><span class="food-bars__ref-label t-3rd-regular">${t('орієнтир')} ${LETTERS[key]} ${whole(card.ref[key]!)}</span></span>`).join('');
+  const guided = grams.filter((key) => card.ref[key] !== undefined);
+  const refs = guided.map((key) => `<span class="food-bars__ref food-bars__ref--${key}" style="--at: ${at(card.ref[key]!)}"></span>`).join('');
   const days = card.bars.map((bar, i) => `
       <div class="food-bars__day">${bar && few ? `<span class="food-bars__kcal t-3rd-semibold">${whole(bar.kcal)}</span>` : ''}
         <div class="food-bars__group">${bar ? grams.map((key) => `<span class="food-bar food-bar--${key}" style="height: ${pct((bar[key] / top) * 100)}"></span>`).join('') : ''}</div>
@@ -100,9 +118,10 @@ function macrosMarkup(card: Extract<FoodCard, { kind: 'food-macros' }>): string 
   return `<ul class="avgs" role="list">
       <li class="avg"><span class="avg__label t-3rd-semibold">${LETTERS.kcal}</span> <b class="avg__value t-1st-bold">${whole(avg.kcal)}${kcalRef}</b></li>${grams.map((key) => `
       <li class="avg"><span class="avg__label t-3rd-semibold">${LETTERS[key]}</span> <b class="avg__value t-1st-bold">${whole(avg[key])}${card.ref[key] === undefined ? '' : ` / ${whole(card.ref[key]!)}`}</b></li>`).join('')}</ul>
-    <div class="food-bars" aria-hidden="true"><div class="food-bars__plot">${refs}${days}</div></div>
+    <div class="food-bars" aria-hidden="true"><div class="food-bars__y">${axis}<span class="food-bars__unit t-3rd-regular">${t('г')}</span></div><div class="food-bars__plot">${grid}${refs}${days}</div></div>
     <ul class="chart__legend t-3rd-regular" role="list">
       <li><span class="food-key food-bar--p"></span>${t('білки')}</li><li><span class="food-key food-bar--f"></span>${t('жири')}</li><li><span class="food-key food-bar--c"></span>${t('вуглеводи')}</li>${
+  guided.length ? `<li><span class="food-key food-key--ref"></span>${t('орієнтир')}</li>` : ''}${
   card.weekly ? `<li>${t('по тижнях')}</li>` : ''}</ul>
     <p class="t-3rd-regular muted">${t('у середньому за день, г; дні без записів не враховано')}</p>`;
 }

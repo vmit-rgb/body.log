@@ -9,7 +9,7 @@ import {
   daySummary, dayTotals, itemKcal, kcalOf, onlyNumber, mealLine, mergeDishes, readFoodSettings, readMeals, searchDishes, totalsLine, type Dish, type Meal,
 } from './food';
 import { dishesPrompt, mealPrompt, readFoodPaste } from './food-paste';
-import { foodCards } from './food-cards';
+import { foodCards, foodCardBody, gridStep } from './food-cards';
 import { describeChanges } from '../paste/preview';
 import { foodForAi, keepFood, withDishes, withFood, withRef } from './food-profile';
 
@@ -250,5 +250,19 @@ describe('Olesia, 2026-11-23', () => {
     const off = { ...EXAMPLE_DIARY.profile, food: { enabled: false } };
     expect(describeChanges(off, EXAMPLE_DIARY.profile, names).changed).toContain('їжа: білки, жири, вуглеводи');
     expect(describeChanges(null, { ...EXAMPLE_DIARY.profile, food: { enabled: true, macros: false } }, names).added).toContain('їжа: назви страв і час');
+  });
+});
+
+describe('the y axis of the bars (Olesia, 2026-11-23)', () => {
+  it('steps by 1, 2 or 5 times ten, 3–5 lines', () => {
+    expect([gridStep(4), gridStep(31), gridStep(90), gridStep(264)]).toEqual([1, 10, 50, 100]);
+  });
+
+  it('has grams on the axis and no words on the guide lines', () => {
+    const day = { ...emptyDay(DAY), food: [{ t: '08:00', items: [{ name: 'x', portion: 1, p: 31, f: 5, c: 60, kcal: null }] }] } as Day;
+    const html = foodCardBody(foodCards([DAY], () => day, { ...readFoodSettings({ enabled: true, ref: { c: 5 } }) })[0]!);
+    expect(html).toContain('food-bars__tick');
+    expect(html).not.toContain('food-bars__ref-label');
+    expect(html).toContain('food-key--ref');
   });
 });

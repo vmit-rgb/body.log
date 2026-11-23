@@ -225,22 +225,57 @@
   color: var(--muted);
   white-space: nowrap;
 }
+.food-bars {
+  display: flex;
+  gap: var(--gap-micro);
+}
+.food-bars__plot {
+  flex: 1;
+  min-width: 0;
+}
+/* the y axis: as tall as the plot, its labels where the plot's lines are */
+.food-bars__y {
+  position: relative;
+  flex: none;
+  width: 3.2em;
+  height: 132px;
+}
+.food-bars__tick {
+  position: absolute;
+  right: 0;
+  bottom: calc(18px + (100% - 36px) * var(--at));
+  color: var(--muted);
+  line-height: 1;
+  transform: translateY(50%);
+}
+.food-bars__unit {
+  position: absolute;
+  top: 0;
+  right: 0;
+  color: var(--muted);
+}
+.food-bars__grid,
 .food-bars__ref {
   position: absolute;
   right: 0;
   /* the bars stand between the kcal row (18 px) and the day labels (18 px) */
   bottom: calc(18px + (100% - 36px) * var(--at));
   left: 0;
-  border-top: 1px dashed var(--muted);
   pointer-events: none;
 }
-.food-bars__ref-label {
-  position: absolute;
-  right: 0;
-  bottom: 1px;
-  padding: 0 2px;
-  background: var(--bg);
-  color: var(--muted);
+.food-bars__grid {
+  border-top: 1px solid var(--sunk);
+}
+.food-bars__ref {
+  border-top: 1.5px dashed var(--muted);
+}
+.food-bars__ref--p {
+  border-top-color: var(--accent);
+}
+.food-key--ref {
+  height: 0;
+  border-top: 1.5px dashed var(--muted);
+  vertical-align: middle;
 }
 .food-key {
   display: inline-block;
