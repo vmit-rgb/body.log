@@ -574,6 +574,10 @@
   margin: calc(-1 * var(--gap-group) - 10px) 0 0;
   padding-left: calc(17px * var(--text-scale) * 0.6 * 3 + var(--gap-items));
 }
+/* only the first one tucks up to the checkbox; the next stands under it («їжа», 2026-11-23) */
+.settings .st-hint + .st-hint {
+  margin-top: var(--gap-items);
+}
 
 /* a description or «як робити» keeps its line breaks and empty lines, as on home */
 .st-text[data-edit='long'] {
