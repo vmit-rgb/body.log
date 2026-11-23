@@ -51,8 +51,9 @@ export function showInstallHow(phone: Phone): void {
  * The drawn phone under the steps (Olesia, 2026-11-22), drawn anew for the phone
  * chosen in the toggle. None without motion (moving(): the app's «вимкнути всі
  * анімації» or the phone's «reduce motion»): the steps are in the text.
+ * Also on screen install-first (Olesia, 2026-11-23: «отут тркж тре анімація інсталяції»).
  */
-function wireDemo(root: HTMLElement, phone: Phone): void {
+export function wireDemo(root: HTMLElement, phone: Phone): void {
   const host = root.querySelector<HTMLElement>('[data-install-demo]')!;
   if (!moving()) {
     host.remove();

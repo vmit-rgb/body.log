@@ -2,6 +2,7 @@ import type { Phone } from '../app/start';
 import { chromeIntent } from '../app/in-app';
 import { INSTALL_BUTTON, inAppNow, LANGUAGE_SWITCH, part, platformToggles, tabNote, wireInAppNote, wireInstallSteps, wireLanguageSwitch } from './parts';
 import { t } from '../i18n/lang';
+import { wireDemo } from './install-how';
 
 /*
  * screen/install-first (390:9345): a phone opened the app in the browser.
@@ -9,6 +10,7 @@ import { t } from '../i18n/lang';
  * is Olesia's choice of 2026-11-09, its wording Нитка's draft.
  * Beta 1.0.1 (FIXES-1.0.1.md): the «встановити» button on Android (A1); inside
  * another app's browser the yellow frame takes the place of the steps (A3).
+ * The drawn phone under the steps, as in «як?» (Olesia, 2026-11-23).
  */
 
 const STEPS = `
@@ -20,6 +22,7 @@ const STEPS = `
       ${platformToggles()}
       ${INSTALL_BUTTON}
       <ol class="steps t-1st-regular" data-steps></ol>
+      <div data-install-demo></div>
       <p class="t-3rd-regular muted" data-steps-note></p>
       <p class="t-3rd-regular muted">${t('телефон визначено автоматично. якщо не той — перемкни.')}</p>
     </section>`;
@@ -48,6 +51,9 @@ export function showInstallFirst(host: HTMLElement, phone: Phone, useBrowser: ()
   host.innerHTML = markup(inApp);
   wireLanguageSwitch(host);
   if (inApp) wireInAppNote(host, chromeIntent(location.href));
-  else wireInstallSteps(host, phone);
+  else {
+    wireInstallSteps(host, phone);
+    wireDemo(host, phone);
+  }
   part(host, '[data-use-browser]').addEventListener('click', useBrowser);
 }
