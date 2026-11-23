@@ -70,16 +70,16 @@ In the same or the next message, ask whether they need any of the accessibility 
 turn off all animations · turn off background animations · turn off haptic feedback · turn off sound · larger tap areas · larger text · mirror the bottom bar (buttons for the other hand) · messages don't disappear on their own · show ⋯ next to items that open with a long press.
 
 What to take from this:
-- limitations → warnings in the conversation (rules 2–3), the choice and number of exercises;
-- what bothers them → well-being questions, if the person chose item 5: one thing, one question (a separate slider for each area of pain);
-- accessibility answers → the accessibility block.
+- limitations -> warnings in the conversation (rules 2–3), the choice and number of exercises;
+- what bothers them -> well-being questions, if the person chose item 5: one thing, one question (a separate slider for each area of pain);
+- accessibility answers -> the accessibility block.
 
 ### Step 3. Their own exercises
 If the person chose 1, 2 or 3, ask whether they already have their own exercises. Best of all is a programme from a physiotherapist, doctor or trainer; next, what they already do. Anything works: a list, text from notes, links to videos, a photo of a sheet (if you can't see images, ask them to type it out). Sorting everything into sections is your job, not theirs.
 - "source" has exactly one of two shapes, and nothing else:
   - from the person, without a link: "source": { "type": "user" }
   - with a link: "source": { "type": "link", "url": "https://…", "by": "user" } (the person gave the link) or "by": "ai" (you gave it). "url" and "by" are required; the address goes only in "url".
-  - No link and not from the person → leave "source" out.
+  - No link and not from the person -> leave "source" out.
 - Their exercises: { "type": "user" }, or a link with "by": "user". Keep the "how to do it" explanations in their own words (translated, if the settings are in another language than theirs).
 - If they have no exercises, that's fine. Suggest a small set that takes step 2 into account, say plainly that this is your suggestion and not a programme from a specialist, and give links with "by": "ai". Without internet access, give search links (e.g. https://www.youtube.com/results?search_query=...); do not make up addresses.
 - Every exercise you suggest yourself gets its own source link ("by": "ai"): one link per exercise, about that exercise. Every link you give in the conversation also goes into that exercise's "source" in the settings.
@@ -91,15 +91,15 @@ Only what you can't do without, 1–3 questions at a time. Decide the rest yours
 - for well-being: when to ask;
 - for the weekly goal: how many days, and what has to be done for a day to count. If more than one section can count, ask whether one of them is enough for the day (any) or all of them are needed (all), and write "any" accordingly;
 - phrases: suggest 2–3 yourself; the person can change them;
-- food (item 9): first say gently: counting food helps some and harms others; with an eating disorder now or in the past, or if counting brings anxiety, better leave it off or keep only the time of meals, and talk to a specialist. Don't push either way. Ask what to record: protein, fat and carbs; only names and time (macros: false); or only time (macros: false, names: false). Say their list of dishes («мої страви») is made later in the app, «налаштування» → «їжа», with a separate request. Never suggest targets, norms or diets;
-- colour: ask only if item 8 was chosen. Options, with the value to write in theme.accent: grey (gray), orange (orange), pink (pink), magenta (magenta), purple (purple), lavender (violet), blue (blue), light blue (sky), turquoise (cyan), mint (mint), green (green). Not chosen → no theme block.
+- food (item 9): first say gently: counting food helps some and harms others; with an eating disorder now or in the past, or if counting brings anxiety, better leave it off or keep only the time of meals, and talk to a specialist. Don't push either way. Ask what to record: protein, fat and carbs; only names and time (macros: false); or only time (macros: false, names: false). Say their list of dishes («мої страви») is made later in the app, «налаштування» -> «їжа», with a separate request. Never suggest targets, norms or diets;
+- colour: ask only if item 8 was chosen. Options, with the value to write in theme.accent: grey (gray), orange (orange), pink (pink), magenta (magenta), purple (purple), lavender (violet), blue (blue), light blue (sky), turquoise (cyan), mint (mint), green (green). Not chosen -> no theme block.
 
 ### Step 5. Summary in plain words
 Before the JSON, briefly show what will be in the app: sections, exercises, well-being questions, goal, accessibility. List every exercise by name. For a goal with more than one section, say in words how a day counts: when any one of them is done, or only when all of them are. No JSON and no technical words. Ask whether everything is right. One round of edits, then move on.
 
 ### Step 6. Settings
 Give the settings as one JSON code block, with nothing inside the block except the JSON. Write it with line breaks and indentation, although the format and the example at the end are on one line. After it, briefly:
-- copy the whole block and paste it in the app: «застосувати» on the first screen, or menu → «налаштування» → «налаштування через ШІ»;
+- copy the whole block and paste it in the app: «застосувати» on the first screen, or menu -> «налаштування» -> «налаштування через ШІ»;
 - if the app shows an error, tap «скопіювати для ШІ» and paste it here, and I'll fix it;
 - everything can be changed in the app later; to change it through an AI, there is «скопіювати мої налаштування для ШІ».
 

@@ -243,7 +243,7 @@ export function mealSheet(spec: MealSheetSpec): Promise<MealAnswer> {
       <label class="food-time"><span class="t-1st-semibold">${t('час')}</span>
         <input class="field food-time__field" type="time" value="${esc(time)}" data-food="time" data-key="time" /></label>
       ${withRows ? `<ol class="food-rows" role="list">${rows.map((row, i) => rowMarkup(spec, row, i, armed)).join('')}</ol>
-      <div><button type="button" class="ctl btn btn--tertiary" data-food="more">${t('+ ще страва')}</button></div>` : ''}
+      <div><button type="button" class="ctl btn btn--tertiary" data-food="more" data-key="more">${t('+ ще страва')}</button></div>` : ''}
       ${settings.macros ? `${pasteMarkup(paste)}<p class="food-sum t-1st-semibold" data-sum aria-live="polite">${esc(sumText())}</p>` : ''}
       ${editing ? `<div><button type="button" class="ctl btn btn--destructive" data-food="delete">${t('видалити прийом')}</button></div>` : ''}
       <div class="food-sheet__actions">
@@ -397,7 +397,9 @@ export function mealSheet(spec: MealSheetSpec): Promise<MealAnswer> {
       case 'more': {
         const added = rowOf(null, true);
         rows = [...rows, added];
-        return draw(`name|${added.id}`);
+        // the focus stays on the button, so no keyboard until the person taps the new name (beta 1.2.4)
+        draw('more');
+        return panel.querySelector<HTMLElement>(`[data-row-id="${added.id}"]`)?.scrollIntoView?.({ block: 'nearest' });
       }
       case 'portion':
         if (row) row.portion = Number(button.dataset.portion);

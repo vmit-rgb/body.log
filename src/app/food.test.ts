@@ -162,6 +162,9 @@ describe('the section «їжа»', () => {
     section()!.querySelector<HTMLElement>('[data-act="meal-add"]')!.click();
     await settle();
     expect(document.activeElement).toBe(inSheet('#food-sheet-title'));
+    sheetButton('+ ще страва').click();
+    expect(sheet()!.querySelectorAll('[data-food="name"]')).toHaveLength(2);
+    expect(document.activeElement).toBe(sheetButton('+ ще страва'));
   });
 
   it('«вставити від ШІ»: copies the prompt by itself (toast), «скопіювати запит ще раз» is tertiary; the answer fills the rows marked as an estimate; a wrong one says why', async () => {
