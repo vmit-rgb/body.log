@@ -17,6 +17,7 @@ import { dropPulse, pulseRunning, PULSE_READY_MS, PULSE_SAYS, READY_MS, schedule
 import { prepareSound, startSignal } from './signal';
 import { REMOVE_TIP, ROUNDS_TIP, SETS_TIP, SLIDER_TIP, SLIDER_TIP_TEXT, SW_RUNNING_LABEL, tip } from './sections';
 import { t } from '../i18n/lang';
+import { openMeal, type FoodControls } from '../food/food-controls';
 import { applyHealthField, connectHealth, pasteHealth, syncHealth, type HealthControls } from '../health/health-controls';
 
 /*
@@ -46,6 +47,8 @@ export interface SectionControls {
   tipDone?(id: string): void;
   /** iPhone only: the «Здоровʼя» buttons in «рух» (beta 1.1.1). */
   readonly health?: HealthControls | undefined;
+  /** «їжа»: the clipboard and «мої страви» (FOOD-SECTION.md). */
+  readonly food?: FoodControls | undefined;
 }
 
 const AI_LINK: ToastMessage = { message: t('це посилання дав ШІ. перевір його, перш ніж повторювати.') };
@@ -368,6 +371,8 @@ const TAPS: Record<string, Tap> = {
   'health-sync': syncHealth,
   'health-paste': (c) => void pasteHealth(c),
   'health-apply': applyHealthField,
+  'meal-add': (c) => void openMeal(c, null),
+  meal: (c, el) => void openMeal(c, index(el)),
 };
 
 /* ---- typing ---- */

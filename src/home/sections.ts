@@ -17,6 +17,7 @@ import {
 } from './session';
 import { t } from '../i18n/lang';
 import { formatHealth, hasHealth, HEALTH_NAME, SHORTCUT_LINK, SHORTCUT_RUN } from '../health/health';
+import { daySummary, mealLine } from '../food/food';
 
 /*
  * The inside of the home sections (Figma `activity/section` 112:4468 and its
@@ -729,4 +730,27 @@ export function movementBody(ctx: SectionContext): string {
 export function noteBody(ctx: SectionContext): string {
   return `${withGrip(`<textarea class="field note-field" rows="3" aria-label="${t('нотатка')}" placeholder="${t('як минув день? пиши як є')}" data-input="note"
     ${keyed(dayKey(ctx, 'note'))}>${esc(ctx.day.note)}</textarea>`)}<p class="t-3rd-regular muted" data-saving>${t('зберігається, поки пишеш')}</p>`;
+}
+
+/*
+ * ---- «їжа» (FOOD-SECTION.md): the meals of the day and «+ прийом»; the sheet itself is food/meal-sheet.ts.
+ * The day's sum stands at the top, also in the header while the section is closed. No grades, no colours of «enough».
+ */
+
+/** Under the description, small (FOOD-SECTION.md, «Калорії»). */
+export const KCAL_HINT = t('калорії рахуються самі з білків, жирів і вуглеводів');
+
+export function foodBody(ctx: SectionContext): string {
+  const settings = ctx.settings.food;
+  const meals = ctx.day.food ?? [];
+  const summary = daySummary(meals, settings);
+  const list = meals.map((meal, i) => {
+    const what = mealLine(meal, settings);
+    return `<li><button type="button" class="ctl food-meal" data-act="meal" data-i="${i}" aria-label="${t('змінити прийом')} ${esc(meal.t)}${what ? `: ${esc(what)}` : ''}">
+      <span class="food-meal__time t-1st-bold">${esc(meal.t)}</span>${what ? `<span class="food-meal__what t-2nd-regular">${esc(what)}</span>` : ''}</button></li>`;
+  }).join('');
+  return `${settings.macros ? `<p class="t-3rd-regular muted">${KCAL_HINT}</p>` : ''}${
+    summary ? `<p class="food-day t-1st-semibold">${esc(summary)}</p>` : ''}${
+    list ? `<ul class="food-meals" role="list">${list}</ul>` : ''}
+    <div><button type="button" class="ctl btn btn--secondary" data-act="meal-add">${t('+ прийом')}</button></div>`;
 }

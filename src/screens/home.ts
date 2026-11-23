@@ -9,7 +9,7 @@ import { dayArrives, popShownDay, reward, sheetIn, sheetOut, swapMonth } from '.
 import { completed } from '../domain/progress';
 import { heroFor, homeSections, sectionDone, type SectionId, type SectionSpec } from '../home/home-view';
 import {
-  checkInBody, daytimeBody, HEALTH_TIP, morningBody, movementBody, noteBody, sectionTop, workoutBody, type SectionContext,
+  checkInBody, daytimeBody, foodBody, HEALTH_TIP, morningBody, movementBody, noteBody, sectionTop, workoutBody, type SectionContext,
 } from '../home/sections';
 import { PULSE_SAYS, pulseQuestion, pulseRunning, pulseTime, schedulePulse, stopwatchTime, type HomeSession } from '../home/session';
 import { calendarMarkup, type CalendarView } from '../home/calendar';
@@ -29,6 +29,8 @@ import { barMarkup, fillBar, goalText, TO_TOP, wireDateNav, wireScroll } from '.
 import { FOOTER, part, tabNote } from './parts';
 import { wireTabNote } from './install-how';
 import { t } from '../i18n/lang';
+import { daySummary } from '../food/food';
+import type { FoodControls } from '../food/food-controls';
 
 /*
  * Home (Figma `screen/home-default` 73:2601 open, 338:16522 closed;
@@ -70,6 +72,8 @@ export interface HomeActions {
   tips?: { open(id: string): boolean; close(id: string): void; succeed?(id: string): void } | undefined;
   /** iPhone only (beta 1.1.1): «Здоровʼя» in «рух». */
   health?: HomeHealth | undefined;
+  /** «їжа»: the clipboard and «мої страви». */
+  food?: FoodControls | undefined;
 }
 
 export interface HomeHealth {
@@ -87,6 +91,7 @@ const BODIES: Record<SectionId, (ctx: SectionContext) => string> = {
   dw: daytimeBody,
   wo: workoutBody,
   mv: movementBody,
+  food: foodBody,
   'ck-evening': (ctx) => checkInBody(ctx, 'evening'),
   note: noteBody,
 };
@@ -100,15 +105,25 @@ const leadOf = (description: string, done: boolean) => emoticonsHtml(done ? GOOD
 /* Olesia, 2026-11-17: a done section has a tick at the start of its header; said as «зроблено» before the title. */
 const TICK = `<span class="accordion__done">${iconSvg('check')}<span class="visually-hidden">${t('зроблено:')} </span></span>`;
 
+/** «їжа»: the day's sum stands in the header while the section is closed (FOOD-SECTION.md, «Головна»). */
+function headerLine(id: SectionId, ctx: SectionContext): string | null {
+  if (id !== 'food') return null;
+  const summary = daySummary(ctx.day.food ?? [], ctx.settings.food);
+  return summary ? esc(summary) : null;
+}
+
 function sectionMarkup({ id, title, description }: SectionSpec, open: boolean, ctx: SectionContext): string {
   const done = sectionDone(id, ctx.day, ctx.settings);
+  const header = headerLine(id, ctx);
   return `
     <section class="home-section${done ? ' home-section--done' : ''}" aria-labelledby="sec-${id}-title" data-description="${esc(description)}">
       <h2 class="home-section__heading">
         <button type="button" class="ctl accordion accordion--section" id="sec-${id}-title" data-section="${id}"
           aria-expanded="${open}" aria-controls="sec-${id}">${TICK}<span class="accordion__title">${title}</span></button>
       </h2>
-      <p class="home-section__hint t-3rd-regular" aria-hidden="true" data-lead>${leadOf(description, done)}</p>
+      ${header === null
+    ? `<p class="home-section__hint t-3rd-regular" aria-hidden="true" data-lead>${leadOf(description, done)}</p>`
+    : `<p class="home-section__hint t-3rd-regular">${header}</p>`}
       <div class="home-section__body" id="sec-${id}"${open ? '' : ' hidden'}>
         ${sectionTop(id, ctx)}<p class="t-1st-regular" data-lead>${leadOf(description, done)}</p>
         ${BODIES[id](ctx)}
@@ -428,6 +443,7 @@ function sectionControls(host: HTMLElement, state: HomeState, actions: HomeActio
       add: actions.health.add,
       today: () => state.today,
     },
+    food: actions.food,
   };
 }
 

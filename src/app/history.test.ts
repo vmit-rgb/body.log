@@ -99,7 +99,7 @@ describe('«історія» (Figma screen/log-history 165:2758)', () => {
     expect(host.querySelector('.history__averages')).toBeNull();
     expect(texts('.history .cal-block h3')).toEqual(['за листопад', 'середнє за листопад', 'листопад']);
     expect(texts('.history .stat__goal')[0]).toBe('за 9 днів');
-    expect(texts('.history .avg-card__title')).toEqual(['енергія', 'пульс', 'було важко?', 'втома']);
+    expect(texts('.history .avg-card__title')).toEqual(['енергія', 'пульс', 'було важко?', 'втома', 'їжа: білки, жири, вуглеводи', 'їжа: час прийомів']);
     const [energy, pulse, , tired] = [...host.querySelectorAll<HTMLElement>('.history .avg-card')];
     expect(texts('.avg', energy)).toEqual(['зранку 5', 'після тренування —']);
     expect(pulse!.textContent).toContain('записів немає');
@@ -203,7 +203,7 @@ describe('«історія» (Figma screen/log-history 165:2758)', () => {
     expect(cards().map(cardTitle)).toEqual(['вівторок, 20.10.2026']);
     expect(isOpen(cards()[0]!)).toBe(true);
     expect(host.querySelector('.carousel h3')!.textContent).toBe('середнє за жовтень');
-    expect(texts('.history .avg-card__empty')).toHaveLength(4);
+    expect(texts('.history .avg-card__empty')).toHaveLength(6);
     expect(document.activeElement).toBe(button('попередній місяць'));
     tap('попередній місяць');
     expect(host.querySelector('.history__empty')!.textContent).toBe('за вересень записів немає. пропущений місяць — просто місяць :)');

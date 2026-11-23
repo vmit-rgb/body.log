@@ -246,6 +246,17 @@
         }
       }
     },
+    "food": {
+      "title": "їжа",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled"],
+      "properties": {
+        "enabled": { "title": "показувати секцію «їжа» на головній", "type": "boolean" },
+        "macros": { "title": "рахувати білки, жири, вуглеводи й калорії", "type": "boolean" },
+        "names": { "title": "записувати назви страв", "type": "boolean" }
+      }
+    },
     "trackers": {
       "title": "самопочуття",
       "description": "Питання про самопочуття. Одне питання — одна річ (один повзунок на одну зону болю, одне поле на пульс).",

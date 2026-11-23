@@ -60,8 +60,18 @@ function accessibilityLine(settings: Settings, names: PreviewNames): string {
   return `${t('доступність:')} ${on.length ? on.join(', ') : t('стандартно')}`;
 }
 
+/** «їжа: білки, жири, вуглеводи» or what it records instead. */
+function foodLine(settings: Settings): string {
+  const { food } = settings;
+  const what = !food.enabled ? t('вимкнено') : food.macros ? t('білки, жири, вуглеводи') : food.names ? t('назви страв і час') : t('лише час');
+  return `${t('їжа')}: ${what}`;
+}
+
+const foodSwitches = (settings: Settings) => [settings.food.enabled, settings.food.macros, settings.food.names].join();
+
 function summary(after: Settings, names: PreviewNames): string[] {
   const lines = ACTIVITY_KINDS.filter((kind) => after[kind].enabled).map((kind) => activityLine(after, kind));
+  if (after.food.enabled) lines.push(foodLine(after));
   for (const [, many, read] of LISTS) {
     if (read(after).length) lines.push(`${many}: ${read(after).length}`);
   }
@@ -92,6 +102,8 @@ export function describeChanges(beforeProfile: JsonObject | null, afterProfile: 
     if (before[kind].enabled !== after[kind].enabled || before[kind].weeklyTarget !== after[kind].weeklyTarget) changed.push(activityLine(after, kind));
     else if (before[kind].hint !== after[kind].hint) changed.push(`${KIND_NAMES[kind]}${t(': підказка')}`);
   }
+
+  if (foodSwitches(before) !== foodSwitches(after)) changed.push(foodLine(after));
 
   for (const [what, many, read, ordered] of LISTS) {
     const was = read(before);

@@ -27,6 +27,7 @@ import { startScreen, type Phone, type Platform, type StartScreen } from './star
 import { installedWelcome } from './in-app';
 import { useInAppHelp } from '../screens/parts';
 import { withHealth } from '../health/health';
+import { withDishes } from '../food/food-profile';
 import { t } from '../i18n/lang';
 
 export { SAVE_DELAY_MS } from './keeper';
@@ -201,6 +202,15 @@ export function startApp(env: AppEnv): void {
       restore: restoreDay,
       refresh: () => showDay(shown, date),
       toast: (message) => toast.show(message),
+      food: {
+        copy: env.copyText,
+        keepDishes(dishes) {
+          // the day's typing first, then the settings with the new dishes; the meal is written on top of both
+          log.saveNow();
+          const next = { ...shown, profile: withDishes(shown.profile, dishes) };
+          if (persist(next)) shown = next;
+        },
+      },
       health: env.health && {
         ...env.health,
         add(days) {

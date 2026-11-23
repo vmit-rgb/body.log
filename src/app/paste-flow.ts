@@ -1,4 +1,5 @@
 import type { JsonObject } from '../domain/diary';
+import { keepFood } from '../food/food-profile';
 import { changesNothing, describeChanges, type Changes, type PreviewNames } from '../paste/preview';
 import { readPaste, type Refusal } from '../paste/read';
 import { PROMPT } from '../prompt/prompt';
@@ -76,11 +77,12 @@ export class PasteFlow {
     else {
       // «доступність» and the accent colour change only when the paste carries them (PROFILE-FORMAT.md)
       const now = this.deps.current();
-      this.pending = {
+      // «їжа»: the AI only switches it; «мої страви» and the guide stay as they were (Olesia, 2026-11-23)
+      this.pending = keepFood(now, {
         ...(now?.theme === undefined ? {} : { theme: now.theme }),
         ...(now?.accessibility === undefined ? {} : { accessibility: now.accessibility }),
         ...read.profile,
-      };
+      });
       if (read.unknown.length) this.view = { kind: 'unknown', lines: read.unknown };
       else this.preview();
     }

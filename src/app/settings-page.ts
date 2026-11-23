@@ -9,6 +9,12 @@ import {
   cleanForSave, withAccent, withAccessibility, withEncouragement, withGoal, withPulseTimer, type ProfileEdit,
 } from '../domain/profile-edit';
 import { tidy } from '../domain/sections-edit';
+import { foodForAi, withFood, withRef } from '../food/food-profile';
+import { findDish, mergeDishes, tenth, type FoodNumber } from '../food/food';
+import { dishesPrompt, readFoodPaste } from '../food/food-paste';
+import { dishSheet } from '../food/meal-sheet';
+import type { FoodView } from '../food/food-settings';
+import { parseNumber } from '../domain/numbers';
 import { readSettings, type ActivityKind, type Settings } from '../domain/settings';
 import { russianReason } from '../paste/russian';
 import { ACCENT_NAMES, ACCESS_SHORT } from '../screens/settings';
@@ -100,6 +106,8 @@ class Draft implements SettingsPage {
   private shown = false;
   /** The «затисни» tip was hidden by a tap in this visit. */
   private tipQuiet = false;
+  /** «їжа»: the AI import field and what it answered. */
+  private food: FoodView = { pasted: '', lines: [] };
   readonly sections: SectionsEditor;
   /** «застосувати»: compares with the settings on screen; «зберегти» keeps the pasted ones at once. */
   readonly paste = new PasteFlow({
@@ -154,6 +162,7 @@ class Draft implements SettingsPage {
       pasteView: this.paste.view,
       sections: { ...this.sections.view(), holdTip: !this.tipQuiet && (this.env.tips?.open(HOLD_TIP) ?? false) },
       unsaved: !same(this.draft, this.saved),
+      food: this.food,
     }, {
       act: (action) => ACTS[action.act](this, action as never),
       paste: (text) => {
@@ -300,7 +309,7 @@ class Draft implements SettingsPage {
   }
 
   copySettings(): Promise<void> {
-    return this.copy(JSON.stringify(this.draft, null, 1), 'copy-settings');
+    return this.copy(JSON.stringify(foodForAi(this.draft), null, 1), 'copy-settings');
   }
 
   exportText(): Promise<void> {
@@ -404,6 +413,49 @@ class Draft implements SettingsPage {
     this.home.erase({ message: t('усе видалено'), showIcon: true, action: undo(() => this.home.restart(before)) });
   }
 
+  /* ---- «їжа» (FOOD-SECTION.md) ---- */
+
+  foodText(text: string): void {
+    this.food = { pasted: text, lines: [] };
+  }
+
+  foodRef(key: FoodNumber, typed: string): void {
+    const value = parseNumber(typed);
+    if (value === (this.settings().food.ref[key] ?? null)) return;
+    this.change((profile) => withRef(profile, key, value === null ? null : tenth(value)));
+  }
+
+  async editDish(index: number | null): Promise<void> {
+    const { dishes } = this.settings().food;
+    const dish = index === null ? null : dishes[index] ?? null;
+    const answer = await dishSheet({ dish, taken: dishes.filter((_, i) => i !== index).map((x) => x.name) });
+    if (answer === null) return;
+    const next = answer.kind === 'delete'
+      ? dishes.filter((_, i) => i !== index)
+      : index === null ? [...dishes, answer.dish] : dishes.map((x, i) => (i === index ? answer.dish : x));
+    this.change((profile) => withFood(profile, { dishes: next }));
+  }
+
+  async foodImport(): Promise<void> {
+    const read = readFoodPaste(this.food.pasted);
+    if (read.kind === 'refused') {
+      this.food = { pasted: '', lines: read.lines };
+      return this.redraw();
+    }
+    const { dishes } = this.settings().food;
+    const twins = read.dishes.filter((dish) => findDish(dishes, dish.name)).map((dish) => dish.name);
+    let replace = false;
+    if (twins.length) {
+      const answer = await confirmDialog({
+        title: t('такі страви вже є'), body: twins.join(', '), confirm: t('замінити'), cancel: t('пропустити'),
+      });
+      replace = answer === 'confirm';
+    }
+    this.food = { pasted: '', lines: [] };
+    this.change((profile) => withFood(profile, { dishes: mergeDishes(dishes, read.dishes, replace) }));
+    this.say({ message: `${t('додано страв:')} ${read.dishes.length - (replace ? 0 : twins.length)}`, showIcon: true });
+  }
+
   /* ---- the goal and the pulse timer ---- */
 
   goalKind(kind: ActivityKind, on: boolean): void {
@@ -469,6 +521,13 @@ const ACTS: Acts = {
   'pick-done': (p) => p.sections.finishPicking(true),
   'pick-cancel': (p) => p.sections.finishPicking(false),
   drop: (p, a) => p.sections.drop(a.from, a.target),
+  'food-on': (p, a) => p.change((profile) => withFood(profile, { [a.key]: a.on })),
+  'food-ref': (p, a) => p.foodRef(a.key, a.value),
+  'food-dish': (p, a) => void p.editDish(a.index),
+  'food-dish-add': (p) => void p.editDish(null),
+  'food-paste': (p, a) => p.foodText(a.text),
+  'food-prompt': (p) => void p.copy(dishesPrompt(), 'food-prompt'),
+  'food-import': (p) => void p.foodImport(),
 };
 
 export function settingsPage(env: SettingsEnv, home: SettingsHome): SettingsPage {

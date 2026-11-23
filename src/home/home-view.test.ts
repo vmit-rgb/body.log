@@ -10,7 +10,7 @@ const key = (text: string) => text as DayKey;
 describe('homeSections', () => {
   it('shows every section of the example settings in the fixed order', () => {
     expect(homeSections(readSettings(EXAMPLE_DIARY.profile)).map((section) => section.title)).toEqual([
-      'самопочуття зранку', 'ранкова розминка', 'денна розминка', 'тренування', 'рух', 'самопочуття ввечері', 'нотатка',
+      'самопочуття зранку', 'ранкова розминка', 'денна розминка', 'тренування', 'рух', 'їжа', 'самопочуття ввечері', 'нотатка',
     ]);
   });
 

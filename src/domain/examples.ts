@@ -68,6 +68,8 @@ const EXAMPLE_PROFILE = {
     { id: 'hard', name: t('було важко?'), kind: 'yesno', ask: ['afterWorkout'] },
     { id: 'tired', name: t('втома'), hint: t('0 — бадьоро, 10 — дуже втомлено'), kind: 'scale', min: 0, max: 10, ask: ['evening'] },
   ],
+  // «почати без ШІ» shows what the app can do, food too (Olesia, 2026-11-23); for everyone else it stays off
+  food: { enabled: true },
 };
 
 export const EXAMPLE_DIARY: Diary = { profile: EXAMPLE_PROFILE, days: {} };

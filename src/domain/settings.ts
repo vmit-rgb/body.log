@@ -1,4 +1,5 @@
 import { parseAccent, type Accent } from './accents';
+import { readFoodSettings, type FoodSettings } from '../food/food';
 
 /**
  * Settings as the screens read them. The stored profile stays as it came
@@ -102,6 +103,8 @@ export interface Settings {
   readonly movement: Activity & { readonly kinds: readonly MovementKind[] };
   readonly exercises: readonly Exercise[];
   readonly trackers: readonly Tracker[];
+  /** «їжа» (FOOD-SECTION.md): off unless switched on; kept in the profile, not in the AI's schema. */
+  readonly food: FoodSettings;
 }
 
 type Raw = { readonly [key: string]: unknown };
@@ -243,5 +246,6 @@ export function readSettings(profile: Raw): Settings {
       id: exerciseId, name: text(exercise.name), how: text(exercise.how), source: readSource(exercise.source),
     })),
     trackers: withIds(profile.trackers, readTracker),
+    food: readFoodSettings(profile.food),
   };
 }

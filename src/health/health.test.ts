@@ -145,7 +145,7 @@ describe('«Здоровʼя» on the screens (A3, A5)', () => {
 
   it('averages steps and km over the days that have them; a card only then', () => {
     expect(healthAverages(week, dayAt)).toEqual({ steps: 5001, km: 6 });
-    const card = trackerCards(week, dayAt, settings).at(-1)!;
+    const card = trackerCards(week, dayAt, settings).find((c) => c.id === 'health')!;
     expect(card).toMatchObject({ id: 'health', name: 'зі Здоровʼя', kind: 'averages', rows: [{ label: 'кроки', value: 5001 }, { label: 'км', value: 6 }] });
     expect(trackerCards(week, (key) => emptyDay(key), settings).some((c) => c.id === 'health')).toBe(false);
   });

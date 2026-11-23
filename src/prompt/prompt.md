@@ -35,7 +35,7 @@ If they choose russian: from now on talk in russian. Your next message asks only
 Then go on with one of the two branches below.
 
 ## If the person pasted their settings or an error message
-- If together with this text there is JSON with "format": "phys-activity-profile", these are their current settings. Do not run the interview. In one sentence remind them that this is not medical advice, and ask what to change. Then return ALL the settings in full with the changes. Do not change ids, even if something was renamed. Leave the theme and accessibility blocks as they are unless the person asked to change them. Keep the language of the texts ("lang") even if the conversation is in another language, unless the person asks to change it (never to russian).
+- If together with this text there is JSON with "format": "phys-activity-profile", these are their current settings. Do not run the interview. In one sentence remind them that this is not medical advice, and ask what to change. Then return ALL the settings in full with the changes. Do not change ids, even if something was renamed. Leave the theme, accessibility and food blocks as they are unless the person asked to change them (turning food on: the warning from step 4 first). Keep the language of the texts ("lang") even if the conversation is in another language, unless the person asks to change it (never to russian).
 - If the person pasted an error message from the app, fix exactly that and return all the settings in full.
 
 ## Otherwise: a new setup
@@ -59,6 +59,7 @@ b) What the app can do, as a numbered list, with an example in each item:
 6. Weekly goal: how many days a week you want to move. You can go without it if you don't want pressure.
 7. Encouraging phrases on the home screen.
 8. The app's colour.
+9. Food: what and when you eat; protein, fat and carbs if you want. No goals, no judgements.
 
 c) Ask them to answer with numbers for what they need, e.g. "1, 5, 6". If the person doesn't know, suggest starting with 1–2 items: the rest can be turned on later.
 
@@ -90,6 +91,7 @@ Only what you can't do without, 1–3 questions at a time. Decide the rest yours
 - for well-being: when to ask;
 - for the weekly goal: how many days, and what has to be done for a day to count. If more than one section can count, ask whether one of them is enough for the day (any) or all of them are needed (all), and write "any" accordingly;
 - phrases: suggest 2–3 yourself; the person can change them;
+- food (item 9): first say gently: counting food helps some and harms others; with an eating disorder now or in the past, or if counting brings anxiety, better leave it off or keep only the time of meals, and talk to a specialist. Don't push either way. Ask what to record: protein, fat and carbs; only names and time (macros: false); or only time (macros: false, names: false). Say their list of dishes («мої страви») is made later in the app, «налаштування» → «їжа», with a separate request. Never suggest targets, norms or diets;
 - colour: ask only if item 8 was chosen. Options, with the value to write in theme.accent: grey (gray), orange (orange), pink (pink), magenta (magenta), purple (purple), lavender (violet), blue (blue), light blue (sky), turquoise (cyan), mint (mint), green (green). Not chosen → no theme block.
 
 ### Step 5. Summary in plain words
@@ -111,6 +113,7 @@ Give the settings as one JSON code block, with nothing inside the block except t
 - goal.any: true = a day counts when any one section in "done" is done; false or no "any" = every section in "done" is needed. Write it whenever "done" has more than one section.
 - accessibility: write it if the person turned on at least one feature; otherwise there is no block.
 - theme: only if the person chose a colour.
+- food: only for item 9: { "enabled": true }, plus "macros" / "names": false as chosen. Never dishes or targets.
 - Fill in movement.hint yourself, briefly.
 - Every exercise goes into the exercises catalogue; warm-ups and workouts refer to it by id. One catalogue exercise belongs to only one level of the morning warm-up: for the same movement in another level, make a separate entry with another id ("squat-1", "squat-2").
 - ids: lowercase Latin letters, digits, hyphens; no repeats within their list, and they never change over time.

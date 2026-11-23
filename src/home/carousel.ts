@@ -5,6 +5,7 @@ import { pickFromList } from '../ui/dialog';
 import { esc } from '../ui/html';
 import { iconSvg } from '../ui/icons';
 import { t } from '../i18n/lang';
+import { foodCardBody, type FoodCard } from '../food/food-cards';
 
 /*
  * The carousel of averages (wave 9, Olesia 2026-11-18; layout from
@@ -124,6 +125,7 @@ export function chartSvg(data: ChartData, width: number, textScale: number): str
 /* ---- the cards ---- */
 
 function body(card: TrackerCard): string {
+  if (card.kind === 'food-macros' || card.kind === 'food-times' || card.id === 'food-macros' || card.id === 'food-times') return foodCardBody(card as FoodCard);
   switch (card.kind) {
     case 'empty':
       return `<p class="avg-card__empty t-2nd-regular muted">${t('записів немає')}</p>`;
