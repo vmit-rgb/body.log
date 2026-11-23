@@ -460,7 +460,7 @@ export const EN: Readonly<Record<string, string>> = {
   "чи можна заповнити день наперед?": "can I fill in a day ahead?",
   "ні: відкрити можна тільки сьогодні й дні, що вже минули. майбутні дні в календарі не натискаються.": "no: you can only open today and days that have passed. future days in the calendar can't be tapped.",
   "куди зникла нижня панель?": "where did the bottom bar go?",
-  "вона ховається, коли гортаєш униз, і повертається, щойно гортаєш трохи вгору. кнопка /\\ повертає на початок сторінки.": "it hides when you scroll down and comes back as soon as you scroll up a little. the /\\ button takes you back to the top of the page.",
+  "вона ховається, коли гортаєш униз, і повертається, щойно гортаєш трохи вгору. кнопка ↑ повертає на початок сторінки.": "it hides when you scroll down and comes back as soon as you scroll up a little. the ↑ button takes you back to the top of the page.",
   "календар і статистика": "calendar and stats",
   "що означають точки в календарі?": "what do the dots in the calendar mean?",
   "точки під числом — скільки рівнів ранкової розминки виконано, над числом — скільки груп денної. з 6 замість точок стоїть число. кружечок ліворуч від числа — рух, крапка праворуч — тренування. пояснення є і під календарем. місяць гортається стрілками або свайпом по днях.": "dots under the date — how many morning warm-up levels are done, over the date — how many daytime groups. from 6 on, there's a number instead of dots. a circle to the left of the date — movement, a dot to the right — workout. the legend is under the calendar too. switch months with the arrows or by swiping the days.",
