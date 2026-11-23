@@ -9,7 +9,7 @@ import { t } from '../i18n/lang';
  * («Home», «Bottom bar»), Olesia's decisions of 2026-10-29 and 2026-11-08.
  */
 
-export type SectionId = 'ck-morning' | 'mw' | 'dw' | 'wo' | 'mv' | 'ck-evening' | 'note';
+export type SectionId = 'ck-morning' | 'mw' | 'dw' | 'wo' | 'mv' | 'food' | 'ck-evening' | 'note';
 
 export interface SectionSpec {
   readonly id: SectionId;
@@ -30,6 +30,8 @@ export function homeSections(settings: Settings): SectionSpec[] {
     [settings.daytimeWarmup.enabled, { id: 'dw', title: t('денна розминка'), description: LISTEN_TO_BODY }],
     [settings.workout.enabled, { id: 'wo', title: t('тренування'), description: LISTEN_TO_BODY }],
     [settings.movement.enabled, { id: 'mv', title: t('рух'), description: t('запиши, скільки вийшло.') }],
+    // FOOD-SECTION.md: switched on by hand in the settings; never «done», no grades
+    [settings.food.enabled, { id: 'food', title: t('їжа'), description: t('запиши, що їси й коли.') }],
     [asked(settings, 'evening'), { id: 'ck-evening', title: t('самопочуття ввечері'), description: CHECK_IN }],
     [true, { id: 'note', title: t('нотатка'), description: t('усе, що хочеш запамʼятати про цей день.') }],
   ];

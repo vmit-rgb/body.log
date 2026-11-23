@@ -1,0 +1,289 @@
+/*
+ * «їжа» (FOOD-SECTION.md): the meals on home, the sheet «+ прийом», the dish
+ * sheet, the settings part and the two cards. Neutral colours only: protein
+ * in the accent, the rest muted; nothing red or green about «enough».
+ */
+
+/* ---- home ---- */
+.food-day {
+  margin: 0;
+}
+.food-meals {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-items);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.food-meal {
+  --fg-0: var(--ink);
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-start;
+  gap: var(--gap-group);
+  width: 100%;
+  min-height: var(--tap);
+  padding: 8px;
+  background: var(--surface);
+  text-align: left;
+}
+.food-meal__what {
+  overflow-wrap: anywhere;
+}
+
+/* ---- the sheets ---- */
+.food-sheet__panel {
+  gap: var(--gap-group);
+  padding-bottom: calc(var(--gap-section) + env(safe-area-inset-bottom));
+}
+.food-sheet__panel h2 {
+  margin: 0;
+}
+.food-sheet .field:not(textarea),
+.food-search__field {
+  min-height: var(--tap);
+}
+.food-time {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-group);
+}
+.food-time__field {
+  width: auto;
+  min-width: 0;
+}
+.food-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-group);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.food-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-items);
+  padding: var(--gap-items);
+  background: var(--surface);
+}
+.food-row__head {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-micro);
+}
+.food-row__name {
+  flex: 1;
+  min-width: 0;
+}
+.food-row__numbers {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--gap-items) var(--gap-group);
+}
+.food-num {
+  --chars: 4;
+}
+.food-num--wrong {
+  --num-line: var(--err);
+}
+.food-num .number__input::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+.food-row__arrow {
+  color: var(--muted);
+}
+.food-row__own {
+  margin-left: calc(-1 * var(--gap-items));
+}
+.food-portions {
+  align-items: center;
+}
+.food-suggest,
+.food-list,
+.food-dishes {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.food-suggest:empty {
+  display: none;
+}
+.food-pick {
+  --fg-0: var(--ink);
+  justify-content: flex-start;
+  width: 100%;
+  min-height: var(--tap);
+  border-bottom: var(--stroke-4) solid var(--sunk);
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.food-search {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-items);
+}
+.food-list {
+  max-height: 40vh;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.food-paste {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-items);
+}
+.food-errors ul {
+  margin: var(--gap-micro) 0 0;
+  padding-left: 1.2em;
+}
+.food-errors,
+.food-error {
+  color: var(--err);
+}
+.food-sum {
+  margin: 0;
+}
+.food-sheet__actions {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--gap-group);
+}
+
+/* ---- settings ---- */
+.food-dish {
+  --fg-0: var(--ink);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  min-height: var(--tap);
+  padding: 8px 0;
+  border-bottom: var(--stroke-4) solid var(--sunk);
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.food-dishes li[hidden] {
+  display: none;
+}
+
+/* ---- card: protein, fat, carbs ---- */
+.food-bars__plot {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  gap: var(--gap-micro);
+  height: 132px;
+  padding-top: 18px;
+}
+.food-bars__day {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+}
+.food-bars__kcal {
+  position: absolute;
+  top: -18px;
+  white-space: nowrap;
+}
+.food-bars__group {
+  display: flex;
+  flex: 1;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 2px;
+  width: 100%;
+  border-bottom: var(--stroke-4) solid var(--muted);
+}
+.food-bar {
+  width: min(8px, 28%);
+  min-height: 1px;
+}
+.food-bar--p,
+.food-key.food-bar--p {
+  background: var(--accent);
+}
+.food-bar--f,
+.food-key.food-bar--f {
+  background: var(--muted);
+}
+.food-bar--c,
+.food-key.food-bar--c {
+  background: color-mix(in srgb, var(--muted) 45%, transparent);
+}
+.food-bars__x {
+  height: 18px;
+  line-height: 18px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.food-bars__ref {
+  position: absolute;
+  right: 0;
+  /* the bars stand between the kcal row (18 px) and the day labels (18 px) */
+  bottom: calc(18px + (100% - 36px) * var(--at));
+  left: 0;
+  border-top: 1px dashed var(--muted);
+  pointer-events: none;
+}
+.food-bars__ref-label {
+  position: absolute;
+  right: 0;
+  bottom: 1px;
+  padding: 0 2px;
+  background: var(--bg);
+  color: var(--muted);
+}
+.food-key {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 4px;
+}
+
+/* ---- card: the time of meals ---- */
+.food-times {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.food-times__row {
+  display: grid;
+  grid-template-columns: 3.5em 1fr;
+  align-items: center;
+  min-height: 18px;
+}
+.food-times__day {
+  color: var(--muted);
+}
+.food-times__line {
+  position: relative;
+  height: 18px;
+  border-bottom: 1px solid var(--sunk);
+}
+.food-times__dot {
+  position: absolute;
+  top: 50%;
+  width: var(--size);
+  height: var(--size);
+  border-radius: 50%;
+  background: var(--accent);
+  transform: translate(-50%, -50%);
+}
+.food-times__axis {
+  display: flex;
+  justify-content: space-between;
+  margin-left: 3.5em;
+  color: var(--muted);
+}

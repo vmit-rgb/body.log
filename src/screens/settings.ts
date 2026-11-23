@@ -19,6 +19,8 @@ import {
 } from './settings-sections';
 import { goalKinds } from '../domain/progress';
 import { t } from '../i18n/lang';
+import { foodMeta, foodSettingsBody, type FoodSwitch, type FoodView } from '../food/food-settings';
+import type { FoodNumber } from '../food/food';
 
 /** Shown only with two or more sections ticked: with one, «any» and «all» are the same (Нитка, 2026-11-19). */
 export const GOAL_ANY = t('будь-яка активність зараховує день');
@@ -33,7 +35,7 @@ export const GOAL_ANY = t('будь-яка активність зарахову
  * «Settings» and «Added 2026-11-08 in Figma».
  */
 
-export type PartId = 'goal' | 'phrase' | 'accent' | 'access' | 'wellbeing' | 'morning' | 'daytime' | 'workout' | 'movement' | 'ai' | 'backup' | 'delete';
+export type PartId = 'goal' | 'phrase' | 'accent' | 'access' | 'wellbeing' | 'morning' | 'daytime' | 'workout' | 'movement' | 'food' | 'ai' | 'backup' | 'delete';
 
 export interface SettingsState {
   /** The settings as edited, not saved yet. */
@@ -50,6 +52,8 @@ export interface SettingsState {
   readonly sections: SectionsView;
   /** The page holds changes that 💾 has not kept yet (F-02). */
   readonly unsaved: boolean;
+  /** «їжа»: the AI import field and what it answered. */
+  readonly food: FoodView;
 }
 
 export type AddWhat = 'tracker' | 'level' | 'zone' | 'session' | 'movement' | 'exercise';
@@ -85,7 +89,12 @@ export type SettingsAct =
   | { readonly act: 'kind-on'; readonly kind: ActivityKind; readonly on: boolean }
   | { readonly act: 'target'; readonly kind: ActivityKind; readonly delta: number }
   | { readonly act: 'pick'; readonly slot: Slot }
-  | { readonly act: 'drop'; readonly from: Slot; readonly target: DropTarget };
+  | { readonly act: 'drop'; readonly from: Slot; readonly target: DropTarget }
+  | { readonly act: 'food-on'; readonly key: FoodSwitch; readonly on: boolean }
+  | { readonly act: 'food-ref'; readonly key: FoodNumber; readonly value: string }
+  | { readonly act: 'food-dish'; readonly index: number }
+  | { readonly act: 'food-paste'; readonly text: string }
+  | { readonly act: 'food-dish-add' | 'food-prompt' | 'food-import' };
 
 export interface SettingsActions {
   act(action: SettingsAct): void;
@@ -142,7 +151,7 @@ const PHRASES = ['фраза', 'фрази', 'фраз'] as const;
  * what goes where: Нитка's proposal, Olesia may change them.
  */
 export const GROUPS: readonly (readonly [id: string, name: string, parts: readonly PartId[]])[] = [
-  ['tracked', t('що відстежую'), ['wellbeing', 'morning', 'daytime', 'workout', 'movement', 'goal']],
+  ['tracked', t('що відстежую'), ['wellbeing', 'morning', 'daytime', 'workout', 'movement', 'food', 'goal']],
   ['look', t('вигляд і доступність'), ['accent', 'phrase', 'access']],
   ['data', t('дані'), ['ai', 'backup', 'delete']],
 ];
@@ -271,6 +280,7 @@ function metas(state: SettingsState): Record<PartId, string> {
     daytime: sections.daytimeWarmup,
     workout: sections.workout,
     movement: sections.movement,
+    food: foodMeta(settings.food),
     ai: '',
     backup: state.backupLine,
     delete: '',
@@ -291,6 +301,7 @@ function markup(state: SettingsState): string {
     daytime: [t('денна розминка'), () => daytimeBody(ctx)],
     workout: [t('тренування'), () => workoutBody(ctx)],
     movement: [t('рух'), () => movementBody(ctx)],
+    food: [t('їжа'), () => foodSettingsBody(settings.food, state.food)],
     ai: [t('налаштування через ШІ'), () => aiBody(state)],
     backup: [t('копія й експорт'), () => backupBody(state)],
     delete: [t('видалення'), deleteBody],
@@ -360,6 +371,8 @@ const READ: Record<string, Read> = {
   'kind-on': (el, on) => ({ act: 'kind-on', kind: d(el, 'kind') as ActivityKind, on }),
   target: (el) => ({ act: 'target', kind: d(el, 'kind') as ActivityKind, delta: Number(d(el, 'delta')) }),
   pick: (el) => ({ act: 'pick', slot: slot(el) }),
+  'food-on': (el, on) => ({ act: 'food-on', key: d(el, 'key') as FoodSwitch, on }),
+  'food-dish': (el) => ({ act: 'food-dish', index: Number(d(el, 'index')) }),
 };
 
 /** A tap on a part's title or on a button with `data-act`. */
@@ -379,12 +392,25 @@ function typed(host: HTMLElement, input: HTMLInputElement, actions: SettingsActi
   const moved = Number(input.value) - Number(input.defaultValue);
   if (input.dataset.input === 'goal-days') return actions.act({ act: 'goal-days', delta: moved });
   if (input.dataset.input === 'target') return actions.act({ act: 'target', kind: d(input, 'kind') as ActivityKind, delta: moved });
+  if (input.dataset.input === 'food-find') return findDishes(host, input.value);
+  if (input.dataset.input === 'food-paste') {
+    actions.act({ act: 'food-paste', text: input.value });
+    part<HTMLButtonElement>(host, '[data-act="food-import"]').disabled = input.value.trim() === '';
+    return;
+  }
+  if (input.classList.contains('number__input')) input.style.setProperty('--len', String(input.value.length));
   // checkboxes say «input» too: only the paste field is text
   if (input.dataset.input !== 'paste') return;
   actions.paste(input.value);
   // the result shown spoke about the text before this change
   showPasteResult(host, { kind: 'none' });
   part<HTMLButtonElement>(host, '[data-act="apply"]').disabled = input.value.trim() === '';
+}
+
+/** «мої страви»: the search hides the dishes that don't match, without drawing the page anew. */
+function findDishes(host: HTMLElement, query: string): void {
+  const q = query.trim().toLocaleLowerCase();
+  for (const item of host.querySelectorAll<HTMLElement>('[data-dish-name]')) item.hidden = q !== '' && !String(item.dataset.dishName).includes(q);
 }
 
 /** Does what a tap asks, then plays what moves on the page drawn anew. */
@@ -403,6 +429,8 @@ function wire(host: HTMLElement, actions: SettingsActions, state: SettingsState)
   host.addEventListener('change', (event) => {
     const input = event.target as HTMLInputElement;
     if (input.type === 'checkbox') actions.act(READ[d(input, 'act')]!(input, input.checked));
+    // a guide line is kept when the field is left, so typing never redraws the page under the finger
+    if (input.dataset.input === 'food-ref') actions.act({ act: 'food-ref', key: d(input, 'ref') as FoodNumber, value: input.value });
   });
   host.addEventListener('input', (event) => typed(host, event.target as HTMLInputElement, actions));
   // the «затисни» tip is a bubble that a tap anywhere hides, as on home; the tap still does what it was for

@@ -1,4 +1,5 @@
 import { hasSet, type Answer, type Day, type MovementLog, type SetLog } from './day';
+import { sortMeals, type Meal } from '../food/food';
 import type { Level, Moment, Settings } from './settings';
 
 /*
@@ -133,4 +134,21 @@ export const rememberNames = (settings: Settings): Edit => (day) => {
   const kept = Object.entries(day.names).filter(([id]) => used.includes(id));
   const named = settings.exercises.filter((exercise) => used.includes(exercise.id));
   return { ...day, names: { ...Object.fromEntries(kept), ...Object.fromEntries(named.map((exercise) => [exercise.id, exercise.name])) } };
+};
+
+/* ---- «їжа» (FOOD-SECTION.md): meals kept by time ---- */
+
+/** «+ прийом» saved, or a meal changed: `index` is its place among the day's meals; none adds it. */
+export const putMeal = (meal: Meal, index?: number): Edit => (day) => {
+  const meals = [...(day.food ?? [])];
+  if (index === undefined || index < 0 || index >= meals.length) meals.push(meal);
+  else meals[index] = meal;
+  return { ...day, food: sortMeals(meals) };
+};
+
+/** «видалити прийом» */
+export const removeMeal = (index: number): Edit => (day) => {
+  const meals = without(day.food ?? [], index);
+  const { food: _was, ...rest } = day;
+  return meals.length ? { ...rest, food: meals } : rest;
 };

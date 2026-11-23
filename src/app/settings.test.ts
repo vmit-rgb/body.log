@@ -87,7 +87,7 @@ describe('settings: the page (Figma screen/edit-profile 186:3278)', () => {
   it('opens from the menu, with its parts closed and 💾 ✕ in the bar', async () => {
     expect(heading()).toBe('налаштування');
     expect(partTitles()).toEqual([
-      'самопочуття', 'ранкова розминка', 'денна розминка', 'тренування', 'рух', 'тижнева ціль',
+      'самопочуття', 'ранкова розминка', 'денна розминка', 'тренування', 'рух', 'їжа', 'тижнева ціль',
       'акцентний колір', 'підбадьорлива фраза', 'доступність',
       'налаштування через ШІ', 'копія й експорт', 'видалення',
     ]);
@@ -100,7 +100,7 @@ describe('settings: the page (Figma screen/edit-profile 186:3278)', () => {
   it('E-14: puts the parts in three groups that never fold, a group titled for the screen reader', () => {
     const groups = [...host.querySelectorAll<HTMLElement>('.settings__parts > .settings__group')];
     expect(groups.map((g) => g.querySelector('h2')!.textContent)).toEqual(['що відстежую', 'вигляд і доступність', 'дані']);
-    expect(groups.map((g) => g.querySelectorAll('.st-part').length)).toEqual([6, 3, 3]);
+    expect(groups.map((g) => g.querySelectorAll('.st-part').length)).toEqual([7, 3, 3]);
     for (const g of groups) {
       // named by its title; no button folds it
       expect(host.querySelector(`#${g.getAttribute('aria-labelledby')}`)!.textContent).toBe(g.querySelector('h2')!.textContent);
@@ -108,7 +108,7 @@ describe('settings: the page (Figma screen/edit-profile 186:3278)', () => {
       expect(g.hidden).toBe(false);
     }
     // a part's title is one level under its group's
-    expect(host.querySelectorAll('.st-part > h3.st-part__heading')).toHaveLength(12);
+    expect(host.querySelectorAll('.st-part > h3.st-part__heading')).toHaveLength(13);
   });
 
   it('says what a closed part holds', async () => {

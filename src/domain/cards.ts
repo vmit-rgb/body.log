@@ -4,6 +4,7 @@ import { MOMENTS, type Moment, type Settings, type Tracker } from './settings';
 import { MOMENT_SHORT } from './stats';
 import { t } from '../i18n/lang';
 import { healthAverages, HEALTH_NAME } from '../health/health';
+import { foodCards, type FoodCard } from '../food/food-cards';
 
 /*
  * The carousel «середнє за 7 днів» (wave 9, Olesia 2026-11-18; FIXES-PLAN
@@ -47,7 +48,7 @@ export type TrackerCard = CardBase & (
   | { readonly kind: 'averages'; readonly rows: readonly AverageRow[]; readonly chart: Chart | null }
   | { readonly kind: 'pairs'; readonly entries: readonly PairEntry[]; readonly units: readonly [string, string] }
   | { readonly kind: 'yesno'; readonly rows: readonly YesNoRow[] }
-);
+) | FoodCard;
 
 const round = (value: number) => Math.round(value * 10) / 10;
 const mean = (values: readonly number[]) => values.reduce((sum, value) => sum + value, 0) / values.length;
@@ -133,9 +134,13 @@ function healthCard(keys: readonly DayKey[], dayAt: (key: DayKey) => Day): Track
   return [{ id: 'health', name: HEALTH_NAME, kind: 'averages', rows: [{ label: t('кроки'), value: steps }, { label: t('км'), value: km }], chart: null }];
 }
 
-/** A card for every question but the notes, in the order of the settings; «зі Здоровʼя» last. */
+/** A card for every question but the notes, in the order of the settings; «зі Здоровʼя», then «їжа» last. */
 export function trackerCards(keys: readonly DayKey[], dayAt: (key: DayKey) => Day, settings: Settings): TrackerCard[] {
-  return [...settings.trackers.filter((tracker) => tracker.kind !== 'note').map((tracker) => card(tracker, keys, dayAt)), ...healthCard(keys, dayAt)];
+  return [
+    ...settings.trackers.filter((tracker) => tracker.kind !== 'note').map((tracker) => card(tracker, keys, dayAt)),
+    ...healthCard(keys, dayAt),
+    ...foodCards(keys, dayAt, settings.food),
+  ];
 }
 
 /** The day shown and the six before it, oldest first: the points of the chart on home. */

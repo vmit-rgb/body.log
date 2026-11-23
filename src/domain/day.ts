@@ -1,4 +1,5 @@
 import type { DayKey } from './dates';
+import { readMeals, type Meal } from '../food/food';
 
 /**
  * What was logged on one day, in the shape «бета 0.81» stores (`v: 2`),
@@ -23,6 +24,9 @@ import type { DayKey } from './dates';
  *   `exmin` (exercise minutes), `kcal` (active energy), `floors`, `workouts` (`min`, `km`, `name`).
  *   Its own record, apart from `mv`: a sync replaces it, and it never makes «рух» done.
  *   Left out when nothing came, so a copy without it reads as before.
+ * - `food`: meals («їжа», FOOD-SECTION.md): `t` = «HH:MM», `items` = dishes with their own
+ *   numbers per portion (`portion`, `p`, `f`, `c`, `kcal`, `kcalManual`, `ai`). Left out when
+ *   there are none, so a copy without it reads as before.
  */
 
 export type Answer = number | string | readonly (number | null)[];
@@ -51,6 +55,8 @@ export interface Day {
   readonly names: Table<string>;
   /** «Здоров'я» (beta 1.1.1); none when nothing came for the day. */
   readonly hl?: HealthLog;
+  /** «їжа»; none when no meal was logged. */
+  readonly food?: readonly Meal[];
 }
 
 type Raw = { readonly [key: string]: unknown };
@@ -131,8 +137,10 @@ export function readDay(value: unknown, date: DayKey): Day {
   const mw = raw(day.mw);
   const names = table(day.names, (name) => (typeof name === 'string' ? name : null));
   const hl = readHealth(day.hl);
+  const food = readMeals(day.food);
   return {
     ...(hl ? { hl } : {}),
+    ...(food ? { food } : {}),
     date,
     t: table(day.t, (answers) => table(answers, readAnswer)),
     note: typeof day.note === 'string' ? day.note : '',
@@ -161,7 +169,7 @@ const someAnswer = (t: Day['t']) => Object.values(t).some((answers) => Object.ke
 /** Whether anything at all was logged (0.81 `hasData`); an empty day isn't stored. */
 export function hasData(day: Day): boolean {
   return someAnswer(day.t) || someTime(day.mw.times) || day.note !== '' || day.mw.ticks.length > 0
-    || day.dw.length > 0 || day.wo !== null || Object.values(day.mv).some((laps) => laps.some(hasLap)) || someHealth(day.hl);
+    || day.dw.length > 0 || day.wo !== null || Object.values(day.mv).some((laps) => laps.some(hasLap)) || someHealth(day.hl) || (day.food?.length ?? 0) > 0;
 }
 
 /** The day as stored, or null when there is nothing to keep (0.81 `compactDay`). */
@@ -173,5 +181,6 @@ export function writeDay(day: Day): Raw | null {
     ex: Object.fromEntries(Object.entries(day.wo.ex).map(([id, sets]) => [id, trimEnd(sets, hasSet)] as const).filter(([, sets]) => sets.length > 0)),
   };
   const hl = someHealth(day.hl) ? { hl: day.hl } : {};
-  return { v: 2, date: day.date, t, note: day.note, mw: day.mw, dw: day.dw, wo, mv: writeMovement(day.mv), names: day.names, ...hl };
+  const food = day.food?.length ? { food: day.food } : {};
+  return { v: 2, date: day.date, t, note: day.note, mw: day.mw, dw: day.dw, wo, mv: writeMovement(day.mv), names: day.names, ...hl, ...food };
 }

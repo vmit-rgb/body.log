@@ -9,6 +9,7 @@ import './styles/calendar.css';
 import './styles/menu.css';
 import './styles/history.css';
 import './styles/settings.css';
+import './styles/food.css';
 import './styles/glass.css';
 import './styles/install-demo.css';
 import './styles/motion.css';

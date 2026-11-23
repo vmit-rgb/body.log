@@ -79,6 +79,8 @@ export class PasteFlow {
       this.pending = {
         ...(now?.theme === undefined ? {} : { theme: now.theme }),
         ...(now?.accessibility === undefined ? {} : { accessibility: now.accessibility }),
+        // «їжа» is not in the AI's settings (FOOD-SECTION.md): it stays as it was
+        ...(now?.food === undefined ? {} : { food: now.food }),
         ...read.profile,
       };
       if (read.unknown.length) this.view = { kind: 'unknown', lines: read.unknown };

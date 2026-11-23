@@ -6,6 +6,7 @@ import { kindDone, levelDone } from './progress';
 import { MOMENTS, type Moment, type Settings, type Tracker } from './settings';
 import { monthName, monthOf, type MonthKey } from './stats';
 import { t } from '../i18n/lang';
+import { daySummary, hasNumbers, mealLine } from '../food/food';
 import { formatHealth, hasHealth, HEALTH_NAME } from '../health/health';
 
 /*
@@ -194,6 +195,16 @@ function movement(day: Day, settings: Settings): DayBlock[] {
   return rows.length || health.length ? [{ kind: 'values', title: t('рух'), rows: [...health, ...rows] }] : [];
 }
 
+/** «їжа»: a row per meal, its time and what was in it; the day's sum last (FOOD-SECTION.md). */
+function food(day: Day, settings: Settings): DayBlock[] {
+  const meals = day.food ?? [];
+  if (meals.length === 0) return [];
+  const rows: ValueRow[] = meals.map((meal) => ({ label: meal.t, value: mealLine(meal, settings.food) || '—', unit: '', text: false }));
+  const sum = settings.food.macros && meals.length > 1 && meals.some(hasNumbers)
+    ? [{ label: t('за день'), value: daySummary(meals, settings.food), unit: '', text: false }] : [];
+  return [{ kind: 'values', title: t('їжа'), rows: [...rows, ...sum] }];
+}
+
 /** Every block of the day in the order it was lived; `days` holds names of deleted exercises. */
 export function dayBlocks(day: Day, days: Readonly<Record<DayKey, Day>>, settings: Settings): DayBlock[] {
   const all = [day, ...Object.values(days)];
@@ -211,6 +222,7 @@ export function dayBlocks(day: Day, days: Readonly<Record<DayKey, Day>>, setting
     ...at('beforeMovement'),
     ...movement(day, settings),
     ...at('afterMovement'),
+    ...food(day, settings),
     ...at('evening'),
     ...(day.note ? [{ kind: 'text' as const, title: t('нотатка'), text: day.note }] : []),
   ];
