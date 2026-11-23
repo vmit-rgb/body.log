@@ -59,6 +59,11 @@
 .food-time__field {
   width: auto;
   min-width: 0;
+  /* the picker's \/ on Android kept to the frame (Olesia's screenshot, 2026-11-23): room on the right */
+  padding-right: 16px;
+}
+.food-time__field::-webkit-calendar-picker-indicator {
+  margin-left: 8px;
 }
 .food-rows {
   display: flex;
