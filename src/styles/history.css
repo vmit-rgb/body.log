@@ -238,3 +238,108 @@
 .bar__search[aria-pressed='true'] {
   color: var(--muted);
 }
+
+/* ---- filters (FIXES-1.3 item 15, Olesia 2026-11-27): a round button right under the calendar block ---- */
+.history__filter {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-group);
+  padding: 0 var(--pad-screen-x);
+}
+.cal-block + .history__filter {
+  margin-top: calc(var(--gap-section) - var(--gap-huge));
+}
+.history__filter + .history__days {
+  margin-top: calc(var(--gap-group) - var(--gap-huge));
+}
+.filter-btn {
+  border-radius: var(--radius-pill);
+}
+/* how many ticks: a small accent circle on the button's edge */
+.filter-btn__count {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  display: grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 4px;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  color: var(--on-accent);
+  line-height: 1;
+}
+
+/* ---- the filter panel: from the right over ¾ of the screen, as in shops ---- */
+.filter-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+}
+.filter-sheet__scrim {
+  position: absolute;
+  inset: 0;
+  background: rgb(0 0 0 / 60%);
+}
+.filter-sheet__panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  width: 75%;
+  max-width: 480px;
+  padding-top: env(safe-area-inset-top);
+  background: var(--bg);
+  box-shadow: -2px 0 12px rgb(0 0 0 / 25%);
+}
+.filter-sheet__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gap-items);
+  padding: var(--gap-items) var(--gap-items) var(--gap-items) var(--gap-group);
+}
+.filter-sheet__head h2 {
+  margin: 0;
+}
+.filter-sheet__groups {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--gap-section);
+  min-height: 0;
+  padding: var(--gap-items) var(--gap-group) var(--gap-section);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.filter-sheet__group {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.filter-sheet__legend {
+  margin-bottom: var(--gap-micro);
+  padding: 0;
+  color: var(--accent);
+}
+.filter-sheet__item {
+  width: 100%;
+  overflow-wrap: anywhere;
+}
+.filter-sheet__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gap-group);
+  padding: var(--gap-group) var(--gap-group) calc(var(--gap-group) + env(safe-area-inset-bottom));
+  border-top: var(--stroke-4) solid var(--sunk);
+}
+.filter-sheet__show {
+  flex: 1;
+}

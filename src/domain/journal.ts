@@ -3,7 +3,7 @@ import { hasData, hasLap, hasSet, type Answer, type Day, type SetLog } from './d
 import { formatLaps } from './history';
 import { formatNumber, plural } from './numbers';
 import { kindDone, levelDone, levelsOf } from './progress';
-import { MOMENTS, type Moment, type Settings, type Tracker } from './settings';
+import { MOMENTS, type ActivityKind, type Moment, type Settings, type Tracker } from './settings';
 import { monthName, monthOf, type MonthKey } from './stats';
 import { t } from '../i18n/lang';
 import { daySummary, hasNumbers, mealLine } from '../food/food';
@@ -129,8 +129,8 @@ export function answerRow(tracker: Tracker | undefined, answer: Answer): ValueRo
   return { label, value: String(answer), unit, text: true };
 }
 
-function checkIn(day: Day, settings: Settings, moment: Moment): DayBlock[] {
-  const answers = Object.entries(day.t[moment] ?? {});
+function checkIn(day: Day, settings: Settings, moment: Moment, filter?: HistoryFilter): DayBlock[] {
+  const answers = Object.entries(day.t[moment] ?? {}).filter(([id]) => !filter || filter.has(questionKey(id)));
   if (answers.length === 0) return [];
   const rows = answers.map(([id, answer]) => answerRow(settings.trackers.find((t) => t.id === id), answer));
   return [{ kind: 'values', title: MOMENT_TITLES[moment], rows }];
@@ -206,27 +206,90 @@ function food(day: Day, settings: Settings): DayBlock[] {
   return [{ kind: 'values', title: t('їжа'), rows: [...rows, ...sum] }];
 }
 
-/** Every block of the day in the order it was lived; `days` holds names of deleted exercises. */
-export function dayBlocks(day: Day, days: Readonly<Record<DayKey, Day>>, settings: Settings): DayBlock[] {
+/* ---- filters in the history (FIXES-1.3 item 15, Olesia 2026-11-27) ---- */
+
+/** A section of the settings that a filter can pick whole. */
+export type FilterSection = ActivityKind | 'food';
+
+/** What a filter keeps: sections, questions (`q:` + id) and the day's note. */
+export type FilterKey = FilterSection | `q:${string}` | 'note';
+
+/** The chosen keys; with none, nothing is filtered. */
+export type HistoryFilter = ReadonlySet<FilterKey>;
+
+export const questionKey = (id: string): FilterKey => `q:${id}`;
+
+export interface FilterItem {
+  readonly key: FilterKey;
+  readonly label: string;
+}
+
+export interface FilterGroup {
+  readonly title: string;
+  readonly items: readonly FilterItem[];
+}
+
+/* the same names and order as in the settings */
+const SECTION_NAMES: Record<FilterSection, string> = {
+  morningWarmup: t('ранкова розминка'), daytimeWarmup: t('денна розминка'), workout: t('тренування'), movement: t('рух'), food: t('їжа'),
+};
+const QUESTION_GROUPS: readonly [Tracker['kind'], string][] = [
+  ['scale', t('повзунки')], ['yesno', t('питання так / ні')], ['numbers', t('два числа')], ['number', t('одне число')], ['note', t('нотатки')],
+];
+
+/**
+ * The groups of the filter panel, as many as the settings have (Olesia):
+ * the sections that are on, then the questions by kind, each by its name;
+ * the day's note goes first among the notes. A group with nothing is left out.
+ */
+export function filterGroups(settings: Settings): FilterGroup[] {
+  const sections = (Object.keys(SECTION_NAMES) as FilterSection[])
+    .filter((section) => settings[section].enabled)
+    .map((section) => ({ key: section, label: SECTION_NAMES[section] }));
+  const questions = QUESTION_GROUPS.map(([kind, title]) => ({
+    title,
+    items: [
+      ...(kind === 'note' ? [{ key: 'note' as const, label: t('нотатка дня') }] : []),
+      ...settings.trackers.filter((tracker) => tracker.kind === kind).map((tracker) => ({ key: questionKey(tracker.id), label: tracker.name || t('без назви') })),
+    ],
+  }));
+  return [{ title: t('розділи'), items: sections }, ...questions].filter((group) => group.items.length > 0);
+}
+
+/**
+ * Every block of the day in the order it was lived; `days` holds names of
+ * deleted exercises. With a filter, only the sections, questions and note
+ * chosen; a check-in keeps its title but only the questions chosen.
+ */
+export function dayBlocks(day: Day, days: Readonly<Record<DayKey, Day>>, settings: Settings, filter?: HistoryFilter): DayBlock[] {
   const all = [day, ...Object.values(days)];
-  const at = (moment: Moment) => checkIn(day, settings, moment);
+  const on = filter?.size ? filter : undefined;
+  const at = (moment: Moment) => checkIn(day, settings, moment, on);
+  const keep = (key: FilterKey, blocks: () => DayBlock[]) => (!on || on.has(key) ? blocks() : []);
   return [
     ...at('morning'),
-    ...morningWarmup(day, all, settings),
+    ...keep('morningWarmup', () => morningWarmup(day, all, settings)),
     ...at('afterMorningWarmup'),
     ...at('beforeDaytimeWarmup'),
-    ...daytimeWarmup(day, settings),
+    ...keep('daytimeWarmup', () => daytimeWarmup(day, settings)),
     ...at('afterDaytimeWarmup'),
     ...at('beforeWorkout'),
-    ...workout(day, all, settings),
+    ...keep('workout', () => workout(day, all, settings)),
     ...at('afterWorkout'),
     ...at('beforeMovement'),
-    ...movement(day, settings),
+    ...keep('movement', () => movement(day, settings)),
     ...at('afterMovement'),
-    ...food(day, settings),
+    ...keep('food', () => food(day, settings)),
     ...at('evening'),
-    ...(day.note ? [{ kind: 'text' as const, title: t('нотатка'), text: day.note }] : []),
+    ...keep('note', () => (day.note ? [{ kind: 'text' as const, title: t('нотатка'), text: day.note }] : [])),
   ];
+}
+
+/** The days of the month the history shows: those with something the filter keeps. */
+export function shownDays(days: Readonly<Record<DayKey, Day>>, month: MonthKey, today: DayKey, settings: Settings, filter?: HistoryFilter): DayKey[] {
+  const keys = monthDays(days, month, today);
+  if (!filter?.size) return keys;
+  return keys.filter((key) => dayBlocks(days[key]!, days, settings, filter).length > 0);
 }
 
 /* ---- the month ---- */
