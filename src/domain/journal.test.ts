@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { DayKey } from './dates';
 import { emptyDay, readDay, type Day } from './day';
 import {
-  dayBlocks, dayMeta, exerciseName, formatSetRuns, monthDays, monthSummary, searchNotes, sessionName,
+  dayBlocks, dayMeta, exerciseName, filterGroups, formatSetRuns, monthDays, monthSummary, searchNotes, sessionName, shownDays, type FilterKey,
 } from './journal';
 import { readSettings } from './settings';
 import type { MonthKey } from './stats';
@@ -283,5 +283,65 @@ describe('searchNotes (COPY.md Search)', () => {
   it('finds each matching text of a day once', () => {
     const twice = { [key('2026-11-03')]: day('2026-11-03', { note: 'сон, сон' }) };
     expect(searchNotes(twice, settings, 'сон')).toHaveLength(1);
+  });
+});
+
+describe('filters in the history (FIXES-1.3 item 15)', () => {
+  const only = (...keys: FilterKey[]) => new Set<FilterKey>(keys);
+  const busy = day('2026-11-10', {
+    note: 'день як день',
+    mw: { ticks: ['a'] },
+    dw: ['back'],
+    t: { morning: { pain: 3, pulse: 70 }, afterWorkout: { how: 'легко', dizzy: 'yes' }, evening: { pain: 2 } },
+    wo: { session: 'A', ex: { x: [{ w: 10, r: 8 }] } },
+    mv: { walk: { min: 30 } },
+  });
+  const quiet = day('2026-11-04', { t: { morning: { pulse: 64 } } });
+  const days = { [busy.date]: busy, [quiet.date]: quiet };
+  const titles = (filter: Set<FilterKey>, of: Day = busy) => dayBlocks(of, days, settings, filter).map((b) => b.title);
+
+  it('has the groups of the settings: the sections that are on, then the questions by kind, the day note first among notes', () => {
+    expect(filterGroups(settings).map((g) => [g.title, g.items.map((i) => i.label)])).toEqual([
+      ['розділи', ['ранкова розминка', 'денна розминка', 'тренування', 'рух']],
+      ['повзунки', ['біль']],
+      ['питання так / ні', ['паморочилось?']],
+      ['два числа', ['тиск', 'пара']],
+      ['одне число', ['пульс']],
+      ['нотатки', ['нотатка дня', 'як пройшло']],
+    ]);
+  });
+
+  it('leaves out a section that is off and a kind with no questions', () => {
+    const fewer = readSettings({ movement: { enabled: false }, trackers: [{ id: 'n', name: 'сон', kind: 'note', ask: ['morning'] }] });
+    const groups = filterGroups(fewer).map((g) => g.title);
+    expect(groups).not.toContain('повзунки');
+    expect(filterGroups(fewer)[0]!.items.map((i) => i.key)).not.toContain('movement');
+    expect(filterGroups(fewer).at(-1)!.items.map((i) => i.label)).toEqual(['нотатка дня', 'сон']);
+  });
+
+  it('shows everything with no filter', () => {
+    expect(titles(only())).toEqual(dayBlocks(busy, days, settings).map((b) => b.title));
+  });
+
+  it('keeps a question in the check-ins it was answered in, only its rows', () => {
+    const blocks = dayBlocks(busy, days, settings, only('q:pain'));
+    expect(blocks.map((b) => b.title)).toEqual(['самопочуття зранку', 'самопочуття ввечері']);
+    expect(blocks.flatMap((b) => (b.kind === 'values' ? b.rows.map((r) => r.label) : []))).toEqual(['біль', 'біль']);
+  });
+
+  it('keeps notes: the note question and the day note together', () => {
+    expect(titles(only('note', 'q:how'))).toEqual(['самопочуття після тренування', 'нотатка']);
+  });
+
+  it('keeps sections whole, several at once', () => {
+    expect(titles(only('morningWarmup', 'movement'))).toEqual(['ранкова розминка', 'рух']);
+  });
+
+  it('lists only the days of the month with something the filter keeps', () => {
+    expect(shownDays(days, month('2026-11'), TODAY, settings, only())).toEqual(['2026-11-10', '2026-11-04']);
+    expect(shownDays(days, month('2026-11'), TODAY, settings, only('q:pulse'))).toEqual(['2026-11-10', '2026-11-04']);
+    expect(shownDays(days, month('2026-11'), TODAY, settings, only('note'))).toEqual(['2026-11-10']);
+    expect(shownDays(days, month('2026-11'), TODAY, settings, only('workout'))).toEqual(['2026-11-10']);
+    expect(titles(only('note'), quiet)).toEqual([]);
   });
 });

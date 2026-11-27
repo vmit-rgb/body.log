@@ -468,3 +468,108 @@ describe('search in notes (Figma search/panel 210:4110)', () => {
     expect(heading()).toBe('меню');
   });
 });
+
+describe('filters (FIXES-1.3 item 15, Olesia 2026-11-27)', () => {
+  beforeEach(() => {
+    start();
+    openHistory();
+  });
+
+  const sheet = () => document.querySelector<HTMLElement>('.filter-sheet');
+  const inSheet = (name: string) => [...sheet()!.querySelectorAll<HTMLButtonElement>('button')].find((b) => (b.getAttribute('aria-label') ?? b.textContent!.trim()) === name)!;
+  const tick = (label: string) => {
+    const box = [...sheet()!.querySelectorAll<HTMLLabelElement>('.checkbox')].find((l) => l.textContent!.trim() === label)!.querySelector('input')!;
+    box.click();
+  };
+  /** The panel answers through a promise: the screen redraws a moment later. */
+  const choose = async (name: string) => {
+    inSheet(name).click();
+    await Promise.resolve();
+  };
+  const blockTitles = (card: HTMLElement) => texts('.day-block__title', card);
+
+  it('puts a round button right under the calendar block, before the cards', async () => {
+    const filter = host.querySelector('.cal-block + .history__filter')!;
+    expect(filter.nextElementSibling!.classList.contains('history__days')).toBe(true);
+    expect(button('фільтри')!.classList.contains('filter-btn')).toBe(true);
+    expect(button('скинути фільтр')).toBeUndefined();
+  });
+
+  it('opens a panel with × and the groups of the settings; nothing changes under it until «показати»', async () => {
+    tap('фільтри');
+    expect(sheet()!.getAttribute('role')).toBe('dialog');
+    expect(inSheet('закрити')).toBeTruthy();
+    expect(texts('.filter-sheet__legend', sheet()!)).toEqual(['розділи', 'повзунки', 'питання так / ні', 'одне число', 'нотатки']);
+    expect(texts('.filter-sheet__group:last-child .checkbox', sheet()!)).toEqual(['нотатка дня']);
+    expect(inSheet('показати 3 дні')).toBeTruthy();
+    tick('нотатка дня');
+    expect(inSheet('показати 2 дні')).toBeTruthy();
+    expect(cards()).toHaveLength(3);
+  });
+
+  it('shows only the days and blocks chosen, every card open, and says how many are chosen', async () => {
+    tap('фільтри');
+    tick('нотатка дня');
+    tick('втома');
+    await choose('показати 3 дні');
+    expect(sheet()).toBeNull();
+    expect(cards().map(cardTitle)).toEqual(['неділя, 08.11.2026', 'четвер, 05.11.2026', 'вівторок, 03.11.2026']);
+    expect(cards().map(isOpen)).toEqual([true, true, true]);
+    expect(cards().map(blockTitles)).toEqual([['нотатка'], ['нотатка'], ['самопочуття ввечері']]);
+    expect(button('фільтри, вибрано 2')).toBe(document.activeElement);
+    expect(host.querySelector('.filter-btn__count')!.textContent).toBe('2');
+  });
+
+  it('keeps the ticks when opened again; × and Escape close without applying', async () => {
+    tap('фільтри');
+    tick('нотатка дня');
+    await choose('показати 2 дні');
+    tap('фільтри, вибрано 1');
+    expect(sheet()!.querySelector<HTMLInputElement>('input:checked')).toBeTruthy();
+    tick('енергія');
+    await choose('закрити');
+    expect(cards()).toHaveLength(2);
+    tap('фільтри, вибрано 1');
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(cards()).toHaveLength(2);
+  });
+
+  it('«скинути» in the panel clears the ticks; «скинути фільтр» brings everything back', async () => {
+    tap('фільтри');
+    tick('нотатка дня');
+    await choose('скинути');
+    expect(sheet()!.querySelector('input:checked')).toBeNull();
+    expect(inSheet('показати 3 дні')).toBeTruthy();
+    tick('нотатка дня');
+    await choose('показати 2 дні');
+    tap('скинути фільтр');
+    expect(cards()).toHaveLength(3);
+    expect(cards().map(isOpen)).toEqual([true, false, false]);
+    expect(button('фільтри')).toBeTruthy();
+  });
+
+  it('stays on through the months, with its own line for a month where nothing matches', async () => {
+    tap('фільтри');
+    tick('нотатка дня');
+    await choose('показати 2 дні');
+    tap('попередній місяць');
+    expect(cards().map(blockTitles)).toEqual([['нотатка']]);
+    tap('попередній місяць');
+    expect(host.querySelector('.history__empty')!.textContent).toBe('за вересень записів немає. пропущений місяць — просто місяць :)');
+    tap('наступний місяць');
+    tap('наступний місяць');
+    tap('фільтри, вибрано 1');
+    tick('нотатка дня');
+    tick('пульс');
+    await choose('показати 0 днів');
+    expect(host.querySelector('.history__empty')!.textContent).toBe('за листопад під фільтр нічого не підходить');
+  });
+
+  it('says so when a day of the calendar has nothing the filter keeps', async () => {
+    tap('фільтри');
+    tick('нотатка дня');
+    await choose('показати 2 дні');
+    calDay('2026-11-03').click();
+    expect(toastSays()).toBe('у цей день під фільтр нічого не підходить');
+  });
+});

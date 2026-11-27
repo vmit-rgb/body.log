@@ -4,7 +4,7 @@
  * sun and moon are text glyphs in Figma, exported with the text outlined.
  */
 export const ICON_NAMES = [
-  'chevron-right', 'chevron-left', 'menu', 'add', 'remove', 'close', 'circle', 'rectangle', 'sun', 'moon', 'play', 'check', 'restart', 'search', 'save', 'arrow-up',
+  'chevron-right', 'chevron-left', 'menu', 'add', 'remove', 'close', 'circle', 'rectangle', 'sun', 'moon', 'play', 'check', 'restart', 'search', 'save', 'arrow-up', 'filter',
 ] as const;
 
 export type IconName = (typeof ICON_NAMES)[number];
@@ -26,6 +26,8 @@ const PATHS: Record<IconName, string> = {
   'search': '<path d="M10.5312 3.53125C14.3972 3.53125 17.5312 6.66526 17.5312 10.5312C17.5312 11.9943 17.0809 13.3514 16.3135 14.4746L21.4688 19.6299L19.6299 21.4688L14.4746 16.3135C13.3514 17.0809 11.9943 17.5312 10.5312 17.5312C6.66526 17.5312 3.53125 14.3972 3.53125 10.5312C3.53125 6.66526 6.66526 3.53125 10.5312 3.53125ZM10.5312 6.13086C8.1012 6.13086 6.13086 8.1012 6.13086 10.5312C6.13107 12.9611 8.10133 14.9307 10.5312 14.9307C12.961 14.9305 14.9305 12.961 14.9307 10.5312C14.9307 8.10133 12.9611 6.13107 10.5312 6.13086Z" fill="currentColor"/>',
   'save': '<path d="M21.5 8.26172V21.5H3.5V3.5H16.7383L21.5 8.26172ZM6.09961 18.8994H18.8994V9.33789L15.8008 6.23926V10.8008H9.40039V6.09961H6.09961V18.8994Z" fill="currentColor"/>',
   'arrow-up': '<path d="M11.5567 6.98574C12.1436 6.50665 13.0098 6.54052 13.557 7.08795L21.5623 15.0973C22.1459 15.6812 22.1459 16.6284 21.5623 17.2123C20.9787 17.7962 20.032 17.7962 19.4484 17.2123L12.5 10.2604L5.5516 17.2123C4.96802 17.7962 4.02125 17.7962 3.43768 17.2123C2.85411 16.6284 2.85411 15.6812 3.43768 15.0973L11.443 7.08795L11.5567 6.98574Z" fill="currentColor"/>',
+  // not in Figma yet: a funnel drawn in the same flat style for the history's filters (FIXES-1.3 item 15)
+  'filter': '<path d="M3.5 4H21.5V7.2L14.6 13.9V21.5L10.4 19.1V13.9L3.5 7.2Z" fill="currentColor"/>',
 };
 
 /** SVG markup for an icon; decorative, so hidden from screen readers. */

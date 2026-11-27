@@ -1,7 +1,8 @@
 import { formatLong, type DayKey } from '../domain/dates';
 import { emptyDay, hasData, type Day } from '../domain/day';
 import type { Diary } from '../domain/diary';
-import { dayBlocks, dayMeta, monthDays, monthSummary, searchNotes, type DayBlock, type ValueRow } from '../domain/journal';
+import { dayBlocks, dayMeta, filterGroups, monthDays, monthSummary, searchNotes, shownDays, type DayBlock, type HistoryFilter, type ValueRow } from '../domain/journal';
+import { filterButton, openFilter } from './history-filter';
 import { weekGoal } from '../domain/progress';
 import type { Settings } from '../domain/settings';
 import { monthName, monthOf, shiftMonth, type MonthKey } from '../domain/stats';
@@ -53,6 +54,8 @@ export interface HistoryActions {
 
 /* «бета 0.81»'s words for a calendar day with nothing in it. */
 const NO_RECORDS: ToastMessage = { message: t('за цей день записів немає') };
+/* A day with entries, but none the filter keeps (FIXES-1.3 item 15). */
+const FILTERED_OUT: ToastMessage = { message: t('у цей день під фільтр нічого не підходить') };
 
 /* ---- one day card ---- */
 
@@ -79,7 +82,7 @@ const block = (item: DayBlock) => `
       ${blockBody(item)}
     </section>`;
 
-function card(day: Day, open: boolean, state: HistoryState): string {
+function card(day: Day, open: boolean, state: HistoryState, filter: HistoryFilter): string {
   const id = `card-${day.date}`;
   return `
   <article class="day-card" id="${id}">
@@ -90,7 +93,7 @@ function card(day: Day, open: boolean, state: HistoryState): string {
       </button>
     </h2>
     <div class="day-card__body" id="${id}-body"${open ? '' : ' hidden'}>
-      ${dayBlocks(day, state.days, state.settings).map(block).join('')}
+      ${dayBlocks(day, state.days, state.settings, filter).map(block).join('')}
       <button type="button" class="ctl btn btn--tertiary day-card__edit" data-edit="${day.date}">${t('редагувати цей день')}</button>
     </div>
   </article>`;
@@ -108,6 +111,8 @@ interface View {
   readonly carousel: CarouselMemory;
   /** The tip was hidden by a tap; it comes back when the history is opened again. */
   tipQuiet: boolean;
+  /** FIXES-1.3 item 15: what the day cards keep; empty shows everything. Kept through months and a day opened over the history. */
+  filter: HistoryFilter;
 }
 
 /**
@@ -119,8 +124,19 @@ export interface HistoryMemory {
   y?: number;
 }
 
-/** The first card of a month is open (0.81). */
-const firstOpen = (state: HistoryState, month: MonthKey) => new Set(monthDays(state.days, month, state.today).slice(0, 1));
+/**
+ * The first card of a month is open (0.81); with a filter all of them are,
+ * since what is left in them is what was asked for.
+ */
+function firstOpen(state: HistoryState, month: MonthKey, filter: HistoryFilter = new Set()): Set<DayKey> {
+  const keys = shownDays(state.days, month, state.today, state.settings, filter);
+  return new Set(filter.size ? keys : keys.slice(0, 1));
+}
+
+/** A month with nothing the filter keeps. */
+export function emptyFiltered(month: MonthKey, today: DayKey): string {
+  return t('за {month} під фільтр нічого не підходить').replace('{month}', monthName(month, today));
+}
 
 /**
  * A month without entries (copy fix A5, Olesia, 2026-11-20): this month still
@@ -135,7 +151,9 @@ function content(state: HistoryState, view: View, tips: TipMemory | undefined): 
   const dayAt = (key: DayKey): Day => state.days[key] ?? emptyDay(key);
   const goal = goalLine(weekGoal(view.date, state.today, dayAt, state.settings));
   const summary = monthSummary(view.month, state.today, Object.values(state.days), state.settings);
-  const keys = monthDays(state.days, view.month, state.today);
+  const keys = shownDays(state.days, view.month, state.today, state.settings, view.filter);
+  /* the month has entries, but none the filter keeps */
+  const filteredOut = view.filter.size > 0 && monthDays(state.days, view.month, state.today).length > 0;
   const calendar = calendarMarkup({
     settings: state.settings, date: view.date, today: state.today, month: view.month, dayAt, place: 'history',
     card: view.carousel.card, period: view.period, picking: view.picking, periodTip: !view.tipQuiet && (tips?.open(PERIOD_TIP) ?? false),
@@ -148,17 +166,18 @@ function content(state: HistoryState, view: View, tips: TipMemory | undefined): 
       </div>
     </section>
     <section class="cal-block" data-place="history" aria-label="${t('календар')}">${calendar}</section>
+    ${filterButton(view.filter)}
     <section class="history__days" aria-label="${t('дні')}">
       ${keys.length
-    ? keys.map((key) => card(dayAt(key), view.open.has(key), state)).join('')
-    : `<p class="history__empty t-2nd-regular muted">${emoticonsHtml(emptyMonth(view.month, state.today))}</p>`}
+    ? keys.map((key) => card(dayAt(key), view.open.has(key), state, view.filter)).join('')
+    : `<p class="history__empty t-2nd-regular muted">${emoticonsHtml(filteredOut ? emptyFiltered(view.month, state.today) : emptyMonth(view.month, state.today))}</p>`}
     </section>`;
 }
 
 /** Shows the history; returns what to undo when another screen takes its place. */
 export function showHistory(host: HTMLElement, state: HistoryState, actions: HistoryActions, memory: HistoryMemory = {}): () => void {
   const view: View = memory.view ?? {
-    date: state.date, month: monthOf(state.date), open: firstOpen(state, monthOf(state.date)), period: null, picking: null, carousel: { card: 0 }, tipQuiet: false,
+    date: state.date, month: monthOf(state.date), open: firstOpen(state, monthOf(state.date)), period: null, picking: null, carousel: { card: 0 }, tipQuiet: false, filter: new Set(),
   };
   const listeners = new AbortController();
   host.innerHTML = `
@@ -185,6 +204,12 @@ export function showHistory(host: HTMLElement, state: HistoryState, actions: His
       actions.toast(NO_RECORDS);
       return;
     }
+    if (view.filter.size && dayBlocks(state.days[date]!, state.days, state.settings, view.filter).length === 0) {
+      render();
+      focus(`[data-cal="day"][data-day="${date}"]`);
+      actions.toast(FILTERED_OUT);
+      return;
+    }
     view.open.add(date);
     render();
     focus(`[data-card="${date}"]`);
@@ -199,7 +224,7 @@ export function showHistory(host: HTMLElement, state: HistoryState, actions: His
   /** The month `by` away (arrows and the swipe); returns the calendar drawn. */
   function turnMonth(by: number): HTMLElement | null {
     view.month = shiftMonth(view.month, by);
-    view.open = firstOpen(state, view.month);
+    view.open = firstOpen(state, view.month, view.filter);
     render();
     return root.querySelector<HTMLElement>('.cal-block');
   }
@@ -249,10 +274,32 @@ export function showHistory(host: HTMLElement, state: HistoryState, actions: His
     focus('[data-cal="period-pick"]');
   }
 
+  /* ---- filters (FIXES-1.3 item 15): the round button under the calendar, the panel from the right ---- */
+
+  function useFilter(filter: HistoryFilter): void {
+    view.filter = filter;
+    view.open = firstOpen(state, view.month, filter);
+    render();
+    focus('[data-filter="open"]');
+    announce(filter.size ? t('фільтр застосовано') : t('фільтр скинуто'));
+  }
+
+  async function chooseFilter(): Promise<void> {
+    const chosen = await openFilter({
+      groups: filterGroups(state.settings),
+      chosen: view.filter,
+      count: (filter) => shownDays(state.days, view.month, state.today, state.settings, filter).length,
+    });
+    if (chosen) useFilter(chosen);
+  }
+
   const held = holdOnDays(root, holdDay, listeners.signal);
   root.addEventListener('click', (event) => {
     if (held()) return;
-    onTap(actions.goTo, tapDay, showMonth, periodButton)(event);
+    const filter = (event.target as Element).closest<HTMLElement>('[data-filter]')?.dataset.filter;
+    if (filter === 'open') void chooseFilter();
+    else if (filter === 'reset') useFilter(new Set());
+    else onTap(actions.goTo, tapDay, showMonth, periodButton)(event);
   });
   wireCarousels(root, view.carousel, listeners.signal);
   wireMonthSwipe(root, (_block, by) => turnMonth(by), listeners.signal);
