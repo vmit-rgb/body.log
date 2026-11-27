@@ -1,7 +1,7 @@
 import { addDays, mondayOf, type DayKey } from './dates';
 import type { Day } from './day';
 import { plural } from './numbers';
-import { kindDone, levelDone, weekSoFar } from './progress';
+import { kindDone, levelDone, levelsOf, weekSoFar } from './progress';
 import { ACTIVITY_KINDS, MOMENTS, type ActivityKind, type Moment, type Settings } from './settings';
 import { t } from '../i18n/lang';
 
@@ -88,7 +88,7 @@ export interface DayMarks {
  * groups count once each.
  */
 export function dayMarks(day: Day, settings: Settings): DayMarks {
-  const morning = settings.morningWarmup.enabled ? settings.morningWarmup.levels.filter((level) => levelDone(day, level)).length : 0;
+  const morning = settings.morningWarmup.enabled ? levelsOf(day, settings).filter((level) => levelDone(day, level)).length : 0;
   const daytime = settings.daytimeWarmup.enabled ? new Set(day.dw).size : 0;
   return { morning, daytime, workout: kindDone(day, 'workout', settings), movement: kindDone(day, 'movement', settings) };
 }

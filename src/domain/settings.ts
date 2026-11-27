@@ -221,6 +221,13 @@ export function readAccessibility(profile: Raw): Accessibility {
   return Object.fromEntries(ACCESSIBILITY_KEYS.map((key) => [key, stored[key] === true])) as Record<AccessibilityKey, boolean>;
 }
 
+/** Morning warm-up levels, from the profile or from a day that kept its own (day.ts `mw.lv`). */
+export function readLevels(value: unknown): Level[] {
+  return withIds(value, (level, levelId) => ({
+    id: levelId, name: text(level.name), duration: text(level.duration), items: readWarmupItems(level.items),
+  }));
+}
+
 export function readSettings(profile: Raw): Settings {
   const theme = raw(profile.theme);
   const goal = raw(profile.goal);
@@ -236,9 +243,7 @@ export function readSettings(profile: Raw): Settings {
     encouragement: list(profile.encouragement).map(text).filter((phrase) => phrase.trim() !== ''),
     morningWarmup: {
       ...readActivity(morning),
-      levels: withIds(morning.levels, (level, levelId) => ({
-        id: levelId, name: text(level.name), duration: text(level.duration), items: readWarmupItems(level.items),
-      })),
+      levels: readLevels(morning.levels),
     },
     daytimeWarmup: {
       ...readActivity(daytime),

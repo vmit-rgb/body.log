@@ -11,6 +11,9 @@ import { readMeals, type Meal } from '../food/food';
  * - `note`: the day's note.
  * - `mw`: morning warm-up. `ticks` = ticked exercise ids; `times` = seconds per
  *   round of a timed exercise; `rows` = how many timer rows the person opened.
+ *   `lv`: the warm-up levels as they were that day, kept once the levels in the settings
+ *   change (Olesia, 2026-11-27: a new exercise must not undo levels done before it);
+ *   left out while the day follows the settings, so a copy without it reads as before.
  * - `dw`: the daytime warm-up chips («для чого») marked today.
  * - `wo`: the workout picked today (`session`), sets per exercise (`ex`: weight `w`,
  *   reps `r`, seconds `s`) and opened set rows (`rows`); null when none was picked.
@@ -31,7 +34,7 @@ import { readMeals, type Meal } from '../food/food';
  *   there are none, so a copy without it reads as before.
  */
 
-import type { WorkoutField } from './settings';
+import { readLevels, type Level, type WorkoutField } from './settings';
 
 /** An exercise added right in the workout, for that day only (beta 1.2.2). */
 export interface AddedExercise { readonly id: string; readonly name: string; readonly fields: readonly WorkoutField[] }
@@ -55,7 +58,11 @@ export interface Day {
   readonly date: DayKey;
   readonly t: Table<Table<Answer>>;
   readonly note: string;
-  readonly mw: { readonly ticks: readonly string[]; readonly times: Table<readonly (number | null)[]>; readonly rows: Table<number> };
+  readonly mw: {
+    readonly ticks: readonly string[]; readonly times: Table<readonly (number | null)[]>; readonly rows: Table<number>;
+    /** The levels this day was lived with; none: today's settings. */
+    readonly lv?: readonly Level[];
+  };
   readonly dw: readonly string[];
   readonly wo: {
     readonly session: string; readonly ex: Table<readonly SetLog[]>; readonly rows: Table<number>; readonly done?: true;
@@ -165,7 +172,10 @@ export function readDay(value: unknown, date: DayKey): Day {
     date,
     t: table(day.t, (answers) => table(answers, readAnswer)),
     note: typeof day.note === 'string' ? day.note : '',
-    mw: { ticks: strings(mw.ticks), times: table(mw.times, readNumbers), rows: table(mw.rows, num) },
+    mw: {
+      ticks: strings(mw.ticks), times: table(mw.times, readNumbers), rows: table(mw.rows, num),
+      ...(Array.isArray(mw.lv) ? { lv: readLevels(mw.lv) } : {}),
+    },
     dw: strings(day.dw),
     wo: readWorkout(day.wo),
     mv: table(day.mv, readMovement),

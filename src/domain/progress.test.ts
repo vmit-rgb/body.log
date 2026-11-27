@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { DayKey } from './dates';
 import { emptyDay, type Day } from './day';
-import { completed, dayDone, kindDone, levelDone, weekGoal, weekSoFar } from './progress';
+import { completed, dayDone, keepPastLevels, kindDone, levelDone, levelsOf, settingsOn, weekGoal, weekSoFar } from './progress';
+import { readDay, writeDay } from './day';
 import { readSettings } from './settings';
 
 // Invented data only: nothing from a real log.
@@ -166,5 +167,51 @@ describe('goal.any: «будь-яка активність зараховує д
     expect(completed(day(), morningOnly, goalWith({ any: true })).day).toBe(true);
     expect(completed(day(), morningOnly, goalWith({})).day).toBe(false);
     expect(completed(morningOnly, both, goalWith({ any: true })).day).toBe(false);
+  });
+});
+
+describe('past days keep their warm-up levels (Olesia, 2026-11-27)', () => {
+  const TODAY = key('2026-11-27');
+  const past = (date: string, ...ids: string[]): Day => ({ ...emptyDay(key(date)), mw: ticks(...ids) });
+  // an exercise «c» added to level 1, and «b» moved to level 2
+  const changed = readSettings({
+    morningWarmup: { enabled: true, levels: [
+      { id: 'l1', items: [{ exercise: 'a' }, { exercise: 'c' }] },
+      { id: 'l2', items: [{ exercise: 'b' }] },
+    ] },
+  });
+  const days = { '2026-11-20': past('2026-11-20', 'a', 'b'), '2026-11-27': past('2026-11-27', 'a', 'b') } as Record<DayKey, Day>;
+
+  it('a level done before the change stays done after it', () => {
+    const kept = keepPastLevels(days, settings, changed, TODAY);
+    const before = kept[key('2026-11-20')]!;
+    expect(kindDone(before, 'morningWarmup', changed)).toBe(true);
+    expect(levelsOf(before, changed)).toEqual(settings.morningWarmup.levels);
+  });
+  it('today follows the new levels', () => {
+    const kept = keepPastLevels(days, settings, changed, TODAY);
+    expect(kept[TODAY]!.mw.lv).toBeUndefined();
+    expect(levelsOf(kept[TODAY]!, changed)).toEqual(changed.morningWarmup.levels);
+  });
+  it('changes nothing when the levels are the same, or a day already keeps its own', () => {
+    expect(keepPastLevels(days, settings, settings, TODAY)).toBe(days);
+    const once = keepPastLevels(days, settings, changed, TODAY);
+    const twice = keepPastLevels(once, changed, settings, TODAY);
+    expect(twice[key('2026-11-20')]!.mw.lv).toEqual(settings.morningWarmup.levels);
+  });
+  it('leaves days with nothing ticked alone', () => {
+    const quiet = { '2026-11-20': { ...emptyDay(key('2026-11-20')), note: 'x' } } as Record<DayKey, Day>;
+    expect(keepPastLevels(quiet, settings, changed, TODAY)).toBe(quiet);
+  });
+  it('home on a past day shows its own levels', () => {
+    const kept = keepPastLevels(days, settings, changed, TODAY);
+    expect(settingsOn(kept[key('2026-11-20')]!, changed).morningWarmup.levels).toEqual(settings.morningWarmup.levels);
+    expect(settingsOn(kept[TODAY]!, changed)).toBe(changed);
+  });
+  it('the kept levels survive saving and reading the day', () => {
+    const kept = keepPastLevels(days, settings, changed, TODAY)[key('2026-11-20')]!;
+    const read = readDay(JSON.parse(JSON.stringify(writeDay(kept))), kept.date);
+    expect(read.mw.lv).toEqual(settings.morningWarmup.levels);
+    expect(readDay(JSON.parse(JSON.stringify(writeDay(past('2026-11-20', 'a')))), key('2026-11-20')).mw.lv).toBeUndefined();
   });
 });

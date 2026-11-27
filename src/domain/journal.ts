@@ -2,7 +2,7 @@ import type { DayKey } from './dates';
 import { hasData, hasLap, hasSet, type Answer, type Day, type SetLog } from './day';
 import { formatLaps } from './history';
 import { formatNumber, plural } from './numbers';
-import { kindDone, levelDone } from './progress';
+import { kindDone, levelDone, levelsOf } from './progress';
 import { MOMENTS, type Moment, type Settings, type Tracker } from './settings';
 import { monthName, monthOf, type MonthKey } from './stats';
 import { t } from '../i18n/lang';
@@ -64,7 +64,7 @@ export function formatSetRuns(sets: readonly SetLog[]): string {
 
 /** The last warm-up level done, counted from 1 (not capped, unlike the calendar). */
 const levelReached = (day: Day, settings: Settings) =>
-  settings.morningWarmup.levels.reduce((reached, level, i) => (levelDone(day, level) ? i + 1 : reached), 0);
+  levelsOf(day, settings).reduce((reached, level, i) => (levelDone(day, level) ? i + 1 : reached), 0);
 
 function warmupMeta(day: Day, settings: Settings): string[] {
   if (!settings.morningWarmup.enabled) return [];
@@ -143,12 +143,13 @@ const seconds = (times: readonly (number | null)[] = []) =>
 export function warmupGroups(day: Day, days: readonly Day[], settings: Settings): CheckGroup[] {
   const ticked = (id: string) => day.mw.ticks.includes(id);
   const item = (id: string) => ({ name: exerciseName(settings, days, id), times: seconds(day.mw.times[id]) });
-  const groups: CheckGroup[] = settings.morningWarmup.levels.flatMap((level, i) => {
+  const levels = levelsOf(day, settings);
+  const groups: CheckGroup[] = levels.flatMap((level, i) => {
     const items = level.items.filter((x) => ticked(x.exercise)).map((x) => item(x.exercise));
     const title = `${level.name || `${t('рівень')} ${i + 1}`}${levelDone(day, level) ? t(' · готово') : ''}`;
     return items.length ? [{ title, items }] : [];
   });
-  const inLevels = new Set(settings.morningWarmup.levels.flatMap((level) => level.items.map((x) => x.exercise)));
+  const inLevels = new Set(levels.flatMap((level) => level.items.map((x) => x.exercise)));
   const other = day.mw.ticks.filter((id) => !inLevels.has(id)).map(item);
   if (other.length) groups.push({ title: t('інші вправи'), items: other });
   return groups;

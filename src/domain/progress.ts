@@ -14,11 +14,36 @@ export function levelDone(day: Day, level: Level): boolean {
   return level.items.length > 0 && level.items.every((item) => day.mw.ticks.includes(item.exercise));
 }
 
+/** The warm-up levels a day was lived with: its own once the settings changed after it, else the settings'. */
+export const levelsOf = (day: Day, settings: Settings): readonly Level[] => day.mw.lv ?? settings.morningWarmup.levels;
+
+/** The settings as `day` sees them: its own warm-up levels, if it kept them (home on a past day). */
+export function settingsOn(day: Day, settings: Settings): Settings {
+  return day.mw.lv ? { ...settings, morningWarmup: { ...settings.morningWarmup, levels: day.mw.lv } } : settings;
+}
+
+/** What makes a level count: its id and the exercises in it, in order. */
+const levelShape = (levels: readonly Level[]) => JSON.stringify(levels.map((level) => [level.id, level.items.map((item) => item.exercise)]));
+
+/**
+ * Before the warm-up levels change in the settings (an exercise added, moved, a level removed),
+ * the past days that follow the settings keep the levels they were lived with, so what was done
+ * stays done (Olesia, 2026-11-27). Today follows the new levels. Days with nothing ticked, and
+ * days that already keep their own, stay as they are.
+ */
+export function keepPastLevels(days: Readonly<Record<DayKey, Day>>, before: Settings, after: Settings, today: DayKey): Readonly<Record<DayKey, Day>> {
+  const levels = before.morningWarmup.levels;
+  if (levelShape(levels) === levelShape(after.morningWarmup.levels)) return days;
+  const keeps = (day: Day) => day.date < today && day.mw.lv === undefined && day.mw.ticks.length > 0;
+  if (!Object.values(days).some(keeps)) return days;
+  return Object.fromEntries(Object.entries(days).map(([key, day]) => [key, keeps(day) ? { ...day, mw: { ...day.mw, lv: levels } } : day]));
+}
+
 const hasSets = (day: Day) => day.wo !== null && Object.values(day.wo.ex).some((sets) => sets.some(hasSet));
 
 export function kindDone(day: Day, kind: ActivityKind, settings: Settings): boolean {
   switch (kind) {
-    case 'morningWarmup': return settings.morningWarmup.levels.some((level) => levelDone(day, level));
+    case 'morningWarmup': return levelsOf(day, settings).some((level) => levelDone(day, level));
     case 'daytimeWarmup': return day.dw.length > 0;
     case 'workout': return hasSets(day);
     case 'movement': return Object.values(day.mv).some((laps) => laps.some(hasLap));
@@ -58,7 +83,7 @@ export interface Completed {
 }
 
 export function completed(before: Day, after: Day, settings: Settings): Completed {
-  const levels = settings.morningWarmup.levels.filter((level) => levelDone(after, level) && !levelDone(before, level)).map((level) => level.id);
+  const levels = levelsOf(after, settings).filter((level) => levelDone(after, level) && !levelDone(before, level)).map((level) => level.id);
   const day = settings.goal.enabled && dayDone(after, settings) && !dayDone(before, settings);
   return { levels, day };
 }
