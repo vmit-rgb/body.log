@@ -179,7 +179,8 @@
   text-align: left;
   overflow-wrap: anywhere;
 }
-.food-dishes li[hidden] {
+.food-dishes li[hidden],
+.food-row .rm[hidden] {
   display: none;
 }
 

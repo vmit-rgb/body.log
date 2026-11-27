@@ -69,8 +69,32 @@ describe('trackerCards', () => {
     });
   });
 
-  it('says «так» out of the answers for yes / no', () => {
-    expect(trackerCards(WEEK, dayAt, settings)[3]).toMatchObject({ kind: 'yesno', rows: [{ label: 'зранку', yes: 2, total: 3 }] });
+  it('says «так» out of the days with anything logged for a morning yes / no', () => {
+    expect(trackerCards(WEEK, dayAt, settings)[3]).toMatchObject({ kind: 'yesno', rows: [{ label: 'зранку', yes: 2, total: 3, of: 'day' }] });
+  });
+
+  it('counts a yes / no after a warm-up out of the warm-ups done, not out of the ticks (Olesia, 2026-11-27)', () => {
+    const asked = readSettings({
+      morningWarmup: { enabled: true, levels: [{ id: 'l1', name: 'рівень 1', items: [{ exercise: 'neck' }] }] },
+      workout: { enabled: true },
+      trackers: [{ id: 'dizzy', name: 'було запаморочення?', kind: 'yesno', ask: ['afterMorningWarmup', 'afterWorkout'] }],
+    });
+    const warmed = (date: string, dizzy: boolean) => readDay({ mw: { ticks: ['neck'] }, t: dizzy ? { afterMorningWarmup: { dizzy: 'yes' } } : {} }, key(date));
+    const log: Record<string, Day> = {
+      '2026-11-12': warmed('2026-11-12', true),
+      '2026-11-13': warmed('2026-11-13', false),
+      '2026-11-14': warmed('2026-11-14', false),
+      '2026-11-15': warmed('2026-11-15', true),
+      '2026-11-16': readDay({ note: 'без розминки' }, key('2026-11-16')),
+    };
+    const [card] = trackerCards(WEEK, (at) => log[at] ?? emptyDay(at), asked);
+    // no workout that week, so no row for it
+    expect(card).toMatchObject({ kind: 'yesno', rows: [{ label: 'після ранкової', yes: 2, total: 4, of: 'morningWarmup' }] });
+  });
+
+  it('keeps «так у 0 з …» when the moment came but nothing was ticked', () => {
+    const asked = readSettings({ trackers: [{ id: 'ok', name: 'добре?', kind: 'yesno', ask: ['evening'] }] });
+    expect(trackerCards(WEEK, dayAt, asked)[0]).toMatchObject({ kind: 'yesno', rows: [{ label: 'ввечері', yes: 0, total: 3 }] });
   });
 
   it('is empty without answers', () => {

@@ -1,6 +1,7 @@
 import { addDays, type DayKey } from './dates';
-import type { Answer, Day } from './day';
-import { MOMENTS, type Moment, type Settings, type Tracker } from './settings';
+import { hasData, type Answer, type Day } from './day';
+import { kindDone } from './progress';
+import { MOMENTS, type ActivityKind, type Moment, type Settings, type Tracker } from './settings';
 import { MOMENT_SHORT } from './stats';
 import { t } from '../i18n/lang';
 import { healthAverages, HEALTH_NAME } from '../health/health';
@@ -13,7 +14,7 @@ import { foodCards, type FoodCard } from '../food/food-cards';
  *   with a line per moment (the first 5 with answers), a point per day; over
  *   31 days a point per week. A day without an answer breaks the line;
  * - two numbers (blood pressure): every record, newest last;
- * - yes / no: «так у 4 з 6 записів» per moment;
+ * - yes / no: «так у 3 з 20 ранкових розминок» per moment (2026-11-27; was «з 6 записів»);
  * - no answers at all: «записів немає».
  * No DOM here: home/carousel.ts draws it.
  */
@@ -25,7 +26,9 @@ export const DAILY_UP_TO = 31;
 
 /** `moment` is missing on the card «зі Здоровʼя», whose rows are steps and km. */
 export interface AverageRow { readonly moment?: Moment; readonly label: string; readonly value: number | null }
-export interface YesNoRow { readonly label: string; readonly yes: number; readonly total: number }
+/** What a yes / no answer is counted out of: the days with an activity done, or all days. */
+export type YesNoOf = ActivityKind | 'day';
+export interface YesNoRow { readonly label: string; readonly yes: number; readonly total: number; readonly of: YesNoOf }
 export interface PairEntry { readonly date: DayKey; readonly label: string; readonly a: number | null; readonly b: number | null }
 
 export interface ChartLine { readonly label: string; readonly points: readonly (number | null)[] }
@@ -88,23 +91,43 @@ function chartOf(tracker: Tracker, moments: readonly Moment[], keys: readonly Da
   return { starts: groups.map((group) => group[0]!), end: keys[keys.length - 1]!, weekly: groups.length !== keys.length, min, max, lines };
 }
 
-function card(tracker: Tracker, keys: readonly DayKey[], dayAt: (key: DayKey) => Day): TrackerCard {
+/** The activity a moment comes with; morning and evening come every day. */
+const MOMENT_KIND: Record<Moment, YesNoOf> = {
+  morning: 'day',
+  afterMorningWarmup: 'morningWarmup',
+  beforeDaytimeWarmup: 'daytimeWarmup',
+  afterDaytimeWarmup: 'daytimeWarmup',
+  beforeWorkout: 'workout',
+  afterWorkout: 'workout',
+  beforeMovement: 'movement',
+  afterMovement: 'movement',
+  evening: 'day',
+};
+
+/**
+ * A yes / no question is a checkbox on home: «yes» is ticked, «no» is never stored. So it counts out
+ * of the times the moment came (the days with that activity done; for morning and evening, the days
+ * with anything logged), not out of the answers (Olesia, 2026-11-27: «так у 3 з 3» when there were 20 warm-ups).
+ */
+function yesNoCard(base: CardBase, tracker: Tracker, asked: readonly Moment[], days: readonly Day[], settings: Settings): TrackerCard {
+  const rows = asked.flatMap((moment) => {
+    const of = MOMENT_KIND[moment];
+    const came = days.filter((day) => answerAt(day, moment, tracker) !== undefined || (of === 'day' ? hasData(day) : kindDone(day, of, settings)));
+    if (came.length === 0) return [];
+    const yes = came.filter((day) => answerAt(day, moment, tracker) === 'yes').length;
+    return [{ label: MOMENT_SHORT[moment], yes, total: came.length, of }];
+  });
+  return rows.length ? { ...base, kind: 'yesno', rows } : { ...base, kind: 'empty' };
+}
+
+function card(tracker: Tracker, keys: readonly DayKey[], dayAt: (key: DayKey) => Day, settings: Settings): TrackerCard {
   const base = { id: tracker.id, name: tracker.name || t('без назви') };
   const days = keys.map(dayAt);
   const asked = MOMENTS.filter((moment) => tracker.ask.includes(moment));
+  if (tracker.kind === 'yesno') return yesNoCard(base, tracker, asked, days, settings);
   const answered = asked.filter((moment) => days.some((day) => answerAt(day, moment, tracker) !== undefined));
   if (answered.length === 0) return { ...base, kind: 'empty' };
 
-  if (tracker.kind === 'yesno') {
-    return {
-      ...base,
-      kind: 'yesno',
-      rows: answered.map((moment) => {
-        const values = days.map((day) => answerAt(day, moment, tracker)).filter((value) => value === 'yes' || value === 'no');
-        return { label: MOMENT_SHORT[moment], yes: values.filter((value) => value === 'yes').length, total: values.length };
-      }),
-    };
-  }
   if (tracker.kind === 'numbers') {
     const entries = keys.flatMap((date) => answered.flatMap((moment) => {
       const value = answerAt(dayAt(date), moment, tracker);
@@ -137,7 +160,7 @@ function healthCard(keys: readonly DayKey[], dayAt: (key: DayKey) => Day): Track
 /** A card for every question but the notes, in the order of the settings; «зі Здоровʼя», then «їжа» last. */
 export function trackerCards(keys: readonly DayKey[], dayAt: (key: DayKey) => Day, settings: Settings): TrackerCard[] {
   return [
-    ...settings.trackers.filter((tracker) => tracker.kind !== 'note').map((tracker) => card(tracker, keys, dayAt)),
+    ...settings.trackers.filter((tracker) => tracker.kind !== 'note').map((tracker) => card(tracker, keys, dayAt, settings)),
     ...healthCard(keys, dayAt),
     ...foodCards(keys, dayAt, settings.food),
   ];

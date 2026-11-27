@@ -157,6 +157,27 @@ describe('the section «їжа»', () => {
     expect(section()!.querySelector('.food-meal')!.textContent).toContain('яблуко');
   });
 
+  it('the only dish has «видалити» once something is typed; it clears the row, «скасувати» brings it back (Olesia, 2026-11-27)', async () => {
+    start(withFoodOn());
+    section()!.querySelector<HTMLElement>('[data-act="meal-add"]')!.click();
+    await settle();
+    const rm = () => inSheet('[data-food="rm"]');
+    expect(rm().hidden).toBe(true);
+    type(inSheet('[data-food="name"]'), 'яблуко');
+    expect(rm().hidden).toBe(false);
+    rm().click();
+    rm().click();
+    await settle();
+    expect(sheet()!.querySelectorAll('.food-row')).toHaveLength(1);
+    expect(inSheet<HTMLInputElement>('[data-food="name"]').value).toBe('');
+    expect(rm().hidden).toBe(true);
+    expect(toastSays()).toBe('страву прибрано');
+    [...document.querySelectorAll<HTMLButtonElement>('.toast button')].find((b) => b.textContent === 'скасувати')!.click();
+    await settle();
+    expect(sheet()!.querySelectorAll('.food-row')).toHaveLength(1);
+    expect(inSheet<HTMLInputElement>('[data-food="name"]').value).toBe('яблуко');
+  });
+
   it('the sheet opens with no field focused, so no keyboard until a tap (beta 1.2.4)', async () => {
     start(withFoodOn());
     section()!.querySelector<HTMLElement>('[data-act="meal-add"]')!.click();
