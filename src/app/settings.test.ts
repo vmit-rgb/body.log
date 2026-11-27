@@ -410,7 +410,7 @@ describe('settings: accent and «доступність»', () => {
     await openPart('доступність');
     const labels = [...host.querySelectorAll('#st-access label.checkbox .checkbox__label')].map((l) => l.textContent!.trim());
     expect(labels).toEqual([
-      'вимкнути всі анімації', 'вимкнути фонові анімації (ASCII)', 'вимкнути вібрацію', 'вимкнути звук',
+      'вимкнути всі анімації', 'вимкнути фонові анімації (ASCII)', 'вимкнути тактильний відгук', 'вимкнути звук',
       'збільшити зони натискання', 'збільшити розмір тексту', 'віддзеркалити нижню панель', 'вимкнути зникання повідомлень',
       'показувати ⋯ біля пунктів, що потребують затискання',
     ]);
@@ -464,7 +464,7 @@ describe('settings: accent and «доступність»', () => {
     expect(checkbox('вимкнути всі анімації').checked).toBe(true);
     expect(checkbox('вимкнути всі анімації').disabled).toBe(true);
     expect(checkbox('вимкнути фонові анімації (ASCII)').disabled).toBe(true);
-    expect(checkbox('вимкнути вібрацію').disabled).toBe(false);
+    expect(checkbox('вимкнути тактильний відгук').disabled).toBe(false);
     expect(host.textContent).toContain('на телефоні ввімкнено «зменшити рух», тож анімації вимкнені.');
   });
 });

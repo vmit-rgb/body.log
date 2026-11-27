@@ -31,11 +31,11 @@ npm run check   # типи, тести, збірка
 Робота йде через pull request: кожна зміна в `main` проходить перевірку (`check`) і перегляд, після чого `deploy` публікує сайт на GitHub Pages.
 
 ## Права
-© 2026 (Олеся + Нитка / AI). Усі права захищено.
+© 2026 (Олеся + Нитка / AI).
 
-Код відкритий для перегляду, але копіювати, змінювати чи використовувати його без дозволу не можна. Користуватися самим застосунком можна вільно.
+Код поширюється за ліцензією GNU Affero General Public License 3.0 (лише ця версія): [LICENSE](LICENSE). Його можна читати, змінювати й поширювати, але будь-яка змінена версія, зокрема та, що працює як сайт чи сервіс, має бути відкрита під тією ж ліцензією, з усім своїм кодом. Користуватися самим застосунком можна вільно.
 
-Source is public for transparency. All rights reserved — no reuse without permission. You are free to use the app itself.
+The code is licensed under the GNU Affero General Public License v3.0 only (AGPL-3.0-only): see [LICENSE](LICENSE). Any modified version, including one run as a website or service, must publish its full source under the same license.
 
 Шрифт Noto Sans Mono поширюється за ліцензією SIL Open Font License 1.1: [public/fonts/OFL-NotoSansMono.txt](public/fonts/OFL-NotoSansMono.txt). Та сама ліцензія стосується його частини, що вбудовується в PDF-експорт ([src/pdf/noto-sans-mono-pdf.json](src/pdf/noto-sans-mono-pdf.json)).
 
