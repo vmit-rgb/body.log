@@ -1,6 +1,7 @@
 import { randomAccent } from '../domain/accents';
 import { formatLong, type DayKey } from '../domain/dates';
-import type { Day } from '../domain/day';
+import { emptyDay, type Day } from '../domain/day';
+import { keepPastLevels, settingsOn } from '../domain/progress';
 import { readCopy, type Diary, type JsonObject } from '../domain/diary';
 import { EXAMPLE_DIARY } from '../domain/examples';
 import { readSettings } from '../domain/settings';
@@ -121,6 +122,12 @@ function withSomeAccent(profile: Diary['profile']): Diary['profile'] {
   return { ...profile, theme: { ...named, accent: randomAccent() } };
 }
 
+/** `next` with its past days keeping the warm-up levels of `before`, if the levels changed (progress.ts keepPastLevels). */
+function withPastLevels(before: Diary, next: Diary, today: DayKey): Diary {
+  const days = keepPastLevels(next.days, readSettings(before.profile), readSettings(next.profile), today);
+  return days === next.days ? next : { ...next, days };
+}
+
 /** install-first shows Android's steps unless the phone is an iPhone. */
 const phoneOf = (platform: Platform): Phone => (platform === 'iphone' ? 'iphone' : 'android');
 
@@ -166,7 +173,8 @@ export function startApp(env: AppEnv): void {
       document.documentElement.scrollTop = 0;
       comeIn(host);
     },
-    keep: (next) => persist(next),
+    // settings saved from the menu: past days keep the warm-up levels they were lived with (Olesia, 2026-11-27)
+    keep: (next) => persist(diary ? withPastLevels(diary, next, env.today()) : next),
     restart: (next, message) => keep(next, message),
     erase(message) {
       store.clear();
@@ -182,7 +190,9 @@ export function startApp(env: AppEnv): void {
     leave();
     onHome = true;
     let shown = current;
-    leave = showHome(host, { settings: readSettings(current.profile), days: current.days, date, today: env.today(), session, cameFrom, inTab: !env.installed }, {
+    // a past day shows the warm-up levels it was lived with, if it kept them
+    const settings = settingsOn(current.days[next] ?? emptyDay(next), readSettings(current.profile));
+    leave = showHome(host, { settings, days: current.days, date, today: env.today(), session, cameFrom, inTab: !env.installed }, {
       goTo: (day) => showDay(shown, day),
       openMenu: () => {
         log.saveNow();
