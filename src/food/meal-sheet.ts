@@ -153,12 +153,13 @@ function kcalField(row: Row): string {
   })}<span class="food-row__own t-3rd-regular muted" data-own="${row.id}"${row.manual ? '' : ' hidden'} title="${t('калорії вписано вручну')}">✎<span class="visually-hidden">${t('вписано вручну')}</span></span>`;
 }
 
-function rowMarkup(spec: MealSheetSpec, row: Row, i: number, armed: number | null): string {
+/** The only row has «видалити» too once something is in it; then it is cleared, not taken away (Olesia, 2026-11-27). */
+function rowMarkup(spec: MealSheetSpec, row: Row, i: number, armed: number | null, only: boolean): string {
   const { settings } = spec;
   const macro = (f: 'p' | 'f' | 'c', label: string, letter: string) => foodNumber({
     key: `${f}|${row.id}`, label, value: row[f], unit: letter, data: `data-food="num" data-f="${f}" data-row="${row.id}"`,
   });
-  const remove = i === 0 ? '' : `<button type="button" class="ctl icon-btn icon-btn--secondary rm${armed === row.id ? ' rm--armed' : ''}" data-food="rm" data-row="${row.id}"
+  const remove = `<button type="button" class="ctl icon-btn icon-btn--secondary rm${armed === row.id ? ' rm--armed' : ''}" data-food="rm" data-row="${row.id}"${only && blank(row) ? ' hidden' : ''}
       aria-label="${armed === row.id ? t('точно видалити страву') : t('видалити страву')}">${iconSvg(armed === row.id ? 'check' : 'close')}</button>`;
   const known = findDish(settings.dishes, row.name) !== undefined;
   const numbers = settings.macros ? `
@@ -242,7 +243,7 @@ export function mealSheet(spec: MealSheetSpec): Promise<MealAnswer> {
       <h2 class="t-h5" id="food-sheet-title" tabindex="-1" data-key="title">${editing ? t('прийом їжі') : t('новий прийом')}</h2>
       <label class="food-time"><span class="t-1st-semibold">${t('час')}</span>
         <input class="field food-time__field" type="time" value="${esc(time)}" data-food="time" data-key="time" /></label>
-      ${withRows ? `<ol class="food-rows" role="list">${rows.map((row, i) => rowMarkup(spec, row, i, armed)).join('')}</ol>
+      ${withRows ? `<ol class="food-rows" role="list">${rows.map((row, i) => rowMarkup(spec, row, i, armed, rows.length === 1)).join('')}</ol>
       <div><button type="button" class="ctl btn btn--tertiary" data-food="more" data-key="more">${t('+ ще страва')}</button></div>` : ''}
       ${settings.macros ? `${pasteMarkup(paste)}<p class="food-sum t-1st-semibold" data-sum aria-live="polite">${esc(sumText())}</p>` : ''}
       ${editing ? `<div><button type="button" class="ctl btn btn--destructive" data-food="delete">${t('видалити прийом')}</button></div>` : ''}
@@ -287,10 +288,14 @@ export function mealSheet(spec: MealSheetSpec): Promise<MealAnswer> {
     Object.assign(row, { name: item.name, p: show(item.p), f: show(item.f), c: show(item.c), kcal: item.kcalManual ? show(item.kcal) : '', manual: item.kcalManual === true, ai: false, keep: false, search: false, picked: true });
   }
 
-  /** Removes a row; «скасувати» in the toast puts it back where it was, while the sheet is open. */
+  /**
+   * Removes a row; the only one is swapped for an empty row (Olesia, 2026-11-27: «просто очищати рядок»).
+   * «скасувати» in the toast puts it back where it was, while the sheet is open.
+   */
   function removeRow(row: Row): void {
     const at = rows.indexOf(row);
-    rows = rows.filter((x) => x !== row);
+    const cleared = rows.length === 1 ? rowOf(null, true) : null;
+    rows = cleared ? [cleared] : rows.filter((x) => x !== row);
     armed = null;
     draw();
     panel.querySelector<HTMLElement>('[data-food="more"]')?.focus({ preventScroll: true });
@@ -299,6 +304,7 @@ export function mealSheet(spec: MealSheetSpec): Promise<MealAnswer> {
       showIcon: true,
       action: undo(() => {
         if (!root.isConnected) return;
+        if (cleared && rows.length === 1 && blank(rows[0]!)) rows = [];
         rows.splice(Math.min(at, rows.length), 0, row);
         draw(`name|${row.id}`);
       }),
@@ -379,6 +385,7 @@ export function mealSheet(spec: MealSheetSpec): Promise<MealAnswer> {
       panel.querySelector<HTMLElement>(`[data-own="${row.id}"]`)!.hidden = !row.manual;
       if (!row.manual) target.placeholder = String(counted(row) ?? '');
     }
+    if (rows.length === 1) panel.querySelector<HTMLElement>(`[data-food="rm"][data-row="${row.id}"]`)?.toggleAttribute('hidden', blank(row));
     target.toggleAttribute('aria-invalid', invalid(target.value));
     target.closest('.food-num')?.classList.toggle('food-num--wrong', invalid(target.value));
     const sum = panel.querySelector<HTMLElement>('[data-sum]');

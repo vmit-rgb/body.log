@@ -1,5 +1,5 @@
 import type { DayKey } from '../domain/dates';
-import type { Chart, TrackerCard } from '../domain/cards';
+import type { Chart, TrackerCard, YesNoOf } from '../domain/cards';
 import { formatNumber, plural } from '../domain/numbers';
 import { pickFromList } from '../ui/dialog';
 import { esc } from '../ui/html';
@@ -26,8 +26,15 @@ const WEEKDAYS = [t('нд'), t('пн'), t('вт'), t('ср'), t('чт'), t('пт
 const dayMonth = (key: DayKey) => `${key.slice(8)}.${key.slice(5, 7)}`;
 const weekday = (key: DayKey) => WEEKDAYS[new Date(`${key}T12:00:00Z`).getUTCDay()]!;
 
-/** «з 1 запису», «з 6 записів»: the genitive after «з». */
-const records = (n: number) => (n % 10 === 1 && n % 100 !== 11 ? t('запису') : t('записів'));
+/** «з 1 ранкової розминки», «з 20 ранкових розминок»: the genitive after «з», one or many. */
+const OUT_OF: Record<YesNoOf, readonly [string, string]> = {
+  morningWarmup: [t('ранкової розминки'), t('ранкових розминок')],
+  daytimeWarmup: [t('денної розминки'), t('денних розминок')],
+  workout: [t('тренування'), t('тренувань')],
+  movement: [t('дня з рухом'), t('днів з рухом')],
+  day: [t('дня'), t('днів')],
+};
+const outOf = (n: number, of: YesNoOf) => OUT_OF[of][n % 10 === 1 && n % 100 !== 11 ? 0 : 1];
 
 /* ---- the chart ---- */
 
@@ -131,7 +138,7 @@ function body(card: TrackerCard): string {
       return `<p class="avg-card__empty t-2nd-regular muted">${t('записів немає')}</p>`;
     case 'yesno':
       return `<ul class="avgs avgs--column" role="list">${card.rows.map((row) => `
-        <li class="avg"><span class="avg__label t-3rd-semibold">${esc(row.label)}:</span> <b class="t-2nd-bold">${t('так у')} ${row.yes} ${t('з')} ${row.total}</b> <span class="avg__label t-3rd-regular">${records(row.total)}</span></li>`).join('')}</ul>`;
+        <li class="avg"><span class="avg__label t-3rd-semibold">${esc(row.label)}:</span> <b class="t-2nd-bold">${t('так у')} ${row.yes} ${t('з')} ${row.total}</b> <span class="avg__label t-3rd-regular">${outOf(row.total, row.of)}</span></li>`).join('')}</ul>`;
     case 'pairs':
       return `<div class="avg-card__fill"><ul class="avg-card__list t-2nd-regular" role="list" tabindex="0" aria-label="${t('записи:')} ${esc(card.name)}">${card.entries.map((entry) => `
         <li><span class="muted">${weekday(entry.date)} ${dayMonth(entry.date)} · ${esc(entry.label)}</span> <b class="t-2nd-bold">${formatNumber(entry.a) || '—'}/${formatNumber(entry.b) || '—'}</b></li>`).join('')}</ul></div>`;
