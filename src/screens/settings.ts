@@ -117,7 +117,7 @@ export const ACCENT_NAMES: Record<Accent, string> = {
 const ACCESS_LABELS: Record<AccessibilityKey, string> = {
   noMotion: t('вимкнути всі анімації'),
   noBackgroundMotion: t('вимкнути фонові анімації (ASCII)'),
-  noVibration: t('вимкнути вібрацію'),
+  noVibration: t('вимкнути тактильний відгук'),
   noSound: t('вимкнути звук'),
   largerTargets: t('збільшити зони натискання'),
   largerText: t('збільшити розмір тексту'),
@@ -133,7 +133,7 @@ const ACCESS_HINTS: Partial<Record<AccessibilityKey, string>> = {
 export const ACCESS_SHORT: Record<AccessibilityKey, string> = {
   noMotion: t('без анімацій'),
   noBackgroundMotion: t('без фонових анімацій'),
-  noVibration: t('без вібрації'),
+  noVibration: t('без тактильного відгуку'),
   noSound: t('без звуку'),
   largerTargets: t('більші зони натискання'),
   largerText: t('більший текст'),

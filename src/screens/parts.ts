@@ -29,7 +29,7 @@ export function wireLanguageSwitch(host: ParentNode): void {
 export const FOOTER = `
   <footer class="footer t-3rd-regular">
     <p class="muted">${VERSION_LABEL}</p>
-    <p class="muted">${t('© 2026 (Олеся + Нитка / AI) · усі права захищено')}</p>
+    <p class="muted">${t('© 2026 (Олеся + Нитка / AI)')}</p>
   </footer>`;
 
 /**
